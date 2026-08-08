@@ -27,11 +27,30 @@ function readFile(input){
           let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
           const scale=Math.min(1,MAX/Math.max(w,h));
           w=Math.max(1,Math.round(w*scale)); h=Math.max(1,Math.round(h*scale));
+
           const canvas=document.createElement('canvas');
-          canvas.width=w; canvas.height=h;
+          canvas.width=w;
+          canvas.height=h;
           const ctx=canvas.getContext('2d');
-          ctx.drawImage(img,0,0,w,h);
-          resolve(canvas.toDataURL('image/jpeg',0.72));
+
+          // iPhone/Safari は createImageBitmap の imageOrientation を使うと
+          // EXIF回転を適用した状態で描画できる。未対応時は通常描画へフォールバック。
+          if ('createImageBitmap' in window) {
+            createImageBitmap(f,{imageOrientation:'from-image'}).then(bitmap=>{
+              canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+              canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+              ctx.clearRect(0,0,canvas.width,canvas.height);
+              ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+              if (bitmap.close) bitmap.close();
+              resolve(canvas.toDataURL('image/jpeg',0.72));
+            }).catch(()=>{
+              ctx.drawImage(img,0,0,w,h);
+              resolve(canvas.toDataURL('image/jpeg',0.72));
+            });
+          } else {
+            ctx.drawImage(img,0,0,w,h);
+            resolve(canvas.toDataURL('image/jpeg',0.72));
+          }
         }catch(e){ resolve(original); }
       };
       img.onerror=()=>resolve(original);
