@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0f14" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>Detailing Manager</title>
+  <style>
+    :root{
+      --bg:#0b0f14;--panel:#131a22;--panel2:#19222c;--line:#26313d;
+      --text:#f4f7fb;--muted:#93a0af;--blue:#3ca6ff;--green:#47d48b;--gold:#f4c85b;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#080b10,#0e141b 45%,#0a0e13);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding-bottom:88px}
+    header{padding:22px 18px 8px;position:sticky;top:0;background:linear-gradient(180deg,rgba(8,11,16,.98),rgba(8,11,16,.84),rgba(8,11,16,0));backdrop-filter:blur(10px);z-index:4}
+    h1{margin:0;font-size:28px;letter-spacing:.2px}
+    .sub{color:var(--muted);font-size:13px;margin-top:4px}
+    main{padding:10px 14px 18px;max-width:760px;margin:auto}
+    .card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:22px;padding:16px;margin:12px 0;box-shadow:0 14px 30px rgba(0,0,0,.2)}
+    .hero{padding:18px}
+    .row{display:flex;gap:10px;align-items:center}
+    .between{justify-content:space-between}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .metric{background:#0f151c;border:1px solid #222d38;border-radius:16px;padding:14px}
+    .metric b{font-size:22px}
+    .muted{color:var(--muted)}
+    button,.btn{border:0;border-radius:15px;padding:14px 16px;font-weight:700;font-size:15px}
+    .primary{background:linear-gradient(135deg,#2498ff,#58b7ff);color:white}
+    .secondary{background:#17202a;color:white;border:1px solid #2b3744}
+    input,select,textarea{width:100%;background:#0d1319;color:white;border:1px solid #2a3541;border-radius:14px;padding:13px;font-size:16px;outline:none}
+    label{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+    .result{font-size:36px;font-weight:800}
+    .result small{font-size:15px;color:var(--muted)}
+    .pill{display:inline-block;padding:7px 10px;border-radius:999px;background:#102333;color:#83c8ff;font-size:12px;font-weight:700}
+    nav{position:fixed;bottom:0;left:0;right:0;background:rgba(9,13,18,.94);backdrop-filter:blur(18px);border-top:1px solid #26303b;display:grid;grid-template-columns:repeat(5,1fr);padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:5}
+    nav button{background:transparent;color:#778392;padding:8px 2px;font-size:11px}
+    nav button.active{color:var(--blue)}
+    .tab{display:none}.tab.active{display:block}
+    .list-item{padding:12px 0;border-bottom:1px solid #25303a}.list-item:last-child{border-bottom:0}
+    .tiny{font-size:12px}.danger{color:#ff8282}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Detailing Manager</h1>
+  <div class="sub">洗車・コーティング・希釈管理</div>
+</header>
+
+<main>
+<section id="home" class="tab active">
+  <div class="card hero">
+    <div class="row between">
+      <div>
+        <div class="pill">MY CAR</div>
+        <h2 id="homeCar">車両未登録</h2>
+        <div class="muted" id="homeCoating">コーティング情報なし</div>
+      </div>
+      <div style="font-size:42px">🚘</div>
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div class="metric"><div class="muted tiny">最終洗車</div><b id="lastWash">—</b></div>
+      <div class="metric"><div class="muted tiny">最終コーティング</div><b id="lastCoat">—</b></div>
+    </div>
+  </div>
+  <div class="grid">
+    <button class="primary" onclick="go('history')">＋ 洗車を記録</button>
+    <button class="secondary" onclick="go('dilution')">🧪 希釈計算</button>
+  </div>
+  <div class="card">
+    <h3>最近の施工</h3>
+    <div id="recentHistory" class="muted">まだ記録がありません。</div>
+  </div>
+</section>
+
+<section id="dilution" class="tab">
+  <div class="card">
+    <h2>希釈計算</h2>
+    <label>計算モード</label>
+    <select id="mode" onchange="calc()">
+      <option value="x">○倍希釈</option>
+      <option value="ratio">原液:水</option>
+    </select>
+    <label>倍率 / 水の比率</label>
+    <input id="ratio" type="number" min="1" step="1" value="10" oninput="calc()">
+    <label>作りたい総量 (mL)</label>
+    <input id="total" type="number" min="1" step="10" value="1000" oninput="calc()">
+    <div class="grid" style="margin-top:14px">
+      <div class="metric"><div class="muted tiny">原液</div><div class="result" id="chem">100<small> mL</small></div></div>
+      <div class="metric"><div class="muted tiny">水</div><div class="result" id="water">900<small> mL</small></div></div>
+    </div>
+    <div class="muted tiny" style="margin-top:12px">※「10倍希釈」と「1:10」は計算結果が異なります。</div>
+  </div>
+</section>
+
+<section id="cars" class="tab">
+  <div class="card">
+    <h2>車両管理</h2>
+    <label>車名</label><input id="carName" placeholder="例：レクサス GS">
+    <label>ボディカラー</label><input id="carColor" placeholder="例：ホワイト">
+    <label>現在のコーティング</label><input id="carCoating" placeholder="例：ブラックダイヤ">
+    <label>コーティング施工日</label><input id="coatDate" type="date">
+    <button class="primary" style="margin-top:14px;width:100%" onclick="saveCar()">保存</button>
+  </div>
+</section>
+
+<section id="history" class="tab">
+  <div class="card">
+    <h2>施工記録</h2>
+    <label>日付</label><input id="histDate" type="date">
+    <label>種類</label>
+    <select id="histType">
+      <option>洗車</option><option>コーティング</option><option>メンテナンス</option><option>下地処理</option>
+    </select>
+    <label>使用ケミカル</label><input id="histChem" placeholder="例：GS / 中性シャンプー / QD">
+    <label>メモ</label><textarea id="histMemo" rows="3" placeholder="施工内容や状態"></textarea>
+    <button class="primary" style="margin-top:14px;width:100%" onclick="addHistory()">記録する</button>
+  </div>
+  <div class="card"><h3>履歴</h3><div id="historyList"></div></div>
+</section>
+
+<section id="chemicals" class="tab">
+  <div class="card">
+    <h2>ケミカル管理</h2>
+    <label>商品名</label><input id="chemName" placeholder="例：Koch Chemie Green Star">
+    <label>分類</label>
+    <select id="chemType"><option>アルカリ</option><option>酸性</option><option>中性</option><option>鉄粉除去</option><option>脱脂</option><option>コーティング</option><option>QD</option><option>その他</option></select>
+    <label>推奨倍率</label><input id="chemRatio" placeholder="例：10倍">
+    <label>残量 (mL)</label><input id="chemStock" type="number" placeholder="500">
+    <button class="primary" style="margin-top:14px;width:100%" onclick="addChemical()">登録</button>
+  </div>
+  <div class="card"><h3>登録済み</h3><div id="chemicalList"></div></div>
+</section>
+</main>
+
+<nav>
+  <button data-tab="home" class="active" onclick="go('home')">⌂<br>ホーム</button>
+  <button data-tab="cars" onclick="go('cars')">🚘<br>車両</button>
+  <button data-tab="history" onclick="go('history')">🧼<br>施工</button>
+  <button data-tab="chemicals" onclick="go('chemicals')">🧴<br>ケミカル</button>
+  <button data-tab="dilution" onclick="go('dilution')">🧪<br>希釈</button>
+</nav>
+
+<script>
+const $=id=>document.getElementById(id);
+const load=(k,d)=>JSON.parse(localStorage.getItem(k)||JSON.stringify(d));
+const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+
+function go(id){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  $(id).classList.add('active');
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));
+  render();
+}
+
+function calc(){
+  const mode=$('mode').value, r=Math.max(1,Number($('ratio').value||1)), t=Math.max(0,Number($('total').value||0));
+  let c,w;
+  if(mode==='x'){ c=t/r; w=t-c; }
+  else { c=t/(1+r); w=t-c; }
+  $('chem').innerHTML=`${round(c)}<small> mL</small>`;
+  $('water').innerHTML=`${round(w)}<small> mL</small>`;
+}
+function round(n){return Math.round(n*10)/10}
+
+function saveCar(){
+  const car={name:$('carName').value,color:$('carColor').value,coating:$('carCoating').value,coatDate:$('coatDate').value};
+  save('car',car); render(); go('home');
+}
+function addHistory(){
+  const arr=load('history',[]);
+  arr.unshift({date:$('histDate').value||new Date().toISOString().slice(0,10),type:$('histType').value,chem:$('histChem').value,memo:$('histMemo').value});
+  save('history',arr); $('histChem').value=''; $('histMemo').value=''; render();
+}
+function addChemical(){
+  const arr=load('chemicals',[]);
+  arr.unshift({name:$('chemName').value,type:$('chemType').value,ratio:$('chemRatio').value,stock:$('chemStock').value});
+  save('chemicals',arr); ['chemName','chemRatio','chemStock'].forEach(id=>$(id).value=''); render();
+}
+function daysSince(date){
+  if(!date)return '—';
+  const d=Math.floor((Date.now()-new Date(date+'T00:00:00'))/86400000);
+  return d===0?'今日':`${d}日`;
+}
+function render(){
+  const car=load('car',{});
+  $('homeCar').textContent=car.name||'車両未登録';
+  $('homeCoating').textContent=car.coating?`${car.coating}${car.color?' ・ '+car.color:''}`:'コーティング情報なし';
+  $('carName').value=car.name||'';$('carColor').value=car.color||'';$('carCoating').value=car.coating||'';$('coatDate').value=car.coatDate||'';
+  const h=load('history',[]);
+  const wash=h.find(x=>x.type==='洗車');
+  $('lastWash').textContent=wash?daysSince(wash.date):'—';
+  $('lastCoat').textContent=car.coatDate?daysSince(car.coatDate):'—';
+  $('recentHistory').innerHTML=h.length?h.slice(0,3).map(x=>`<div class="list-item"><b>${x.type}</b> <span class="muted">${x.date}</span><br><span class="tiny">${x.chem||''}</span></div>`).join(''):'まだ記録がありません。';
+  $('historyList').innerHTML=h.length?h.map((x,i)=>`<div class="list-item"><div class="row between"><b>${x.type}</b><span class="muted tiny">${x.date}</span></div><div>${x.chem||'—'}</div><div class="muted tiny">${x.memo||''}</div><button class="secondary tiny" onclick="delHistory(${i})">削除</button></div>`).join(''):'<span class="muted">まだありません。</span>';
+  const c=load('chemicals',[]);
+  $('chemicalList').innerHTML=c.length?c.map((x,i)=>`<div class="list-item"><div class="row between"><b>${x.name||'名称なし'}</b><span class="pill">${x.type}</span></div><div class="muted tiny">推奨 ${x.ratio||'—'} / 残量 ${x.stock||'—'} mL</div><button class="secondary tiny" onclick="delChem(${i})">削除</button></div>`).join(''):'<span class="muted">まだありません。</span>';
+}
+function delHistory(i){const a=load('history',[]);a.splice(i,1);save('history',a);render()}
+function delChem(i){const a=load('chemicals',[]);a.splice(i,1);save('chemicals',a);render()}
+
+$('histDate').value=new Date().toISOString().slice(0,10);
+calc();render();
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{});}
+</script>
+</body>
+</html>
