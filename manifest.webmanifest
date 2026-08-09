@@ -16,5 +16,11 @@
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "description": "洗車・コーティング・ケミカル在庫・希釈管理",
+  "id": "./",
+  "scope": "./",
+  "display_override": [
+    "standalone"
   ]
 }
