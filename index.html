@@ -1327,7 +1327,7 @@
         <div class="card">
           <div class="section-title">
             <h2>設定</h2>
-            <span class="version-badge">v3.3 β1</span>
+            <span class="version-badge">v3.3 β2</span>
           </div>
           <p class="muted">
             β版のデータはこの端末内に保存されます。機種変更や不具合に備えて、JSONファイルへ定期的に保存してください。
@@ -1348,6 +1348,9 @@
           </div>
           <div class="settings-note tiny muted">
             写真を含むデータはバックアップファイルが大きくなる場合があります。大事な施工記録は定期的に書き出してください。
+          </div>
+          <div id="storageStatus" class="backup-status fresh tiny">
+            端末内データ量を確認しています…
           </div>
           <div id="backupStatus" class="backup-status tiny">
             バックアップ状況を確認しています…
@@ -1471,7 +1474,7 @@
     </nav>
     <div id="setupOverlay" class="setup-overlay hidden">
       <div class="setup-box">
-        <span class="version-badge">Detailing Manager v3.3 β1</span>
+        <span class="version-badge">Detailing Manager v3.3 β2</span>
         <h2>無料βテストへようこそ</h2>
         <p class="muted">
           愛車の洗車・コーティング・ケミカル在庫を、このiPhoneでまとめて管理できます。
@@ -1515,8 +1518,10 @@
       </div>
     </div>
     <script>
-      const DM_VERSION = "3.3-beta.1";
+      const DM_VERSION = "3.3-beta.2";
       const MAX_CARS = 5;
+      const MULTI_CAR_SCHEMA_KEY = "dmMultiCarSchema";
+      const MULTI_CAR_SCHEMA_VERSION = "2";
       const pad2 = (n) => String(n).padStart(2, "0");
       const today = () => {
         const d = new Date();
@@ -1556,7 +1561,7 @@
             return true;
           } catch (e) {
             alert(
-              "保存容量がいっぱいです。写真を減らすか、古い記録を削除してください。",
+              "端末内の保存容量がいっぱいです。データは変更されていません。設定からバックアップを書き出した後、不要な写真や記録を減らしてください。",
             );
             return false;
           }
@@ -1607,14 +1612,17 @@
       function carNameById(id) {
         return getCars().find((car) => car.id === id)?.name || "車両未設定";
       }
-      function syncLegacyCar(car) {
-        if (car) save("car", { ...car });
-        else localStorage.removeItem("car");
+      function parseStoredJSON(raw, fallback) {
+        if (raw === null || raw === undefined) return fallback;
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return fallback;
+        }
       }
-      function migrateMultiCarData() {
-        const rawCars = load("cars", []);
-        let cars = Array.isArray(rawCars)
-          ? rawCars.slice(0, MAX_CARS).map(normalizeCar)
+      function buildMultiCarData(source) {
+        let cars = Array.isArray(source.cars)
+          ? source.cars.slice(0, MAX_CARS).map(normalizeCar)
           : [];
         const seen = new Set();
         cars = cars.map((car) => {
@@ -1622,11 +1630,13 @@
             seen.add(car.id);
             return car;
           }
-          const replacement = { ...car, id: createId() };
+          let replacementId = createId();
+          while (seen.has(replacementId)) replacementId = createId();
+          const replacement = { ...car, id: replacementId };
           seen.add(replacement.id);
           return replacement;
         });
-        const legacyCar = load("car", {});
+        const legacyCar = source.car;
         if (
           !cars.length &&
           legacyCar &&
@@ -1635,24 +1645,95 @@
         ) {
           cars = [normalizeCar(legacyCar)];
         }
-        let activeId = load("activeCarId", "");
+        let activeId = String(source.activeCarId || "");
         if (!cars.some((car) => car.id === activeId))
           activeId = cars[0]?.id || "";
-        const migrateRecords = (key) => {
-          const records = load(key, []);
+        const migrateRecords = (records) => {
           if (!Array.isArray(records)) return [];
-          return records.map((record) => ({
-            ...record,
-            carId: cars.some((car) => car.id === record.carId)
-              ? record.carId
-              : activeId,
-          }));
+          return records.map((record) => {
+            const safeRecord =
+              record && typeof record === "object" ? record : {};
+            return {
+              ...safeRecord,
+              carId: cars.some((car) => car.id === safeRecord.carId)
+                ? safeRecord.carId
+                : activeId,
+            };
+          });
         };
-        save("cars", cars);
-        save("activeCarId", activeId);
-        save("history", migrateRecords("history"));
-        save("maintenanceRecords", migrateRecords("maintenanceRecords"));
-        syncLegacyCar(cars.find((car) => car.id === activeId) || null);
+        return {
+          cars,
+          activeCarId: activeId,
+          history: migrateRecords(source.history),
+          maintenanceRecords: migrateRecords(source.maintenanceRecords),
+        };
+      }
+      function captureStorage(keys) {
+        return Object.fromEntries(
+          keys.map((key) => [key, localStorage.getItem(key)]),
+        );
+      }
+      function restoreStorage(snapshot) {
+        const keys = Object.keys(snapshot);
+        keys.forEach((key) => localStorage.removeItem(key));
+        keys.forEach((key) => {
+          if (snapshot[key] !== null) localStorage.setItem(key, snapshot[key]);
+        });
+      }
+      function replaceStorageData(values, keysToReplace) {
+        const snapshot = captureStorage(keysToReplace);
+        try {
+          keysToReplace.forEach((key) => localStorage.removeItem(key));
+          Object.entries(values).forEach(([key, value]) => {
+            localStorage.setItem(key, JSON.stringify(value));
+          });
+          return { ok: true, restored: true };
+        } catch (error) {
+          let restored = true;
+          try {
+            restoreStorage(snapshot);
+          } catch (restoreError) {
+            restored = false;
+            console.error("Storage rollback failed", restoreError);
+          }
+          console.error("Storage update failed", error);
+          return { ok: false, restored };
+        }
+      }
+      function migrateMultiCarData(options = {}) {
+        if (
+          load(MULTI_CAR_SCHEMA_KEY, "") === MULTI_CAR_SCHEMA_VERSION &&
+          localStorage.getItem("car") === null
+        )
+          return true;
+        const keys = [
+          "cars",
+          "activeCarId",
+          "car",
+          "history",
+          "maintenanceRecords",
+          MULTI_CAR_SCHEMA_KEY,
+        ];
+        const snapshot = captureStorage(keys);
+        const migrated = buildMultiCarData({
+          cars: parseStoredJSON(snapshot.cars, []),
+          activeCarId: parseStoredJSON(snapshot.activeCarId, ""),
+          car: parseStoredJSON(snapshot.car, {}),
+          history: parseStoredJSON(snapshot.history, []),
+          maintenanceRecords: parseStoredJSON(snapshot.maintenanceRecords, []),
+        });
+        const result = replaceStorageData(
+          { ...migrated, [MULTI_CAR_SCHEMA_KEY]: MULTI_CAR_SCHEMA_VERSION },
+          keys,
+        );
+        if (!result.ok && !options.silent) {
+          alert(
+            result.restored
+              ? "複数車両へのデータ移行に必要な空き容量がありません。元のデータはそのまま残しています。先にバックアップを書き出してから、写真を減らしてください。"
+              : "データ移行に失敗しました。画面を閉じず、現在のデータをバックアップへ書き出してください。",
+          );
+        }
+        return result.ok;
       }
       function attachUnassignedRecords(carId) {
         ["history", "maintenanceRecords"].forEach((key) => {
@@ -1890,7 +1971,6 @@
         const car = getCars().find((item) => item.id === id);
         if (!car) return;
         save("activeCarId", id);
-        syncLegacyCar(car);
         fillCarForm(car);
         renderCarSelectors(true);
         $("carFormTitle").scrollIntoView({
@@ -1902,7 +1982,6 @@
         const car = getCars().find((item) => item.id === id);
         if (!car) return;
         save("activeCarId", id);
-        syncLegacyCar(car);
         $("carEditId").value = id;
         if ($("histCar")) $("histCar").value = id;
         if ($("maintCar")) $("maintCar").value = id;
@@ -1947,7 +2026,6 @@
         const nextId =
           previousActiveId === id ? remaining[0]?.id || "" : previousActiveId;
         save("activeCarId", nextId);
-        syncLegacyCar(remaining.find((item) => item.id === nextId) || null);
         $("carEditId").value = nextId;
         pendingCarImage = "";
         render();
@@ -2015,7 +2093,6 @@
         else cars.push(car);
         if (!save("cars", cars)) return;
         save("activeCarId", car.id);
-        syncLegacyCar(car);
         attachUnassignedRecords(car.id);
         $("carEditId").value = car.id;
         renderCarSelectors(true);
@@ -2752,7 +2829,6 @@
       const DM_DATA_KEYS = [
         "cars",
         "activeCarId",
-        "car",
         "history",
         "chemicals",
         "favorites",
@@ -2760,6 +2836,49 @@
         "customTemplates",
         "maintenanceRecords",
       ];
+      const DM_LEGACY_KEYS = ["car"];
+      function buildImportData(source) {
+        const multiCarData = buildMultiCarData({
+          cars: source.cars,
+          activeCarId: source.activeCarId,
+          car: source.car,
+          history: source.history,
+          maintenanceRecords: source.maintenanceRecords,
+        });
+        return {
+          ...multiCarData,
+          chemicals: Array.isArray(source.chemicals) ? source.chemicals : [],
+          favorites: Array.isArray(source.favorites) ? source.favorites : [],
+          processTemplates: Array.isArray(source.processTemplates)
+            ? source.processTemplates
+            : [],
+          customTemplates: Array.isArray(source.customTemplates)
+            ? source.customTemplates
+            : [],
+        };
+      }
+      function getLocalStorageBytes() {
+        const parts = [];
+        for (let i = 0; i < localStorage.length; i += 1) {
+          const key = localStorage.key(i);
+          if (key !== null) parts.push(key, localStorage.getItem(key) || "");
+        }
+        try {
+          return new Blob(parts).size;
+        } catch {
+          return parts.reduce((total, part) => total + part.length * 2, 0);
+        }
+      }
+      function formatDataSize(bytes) {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+      }
+      function renderStorageStatus() {
+        const status = $("storageStatus");
+        if (!status) return;
+        status.textContent = `端末内データ：約${formatDataSize(getLocalStorageBytes())}（車両・記録・写真の合計）`;
+      }
       function getTesterId() {
         let id = localStorage.getItem("dmTesterId");
         if (id) return id;
@@ -2772,10 +2891,15 @@
           token = Math.random().toString(36).slice(2).toUpperCase();
         }
         id = `DM-${token.padStart(6, "0").slice(-6)}`;
-        localStorage.setItem("dmTesterId", id);
+        try {
+          localStorage.setItem("dmTesterId", id);
+        } catch {
+          return "DM-STORAGE";
+        }
         return id;
       }
       function renderBetaStatus() {
+        renderStorageStatus();
         if ($("testerId")) $("testerId").textContent = getTesterId();
         const status = $("backupStatus");
         if (!status) return;
@@ -2857,6 +2981,13 @@
         }
       }
       function exportBackup() {
+        const multiCarData = buildMultiCarData({
+          cars: load("cars", []),
+          activeCarId: load("activeCarId", ""),
+          car: load("car", {}),
+          history: load("history", []),
+          maintenanceRecords: load("maintenanceRecords", []),
+        });
         const data = {
           app: "Detailing Manager",
           version: DM_VERSION,
@@ -2864,8 +2995,10 @@
           data: {},
         };
         DM_DATA_KEYS.forEach((k) => {
-          const fallback = k === "car" ? {} : k === "activeCarId" ? "" : [];
-          data.data[k] = load(k, fallback);
+          const fallback = k === "activeCarId" ? "" : [];
+          data.data[k] = Object.prototype.hasOwnProperty.call(multiCarData, k)
+            ? multiCarData[k]
+            : load(k, fallback);
         });
         const blob = new Blob([JSON.stringify(data, null, 2)], {
             type: "application/json",
@@ -2876,7 +3009,9 @@
         a.style.display = "none";
         document.body.appendChild(a);
         a.click();
-        localStorage.setItem("dmLastBackupAt", new Date().toISOString());
+        try {
+          localStorage.setItem("dmLastBackupAt", new Date().toISOString());
+        } catch {}
         renderBetaStatus();
         setTimeout(() => {
           URL.revokeObjectURL(a.href);
@@ -2898,13 +3033,31 @@
             input.value = "";
             return;
           }
-          DM_DATA_KEYS.forEach((k) => {
-            if (Object.prototype.hasOwnProperty.call(obj.data, k))
-              localStorage.setItem(k, JSON.stringify(obj.data[k]));
-          });
-          migrateMultiCarData();
-          localStorage.setItem("dmSetupDone", "1");
-          alert("復元しました。");
+          const imported = buildImportData(obj.data);
+          imported[MULTI_CAR_SCHEMA_KEY] = MULTI_CAR_SCHEMA_VERSION;
+          const result = replaceStorageData(imported, [
+            ...DM_DATA_KEYS,
+            ...DM_LEGACY_KEYS,
+            MULTI_CAR_SCHEMA_KEY,
+          ]);
+          if (!result.ok) {
+            alert(
+              result.restored
+                ? "バックアップの復元に必要な空き容量がありません。現在のデータは元に戻しました。"
+                : "バックアップの復元に失敗しました。画面を閉じず、現在のデータを書き出してください。",
+            );
+            input.value = "";
+            return;
+          }
+          try {
+            localStorage.setItem("dmSetupDone", "1");
+          } catch {}
+          alert(
+            Object.prototype.hasOwnProperty.call(obj.data, "car") &&
+              !Array.isArray(obj.data.cars)
+              ? "旧版のバックアップを複数車両形式へ変換して復元しました。"
+              : "バックアップを復元しました。",
+          );
           location.reload();
         } catch (e) {
           alert(
@@ -2921,10 +3074,13 @@
         )
           return;
         if (!confirm("本当に初期化しますか？")) return;
-        DM_DATA_KEYS.forEach((k) => localStorage.removeItem(k));
+        [...DM_DATA_KEYS, ...DM_LEGACY_KEYS].forEach((k) =>
+          localStorage.removeItem(k),
+        );
         localStorage.removeItem("dmSetupDone");
         localStorage.removeItem("dmLastBackupAt");
         localStorage.removeItem("dmTesterId");
+        localStorage.removeItem(MULTI_CAR_SCHEMA_KEY);
         location.reload();
       }
       function finishSetup() {
