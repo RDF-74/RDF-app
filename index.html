@@ -1,262 +1,2459 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#070b10"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><title>Detailing Manager</title>
-<style>
-:root{--bg:#070b10;--panel:#111821;--panel2:#16212c;--line:#263442;--text:#f5f8fc;--muted:#8f9dac;--blue:#3aa7ff;--green:#4bd38b;--gold:#f3ca59;--pink:#ff57b7;--red:#ff7b7b}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;background:linear-gradient(180deg,#06090d,#0a1016 45%,#071016);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;padding-bottom:calc(92px + env(safe-area-inset-bottom))}header{padding:calc(18px + env(safe-area-inset-top)) 18px 12px;position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(6,9,13,.98),rgba(6,9,13,.88),rgba(6,9,13,.1));backdrop-filter:blur(14px)}h1{margin:0;font-size:30px}h2,h3{margin:0 0 12px}.sub{color:var(--muted);font-size:13px;margin-top:4px}main{padding:8px 14px 20px;max-width:780px;margin:auto}.card{background:linear-gradient(180deg,rgba(23,33,44,.98),rgba(16,24,33,.98));border:1px solid var(--line);border-radius:24px;padding:16px;margin:12px 0;box-shadow:0 16px 36px rgba(0,0,0,.22)}.hero{padding:0;overflow:hidden}.hero-media{height:240px;background:linear-gradient(135deg,#182531,#0e151c);position:relative;overflow:hidden}.hero-media img{width:100%;height:100%;object-fit:contain;display:block;transform-origin:center center;will-change:transform;background:#080d12}.hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.68))}.hero-content{position:absolute;left:18px;right:18px;bottom:16px}.hero-title{font-size:27px;font-weight:800}.hero-sub{color:#d0d7df;margin-top:4px}.pill{display:inline-flex;padding:7px 10px;border-radius:999px;background:#10263b;color:#8ed0ff;font-size:12px;font-weight:800;border:1px solid #1e4667}.row{display:flex;align-items:center;gap:10px}.between{justify-content:space-between}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.metric{background:#0e151d;border:1px solid #263340;border-radius:18px;padding:14px;min-width:0}.metric .label{font-size:11px;color:var(--muted);margin-bottom:7px}.metric b{font-size:20px;white-space:nowrap}.blue{color:var(--blue)}.green{color:var(--green)}.gold{color:var(--gold)}button{border:0;border-radius:16px;padding:14px 16px;font-weight:800;font-size:15px}.primary{background:linear-gradient(135deg,#249cff,#5bb8ff);color:white}.secondary{background:#16212b;color:white;border:1px solid #2a3948}.greenbtn{background:linear-gradient(135deg,#1c6b45,#36a86f);color:white}.ghost{background:transparent;color:var(--blue);padding:5px 0}input,select,textarea{width:100%;background:#0b1117;color:white;border:1px solid #2a3744;border-radius:14px;padding:13px;font-size:16px}label{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}.tab{display:none}.tab.active{display:block}.list-item{padding:13px 0;border-bottom:1px solid #24313d}.list-item:last-child{border-bottom:0}.tiny{font-size:12px}.muted{color:var(--muted)}.result-card{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;text-align:center;background:#0b1219;border:1px solid #263542;border-radius:20px;padding:18px}.big-result{font-size:44px;font-weight:900;line-height:1}.chem-color{color:var(--pink)}.water-color{color:var(--blue)}.fav-chip{display:inline-flex;flex-direction:column;gap:3px;padding:10px 12px;margin:4px;border-radius:14px;background:#0d151d;border:1px solid #283747;color:white}.tag{display:inline-block;font-size:11px;padding:5px 8px;border-radius:999px;background:#152433;color:#92cfff;border:1px solid #284b68;margin-right:5px}.mini-img{width:64px;height:64px;border-radius:14px;object-fit:cover;background:#18222c;border:1px solid #2c3a47}.thumb{width:82px;height:68px;border-radius:13px;object-fit:cover;background:#111922;border:1px solid #283543}.progress{height:7px;background:#27313c;border-radius:999px;overflow:hidden;margin-top:7px}.progress>i{display:block;height:100%;background:linear-gradient(90deg,#31a8ff,#66d09a)}.quick-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}.quick-row button{white-space:nowrap;padding:10px 12px}.danger{color:var(--red)}.section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}.photo-preview{height:230px;border-radius:18px;overflow:hidden;background:#0b1218;border:1px solid #2b3946;position:relative;margin-top:10px}
-.photo-preview img{width:100%;height:100%;object-fit:contain;display:block;transform-origin:center center;will-change:transform;background:#080d12}
-.slider-row{display:grid;grid-template-columns:86px 1fr 58px;gap:10px;align-items:center;margin-top:12px}
-.slider-row span{font-size:13px;color:var(--muted)}
-.slider-row output{text-align:right;font-size:13px;color:#dce7f2}
-input[type="range"]{padding:0;border:0;background:transparent}
-.process-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
-.process-item{display:flex;align-items:center;gap:8px;background:#0b1218;border:1px solid #273542;border-radius:13px;padding:10px}
-.process-item input{width:auto}
-.ba-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
-.ba-box{background:#0b1218;border:1px solid #2b3946;border-radius:16px;padding:10px}
-.ba-box img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;background:#101820;display:none}
-.stock-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.stock-actions button{padding:8px 10px;font-size:12px}
-.template-row{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px}
-.template-row button{white-space:nowrap}
-.template-card{background:#0b1218;border:1px solid #2a3947;border-radius:14px;padding:12px;margin-top:8px}
-.usage-row{display:grid;grid-template-columns:minmax(0,1fr) 105px 42px;gap:8px;align-items:center;margin:8px 0}
-.usage-row select,.usage-row input{min-width:0;margin:0}
-.usage-row button{padding:10px 4px;margin:0}
-.usage-note{padding:9px 11px;background:#0b1218;border:1px solid #263542;border-radius:12px;margin-top:8px}
-.usage-history{padding:8px 10px;background:#0b1218;border-radius:11px;margin-top:7px}
-nav{position:fixed;bottom:0;left:0;right:0;z-index:20;background:rgba(7,11,16,.95);backdrop-filter:blur(18px);border-top:1px solid #26313d;display:grid;grid-template-columns:repeat(7,1fr);padding:7px 5px calc(7px + env(safe-area-inset-bottom))}nav button{background:transparent;color:#7c8897;padding:7px 1px;font-size:10px}nav button.active{color:var(--blue)}
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#070b10" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <title>Detailing Manager β</title>
+    <style>
+      :root {
+        --bg: #070b10;
+        --panel: #111821;
+        --panel2: #16212c;
+        --line: #263442;
+        --text: #f5f8fc;
+        --muted: #8f9dac;
+        --blue: #3aa7ff;
+        --green: #4bd38b;
+        --gold: #f3ca59;
+        --pink: #ff57b7;
+        --red: #ff7b7b;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #06090d, #0a1016 45%, #071016);
+        color: var(--text);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
+          sans-serif;
+        padding-bottom: calc(92px + env(safe-area-inset-bottom));
+      }
+      header {
+        padding: calc(18px + env(safe-area-inset-top)) 18px 12px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: linear-gradient(
+          180deg,
+          rgba(6, 9, 13, 0.98),
+          rgba(6, 9, 13, 0.88),
+          rgba(6, 9, 13, 0.1)
+        );
+        backdrop-filter: blur(14px);
+      }
+      h1 {
+        margin: 0;
+        font-size: 30px;
+      }
+      .title-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .beta-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 4px 8px;
+        border: 1px solid #72591b;
+        border-radius: 999px;
+        background: #332807;
+        color: #ffe184;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+      }
+      h2,
+      h3 {
+        margin: 0 0 12px;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 4px;
+      }
+      main {
+        padding: 8px 14px 20px;
+        max-width: 780px;
+        margin: auto;
+      }
+      .card {
+        background: linear-gradient(
+          180deg,
+          rgba(23, 33, 44, 0.98),
+          rgba(16, 24, 33, 0.98)
+        );
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 16px;
+        margin: 12px 0;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
+      }
+      .hero {
+        padding: 0;
+        overflow: hidden;
+      }
+      .hero-media {
+        height: 240px;
+        background: linear-gradient(135deg, #182531, #0e151c);
+        position: relative;
+        overflow: hidden;
+      }
+      .hero-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        transform-origin: center center;
+        will-change: transform;
+        background: #080d12;
+      }
+      .hero-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0.08),
+          rgba(0, 0, 0, 0.68)
+        );
+      }
+      .hero-content {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: 16px;
+      }
+      .hero-title {
+        font-size: 27px;
+        font-weight: 800;
+      }
+      .hero-sub {
+        color: #d0d7df;
+        margin-top: 4px;
+      }
+      .pill {
+        display: inline-flex;
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: #10263b;
+        color: #8ed0ff;
+        font-size: 12px;
+        font-weight: 800;
+        border: 1px solid #1e4667;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .between {
+        justify-content: space-between;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .grid3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .metric {
+        background: #0e151d;
+        border: 1px solid #263340;
+        border-radius: 18px;
+        padding: 14px;
+        min-width: 0;
+      }
+      .metric .label {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 7px;
+      }
+      .metric b {
+        font-size: 20px;
+        white-space: nowrap;
+      }
+      .blue {
+        color: var(--blue);
+      }
+      .green {
+        color: var(--green);
+      }
+      .gold {
+        color: var(--gold);
+      }
+      button {
+        border: 0;
+        border-radius: 16px;
+        padding: 14px 16px;
+        font-weight: 800;
+        font-size: 15px;
+      }
+      .primary {
+        background: linear-gradient(135deg, #249cff, #5bb8ff);
+        color: white;
+      }
+      .secondary {
+        background: #16212b;
+        color: white;
+        border: 1px solid #2a3948;
+      }
+      .greenbtn {
+        background: linear-gradient(135deg, #1c6b45, #36a86f);
+        color: white;
+      }
+      .ghost {
+        background: transparent;
+        color: var(--blue);
+        padding: 5px 0;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        background: #0b1117;
+        color: white;
+        border: 1px solid #2a3744;
+        border-radius: 14px;
+        padding: 13px;
+        font-size: 16px;
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        color: var(--muted);
+        margin: 10px 0 6px;
+      }
+      .tab {
+        display: none;
+      }
+      .tab.active {
+        display: block;
+      }
+      .list-item {
+        padding: 13px 0;
+        border-bottom: 1px solid #24313d;
+      }
+      .list-item:last-child {
+        border-bottom: 0;
+      }
+      .tiny {
+        font-size: 12px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .result-card {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 8px;
+        align-items: center;
+        text-align: center;
+        background: #0b1219;
+        border: 1px solid #263542;
+        border-radius: 20px;
+        padding: 18px;
+      }
+      .big-result {
+        font-size: 44px;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .chem-color {
+        color: var(--pink);
+      }
+      .water-color {
+        color: var(--blue);
+      }
+      .fav-chip {
+        display: inline-flex;
+        flex-direction: column;
+        gap: 3px;
+        padding: 10px 12px;
+        margin: 4px;
+        border-radius: 14px;
+        background: #0d151d;
+        border: 1px solid #283747;
+        color: white;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        padding: 5px 8px;
+        border-radius: 999px;
+        background: #152433;
+        color: #92cfff;
+        border: 1px solid #284b68;
+        margin-right: 5px;
+      }
+      .mini-img {
+        width: 64px;
+        height: 64px;
+        border-radius: 14px;
+        object-fit: cover;
+        background: #18222c;
+        border: 1px solid #2c3a47;
+      }
+      .thumb {
+        width: 82px;
+        height: 68px;
+        border-radius: 13px;
+        object-fit: cover;
+        background: #111922;
+        border: 1px solid #283543;
+      }
+      .progress {
+        height: 7px;
+        background: #27313c;
+        border-radius: 999px;
+        overflow: hidden;
+        margin-top: 7px;
+      }
+      .progress > i {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, #31a8ff, #66d09a);
+      }
+      .quick-row {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+      .quick-row button {
+        white-space: nowrap;
+        padding: 10px 12px;
+      }
+      .danger {
+        color: var(--red);
+      }
+      .section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+      }
+      .photo-preview {
+        height: 230px;
+        border-radius: 18px;
+        overflow: hidden;
+        background: #0b1218;
+        border: 1px solid #2b3946;
+        position: relative;
+        margin-top: 10px;
+      }
+      .photo-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        transform-origin: center center;
+        will-change: transform;
+        background: #080d12;
+      }
+      .slider-row {
+        display: grid;
+        grid-template-columns: 86px 1fr 58px;
+        gap: 10px;
+        align-items: center;
+        margin-top: 12px;
+      }
+      .slider-row span {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .slider-row output {
+        text-align: right;
+        font-size: 13px;
+        color: #dce7f2;
+      }
+      input[type="range"] {
+        padding: 0;
+        border: 0;
+        background: transparent;
+      }
+      .process-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .process-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #0b1218;
+        border: 1px solid #273542;
+        border-radius: 13px;
+        padding: 10px;
+      }
+      .process-item input {
+        width: auto;
+      }
+      .ba-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 8px;
+      }
+      .ba-box {
+        background: #0b1218;
+        border: 1px solid #2b3946;
+        border-radius: 16px;
+        padding: 10px;
+      }
+      .ba-box img {
+        width: 100%;
+        aspect-ratio: 4/3;
+        object-fit: cover;
+        border-radius: 12px;
+        background: #101820;
+        display: none;
+      }
+      .stock-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .stock-actions button {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+      .template-row {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 4px 0 8px;
+      }
+      .template-row button {
+        white-space: nowrap;
+      }
+      .template-card {
+        background: #0b1218;
+        border: 1px solid #2a3947;
+        border-radius: 14px;
+        padding: 12px;
+        margin-top: 8px;
+      }
+      .usage-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 105px 42px;
+        gap: 8px;
+        align-items: center;
+        margin: 8px 0;
+      }
+      .usage-row select,
+      .usage-row input {
+        min-width: 0;
+        margin: 0;
+      }
+      .usage-row button {
+        padding: 10px 4px;
+        margin: 0;
+      }
+      .usage-note {
+        padding: 9px 11px;
+        background: #0b1218;
+        border: 1px solid #263542;
+        border-radius: 12px;
+        margin-top: 8px;
+      }
+      .usage-history {
+        padding: 8px 10px;
+        background: #0b1218;
+        border-radius: 11px;
+        margin-top: 7px;
+      }
+      nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 20;
+        background: rgba(7, 11, 16, 0.95);
+        backdrop-filter: blur(18px);
+        border-top: 1px solid #26313d;
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        padding: 7px 5px calc(7px + env(safe-area-inset-bottom));
+      }
+      nav button {
+        background: transparent;
+        color: #7c8897;
+        padding: 7px 1px;
+        font-size: 10px;
+      }
+      nav button.active {
+        color: var(--blue);
+      }
 
-.maintenance-preview{width:100%;max-height:260px;object-fit:contain;background:#0b1218;border:1px solid #2b3946;border-radius:16px;margin-top:10px;display:none}
-.settings-actions{display:grid;gap:10px}.restore-btn{display:flex!important;align-items:center;justify-content:center;min-height:52px;border-radius:16px!important;padding:14px 16px!important;font-weight:800!important;font-size:15px!important;background:#16212b!important;color:white!important;border:1px solid #2a3948!important}.settings-note{background:#0b1218;border:1px solid #263542;border-radius:16px;padding:13px;margin-top:12px}.setup-steps{display:grid;gap:8px;margin:16px 0}.setup-step{display:flex;gap:10px;align-items:flex-start;background:#0b1218;border:1px solid #263542;border-radius:14px;padding:11px}.setup-num{display:grid;place-items:center;min-width:28px;height:28px;border-radius:999px;background:#12304a;color:#8ed0ff;font-weight:900}.danger{background:#35151a;color:#ff8d98;border:1px solid #6a2a33}.version-badge{display:inline-block;padding:6px 10px;border:1px solid #31404f;border-radius:999px;color:#9aa8b7;font-size:12px}.setup-overlay{position:fixed;inset:0;z-index:100;background:rgba(3,7,11,.96);display:flex;align-items:center;justify-content:center;padding:24px}.setup-box{max-width:480px;width:100%;background:#111b25;border:1px solid #2a3948;border-radius:28px;padding:26px}.setup-box h2{margin-top:0}.setup-overlay.hidden{display:none}
-</style></head><body>
-<header><h1>Detailing Manager</h1><div class="sub">洗車・コーティング・希釈管理</div></header><main>
-<section id="home" class="tab active"><div class="card hero"><div class="hero-media"><img id="homeCarImage" alt=""><div class="hero-overlay"></div><div class="hero-content"><span class="pill">MY CAR</span><div class="hero-title" id="homeCar">車両未登録</div><div class="hero-sub" id="homeCoating">コーティング情報なし</div></div></div><div style="padding:14px"><div class="grid3"><div class="metric"><div class="label">最終洗車</div><b class="blue" id="lastWash">—</b></div><div class="metric"><div class="label">最終コーティング</div><b class="gold" id="lastCoat">—</b></div><div class="metric"><div class="label">次回メンテ目安</div><b class="green" id="nextMaint">—</b></div></div></div></div><div class="grid2"><button class="primary" onclick="go('history')">＋ 洗車を記録</button><button class="greenbtn" onclick="go('dilution')">希釈計算</button></div><div class="card"><div class="section-title"><h3>最近の施工</h3><button class="ghost" onclick="go('history')">すべて見る</button></div><div id="recentHistory" class="muted"></div></div><div class="card"><div class="section-title"><h3>ケミカル在庫</h3><button class="ghost" onclick="go('chemicals')">一覧</button></div><div id="homeChemicals" class="muted"></div></div></section>
-<section id="dilution" class="tab"><div class="card"><div class="section-title"><h2>希釈計算</h2><button class="ghost" onclick="resetDilution()">リセット</button></div><label>ケミカル</label><select id="dilutionChemical" onchange="applyChemicalPreset()"></select><label>計算モード</label><select id="mode" onchange="calc()"><option value="x">○倍希釈</option><option value="ratio">原液 : 水</option></select><div class="grid2"><div><label>倍率 / 水の比率</label><input id="ratio" type="number" min="1" value="10" oninput="calc()"></div><div><label>作りたい量 (mL)</label><input id="total" type="number" min="1" value="1000" oninput="calc()"></div></div><div class="quick-row" style="margin-top:10px"><button class="secondary" onclick="setRatio(5)">5倍</button><button class="secondary" onclick="setRatio(10)">10倍</button><button class="secondary" onclick="setRatio(20)">20倍</button><button class="secondary" onclick="setTotal(500)">500mL</button><button class="secondary" onclick="setTotal(1000)">1000mL</button><button class="secondary" onclick="setTotal(1500)">1500mL</button></div></div><div class="card"><div class="section-title"><h3>計算結果</h3><span class="muted tiny" id="formulaHint"></span></div><div class="result-card"><div><div class="muted tiny">原液</div><div class="big-result chem-color" id="chem">100</div><div class="chem-color">mL</div></div><div style="font-size:34px;color:#6f7a86">＋</div><div><div class="muted tiny">水</div><div class="big-result water-color" id="water">900</div><div class="water-color">mL</div></div></div><button class="secondary" style="width:100%;margin-top:12px" onclick="saveFavorite()">★ お気に入りに保存</button></div><div class="card"><h3>お気に入り</h3><div id="favorites"></div></div></section>
-<section id="cars" class="tab"><div class="card"><h2>車両管理</h2><label>車名</label><input id="carName" placeholder="例：レクサス GS"><label>ボディカラー</label><input id="carColor" placeholder="例：ホワイト"><label>車両写真</label><input id="carImage" type="file" accept="image/*" onchange="previewSelectedCarImage()">
-<div class="photo-preview"><img id="carPreview" alt="車両写真プレビュー"></div>
-<div class="slider-row"><span>拡大</span><input id="photoZoom" type="range" min="50" max="220" value="100" step="1" oninput="updatePhotoPreview()"><output id="photoZoomOut">100%</output></div>
-<div class="slider-row"><span>左右位置</span><input id="photoX" type="range" min="0" max="100" value="50" step="1" oninput="updatePhotoPreview()"><output id="photoXOut">50</output></div>
-<div class="slider-row"><span>上下位置</span><input id="photoY" type="range" min="0" max="100" value="50" step="1" oninput="updatePhotoPreview()"><output id="photoYOut">50</output></div>
-<button class="secondary" type="button" style="width:100%;margin-top:10px" onclick="resetPhotoPosition()">写真位置をリセット</button>
-<label>現在のコーティング</label><input id="carCoating" placeholder="例：ブラックダイヤ"><div class="grid2"><div><label>コーティング施工日</label><input id="coatDate" type="date"></div><div><label>メンテ周期 (日)</label><input id="maintDays" type="number" value="90" min="1"></div></div><button class="primary" style="margin-top:14px;width:100%" onclick="saveCar()">保存</button></div></section>
-<section id="history" class="tab"><div class="card"><h2>施工記録</h2><label>日付</label><input id="histDate" type="date"><label>種類</label><select id="histType"><option>洗車</option><option>コーティング</option><option>メンテナンス</option><option>下地処理</option></select><div class="grid2"><div><label>走行距離 (km)</label><input id="histMileage" type="number" inputmode="numeric" placeholder="例：12345"></div><div><label>施工時間 (分)</label><input id="histMinutes" type="number" inputmode="numeric" placeholder="例：90"></div></div><label>施工テンプレート</label>
-<div class="template-row">
-  <button class="secondary" type="button" onclick="applyProcessTemplate('standard')">通常洗車</button>
-  <button class="secondary" type="button" onclick="applyProcessTemplate('reset')">リセット洗車</button>
-  <button class="secondary" type="button" onclick="applyProcessTemplate('coating')">コーティング施工</button>
-  <button class="secondary" type="button" onclick="clearProcessTemplate()">全解除</button>
-</div>
-<label>施工工程</label><div class="process-grid"><label class="process-item"><input type="checkbox" name="histProcess" value="プレウォッシュ">プレウォッシュ</label><label class="process-item"><input type="checkbox" name="histProcess" value="コンタクト洗車">コンタクト洗車</label><label class="process-item"><input type="checkbox" name="histProcess" value="鉄粉除去">鉄粉除去</label><label class="process-item"><input type="checkbox" name="histProcess" value="スケール除去">スケール除去</label><label class="process-item"><input type="checkbox" name="histProcess" value="脱脂">脱脂</label><label class="process-item"><input type="checkbox" name="histProcess" value="研磨">研磨</label><label class="process-item"><input type="checkbox" name="histProcess" value="コーティング">コーティング</label><label class="process-item"><input type="checkbox" name="histProcess" value="QD/仕上げ">QD / 仕上げ</label></div><label>使用ケミカル・使用量</label>
-<div id="chemicalUsageRows"></div>
-<button class="secondary" type="button" onclick="addChemicalUsageRow()">＋ ケミカルを追加</button>
-<div class="usage-note muted tiny">施工を保存すると、入力した使用量を在庫から自動で差し引きます。</div><label>Before / After</label><div class="ba-grid"><div class="ba-box"><div class="muted tiny">Before</div><img id="beforePreview"><input id="histBefore" type="file" accept="image/*" onchange="previewHistoryImage('histBefore','beforePreview')"></div><div class="ba-box"><div class="muted tiny">After</div><img id="afterPreview"><input id="histAfter" type="file" accept="image/*" onchange="previewHistoryImage('histAfter','afterPreview')"></div></div><label>メモ</label><textarea id="histMemo" rows="3" placeholder="汚れの状態、仕上がり、気づいた点など"></textarea><button class="primary" style="margin-top:14px;width:100%" onclick="addHistory()">記録する</button></div><div class="card">
-  <div class="section-title"><h3>自分のテンプレート</h3><button class="ghost" type="button" onclick="saveCurrentAsTemplate()">現在の工程を保存</button></div>
-  <div id="customTemplates" class="muted">まだありません。</div>
-</div>
-<div class="card"><h3>履歴</h3><div id="historyList"></div></div></section>
-<section id="chemicals" class="tab"><div class="card"><div class="section-title"><h2>ケミカル管理</h2><button class="secondary" type="button" onclick="addChemicalPresets()">定番プリセット追加</button></div><div class="muted tiny">未登録の商品だけ追加します。残量はあとから入力できます。</div><label>商品名</label><input id="chemName"><label>分類</label><select id="chemType"><option>アルカリ</option><option>酸性</option><option>中性</option><option>鉄粉除去</option><option>脱脂</option><option>コーティング</option><option>QD</option><option>その他</option></select><div class="grid2"><div><label>推奨倍率</label><input id="chemRatio" type="number"></div><div><label>容量 (mL)</label><input id="chemCapacity" type="number"></div></div><label>現在の残量 (mL)</label><input id="chemStock" type="number"><label>ボトル写真</label><input id="chemImage" type="file" accept="image/*"><button class="primary" style="margin-top:14px;width:100%" onclick="addChemical()">登録</button></div><div class="card"><h3>登録済み</h3><div id="chemicalList"></div></div>
-<div id="chemicalEditor" class="card" style="display:none">
-<div class="section-title"><h3>ケミカル編集</h3><button class="ghost" onclick="closeChemicalEditor()">閉じる</button></div>
-<input id="editChemIndex" type="hidden">
-<label>商品名</label><input id="editChemName">
-<label>分類</label><select id="editChemType"><option>アルカリ</option><option>酸性</option><option>中性</option><option>鉄粉除去</option><option>脱脂</option><option>コーティング</option><option>QD</option><option>その他</option></select>
-<div class="grid2"><div><label>推奨倍率</label><input id="editChemRatio" type="number"></div><div><label>容量 (mL)</label><input id="editChemCapacity" type="number"></div></div>
-<label>現在の残量 (mL)</label><input id="editChemStock" type="number">
-<div class="stock-actions"><button class="secondary" onclick="setEditStockPercent(100)">満タン</button><button class="secondary" onclick="setEditStockPercent(75)">75%</button><button class="secondary" onclick="setEditStockPercent(50)">50%</button><button class="secondary" onclick="setEditStockPercent(25)">25%</button><button class="secondary" onclick="setEditStockPercent(0)">空</button></div>
-<button class="primary" style="width:100%;margin-top:12px" onclick="saveChemicalEdit()">変更を保存</button>
-</div></section>
-<section id="maintenance" class="tab"><div class="card"><h2>整備記録</h2><p class="muted">オイル交換・タイヤ・ブレーキ・部品交換など、車の整備履歴を残せます。</p><label>日付</label><input id="maintRecordDate" type="date"><label>走行距離 (km)</label><input id="maintRecordMileage" type="number" inputmode="numeric" placeholder="例：45123"><label>整備内容</label><textarea id="maintRecordContent" rows="4" placeholder="例：エンジンオイル・オイルフィルター交換"></textarea><label>写真</label><input id="maintRecordImage" type="file" accept="image/*" onchange="previewMaintenanceImage()"><img id="maintRecordPreview" class="maintenance-preview" alt="整備写真プレビュー"><button class="primary" style="width:100%;margin-top:14px" onclick="addMaintenanceRecord()">整備記録を保存</button></div><div class="card"><div class="section-title"><h3>整備履歴</h3><span class="muted tiny" id="maintenanceCount"></span></div><div id="maintenanceList"></div></div></section><section id="settings" class="tab"><div class="card"><div class="section-title"><h2>設定</h2><span class="version-badge">v3.0</span></div><p class="muted">機種変更や友達への引き継ぎ用に、アプリのデータを1つのJSONファイルへ保存できます。</p><div class="settings-actions"><button class="primary" type="button" onclick="exportBackup()">バックアップを書き出す</button><label class="restore-btn" style="cursor:pointer">バックアップから復元<input id="restoreFile" type="file" accept="application/json,.json" style="display:none" onchange="importBackup(this)"></label><button class="danger" type="button" onclick="resetAllData()">全データを初期化</button></div><div class="settings-note tiny muted">写真を含むデータはバックアップファイルが大きくなる場合があります。大事な施工記録は定期的に書き出してください。</div></div><div class="card"><h3>iPhoneでアプリとして使う</h3><div class="setup-steps"><div class="setup-step"><span class="setup-num">1</span><div><b>Safariでこのページを開く</b><div class="tiny muted">GitHub PagesのURLをSafariで表示します。</div></div></div><div class="setup-step"><span class="setup-num">2</span><div><b>共有ボタンをタップ</b><div class="tiny muted">画面下の共有メニューを開きます。</div></div></div><div class="setup-step"><span class="setup-num">3</span><div><b>「ホーム画面に追加」</b><div class="tiny muted">次回から普通のアプリのように起動できます。</div></div></div></div></div><div class="card"><h3>アプリ情報</h3><div class="muted">Detailing Manager<br>洗車・コーティング・整備・ケミカル・希釈管理</div><p class="tiny muted">データはこの端末のブラウザ内に保存されます。友達が同じURLを使っても、それぞれの端末で別のデータとして保存されます。</p></div></section></main><nav><button data-tab="home" class="active" onclick="go('home')">⌂<br>ホーム</button><button data-tab="cars" onclick="go('cars')">CAR<br>車両</button><button data-tab="history" onclick="go('history')">LOG<br>施工</button><button data-tab="chemicals" onclick="go('chemicals')">CHEM<br>ケミカル</button><button data-tab="dilution" onclick="go('dilution')">CALC<br>希釈</button><button data-tab="maintenance" onclick="go('maintenance')">TOOL<br>整備</button><button data-tab="settings" onclick="go('settings')">⚙<br>設定</button></nav>
-<div id="setupOverlay" class="setup-overlay hidden"><div class="setup-box"><span class="version-badge">Detailing Manager v3.0</span><h2>Detailing Managerへようこそ</h2><p class="muted">愛車の洗車・コーティング・ケミカル在庫を、このiPhoneでまとめて管理できます。</p><div class="setup-steps"><div class="setup-step"><span class="setup-num">1</span><div><b>車両を登録</b><div class="tiny muted">愛車の写真・コーティング情報を保存</div></div></div><div class="setup-step"><span class="setup-num">2</span><div><b>施工を記録</b><div class="tiny muted">工程・使用ケミカル・使用量まで記録</div></div></div><div class="setup-step"><span class="setup-num">3</span><div><b>在庫を自動管理</b><div class="tiny muted">使用量に応じてケミカル残量を更新</div></div></div></div><button class="primary" style="width:100%" onclick="finishSetup()">車両登録からはじめる</button><button class="secondary" style="width:100%;margin-top:10px" onclick="localStorage.setItem('dmSetupDone','1');document.getElementById('setupOverlay').classList.add('hidden')">あとで設定する</button></div></div>
-<script>
-const DM_VERSION='3.0';
-const $=id=>document.getElementById(id),load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch{return d}},save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){alert('保存容量がいっぱいです。写真を減らすか、古い記録を削除してください。');return false}},today=()=>new Date().toISOString().slice(0,10);$('histDate').value=today();$('maintRecordDate').value=today();
-function go(id){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));render();window.scrollTo({top:0,behavior:'smooth'})}function round(n){return Math.round(n*10)/10}function calc(){let m=$('mode').value,r=Math.max(1,+$('ratio').value||1),t=Math.max(0,+$('total').value||0),c,w;if(m==='x'){c=t/r;w=t-c;$('formulaHint').textContent=`${r}倍希釈 = 原液1 : 水${round(r-1)}`}else{c=t/(1+r);w=t-c;$('formulaHint').textContent=`原液1 : 水${r}`}$('chem').textContent=round(c);$('water').textContent=round(w)}function setRatio(v){$('ratio').value=v;calc()}function setTotal(v){$('total').value=v;calc()}function resetDilution(){$('mode').value='x';$('ratio').value=10;$('total').value=1000;$('dilutionChemical').selectedIndex=0;calc()}
-function readFile(input){
-  return new Promise(resolve=>{
-    const f=input.files&&input.files[0];
-    if(!f)return resolve('');
-    const reader=new FileReader();
-    reader.onload=()=>{
-      const original=reader.result;
-      const img=new Image();
-      img.onload=()=>{
-        try{
-          const MAX=1200;
-          let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
-          const scale=Math.min(1,MAX/Math.max(w,h));
-          w=Math.max(1,Math.round(w*scale)); h=Math.max(1,Math.round(h*scale));
-
-          const canvas=document.createElement('canvas');
-          canvas.width=w;
-          canvas.height=h;
-          const ctx=canvas.getContext('2d');
-
-          // iPhone/Safari は createImageBitmap の imageOrientation を使うと
-          // EXIF回転を適用した状態で描画できる。未対応時は通常描画へフォールバック。
-          if ('createImageBitmap' in window) {
-            createImageBitmap(f,{imageOrientation:'from-image'}).then(bitmap=>{
-              canvas.width=Math.max(1,Math.round(bitmap.width*scale));
-              canvas.height=Math.max(1,Math.round(bitmap.height*scale));
-              ctx.clearRect(0,0,canvas.width,canvas.height);
-              ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
-              if (bitmap.close) bitmap.close();
-              resolve(canvas.toDataURL('image/jpeg',0.72));
-            }).catch(()=>{
-              ctx.drawImage(img,0,0,w,h);
-              resolve(canvas.toDataURL('image/jpeg',0.72));
-            });
-          } else {
-            ctx.drawImage(img,0,0,w,h);
-            resolve(canvas.toDataURL('image/jpeg',0.72));
-          }
-        }catch(e){ resolve(original); }
+      .maintenance-preview {
+        width: 100%;
+        max-height: 260px;
+        object-fit: contain;
+        background: #0b1218;
+        border: 1px solid #2b3946;
+        border-radius: 16px;
+        margin-top: 10px;
+        display: none;
+      }
+      .settings-actions {
+        display: grid;
+        gap: 10px;
+      }
+      .restore-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        min-height: 52px;
+        border-radius: 16px !important;
+        padding: 14px 16px !important;
+        font-weight: 800 !important;
+        font-size: 15px !important;
+        background: #16212b !important;
+        color: white !important;
+        border: 1px solid #2a3948 !important;
+      }
+      .settings-note {
+        background: #0b1218;
+        border: 1px solid #263542;
+        border-radius: 16px;
+        padding: 13px;
+        margin-top: 12px;
+      }
+      .beta-banner {
+        display: grid;
+        gap: 4px;
+        margin: 8px 0 12px;
+        padding: 12px 14px;
+        border: 1px solid #72591b;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #302708, #18170f);
+        color: #ffe184;
+      }
+      .beta-banner span {
+        color: #c9bd91;
+        font-size: 12px;
+      }
+      .feedback-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .feedback-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .backup-status {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border: 1px solid #6a4f22;
+        border-radius: 13px;
+        background: #271e0e;
+        color: #ffd887;
+      }
+      .backup-status.fresh {
+        border-color: #245f43;
+        background: #10281d;
+        color: #89e4b4;
+      }
+      @media (max-width: 430px) {
+        .feedback-grid,
+        .feedback-actions {
+          grid-template-columns: 1fr;
+        }
+      }
+      .setup-steps {
+        display: grid;
+        gap: 8px;
+        margin: 16px 0;
+      }
+      .setup-step {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        background: #0b1218;
+        border: 1px solid #263542;
+        border-radius: 14px;
+        padding: 11px;
+      }
+      .setup-num {
+        display: grid;
+        place-items: center;
+        min-width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        background: #12304a;
+        color: #8ed0ff;
+        font-weight: 900;
+      }
+      .danger {
+        background: #35151a;
+        color: #ff8d98;
+        border: 1px solid #6a2a33;
+      }
+      .version-badge {
+        display: inline-block;
+        padding: 6px 10px;
+        border: 1px solid #31404f;
+        border-radius: 999px;
+        color: #9aa8b7;
+        font-size: 12px;
+      }
+      .setup-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: rgba(3, 7, 11, 0.96);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .setup-box {
+        max-width: 480px;
+        width: 100%;
+        background: #111b25;
+        border: 1px solid #2a3948;
+        border-radius: 28px;
+        padding: 26px;
+      }
+      .setup-box h2 {
+        margin-top: 0;
+      }
+      .setup-overlay.hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="title-row">
+        <h1>Detailing Manager</h1>
+        <span class="beta-badge">BETA</span>
+      </div>
+      <div class="sub">洗車・コーティング・希釈管理</div>
+    </header>
+    <main>
+      <section id="home" class="tab active">
+        <div class="beta-banner">
+          <b>無料βテスト版</b>
+          <span>大切な記録は、設定から定期的にバックアップしてください。</span>
+        </div>
+        <div class="card hero">
+          <div class="hero-media">
+            <img id="homeCarImage" alt="" />
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+              <span class="pill">MY CAR</span>
+              <div class="hero-title" id="homeCar">車両未登録</div>
+              <div class="hero-sub" id="homeCoating">コーティング情報なし</div>
+            </div>
+          </div>
+          <div style="padding: 14px">
+            <div class="grid3">
+              <div class="metric">
+                <div class="label">最終洗車</div>
+                <b class="blue" id="lastWash">—</b>
+              </div>
+              <div class="metric">
+                <div class="label">最終コーティング</div>
+                <b class="gold" id="lastCoat">—</b>
+              </div>
+              <div class="metric">
+                <div class="label">次回メンテ目安</div>
+                <b class="green" id="nextMaint">—</b>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="grid2">
+          <button class="primary" onclick="go('history')">＋ 洗車を記録</button
+          ><button class="greenbtn" onclick="go('dilution')">希釈計算</button>
+        </div>
+        <div class="card">
+          <div class="section-title">
+            <h3>最近の施工</h3>
+            <button class="ghost" onclick="go('history')">すべて見る</button>
+          </div>
+          <div id="recentHistory" class="muted"></div>
+        </div>
+        <div class="card">
+          <div class="section-title">
+            <h3>ケミカル在庫</h3>
+            <button class="ghost" onclick="go('chemicals')">一覧</button>
+          </div>
+          <div id="homeChemicals" class="muted"></div>
+        </div>
+      </section>
+      <section id="dilution" class="tab">
+        <div class="card">
+          <div class="section-title">
+            <h2>希釈計算</h2>
+            <button class="ghost" onclick="resetDilution()">リセット</button>
+          </div>
+          <label>ケミカル</label
+          ><select
+            id="dilutionChemical"
+            onchange="applyChemicalPreset()"
+          ></select
+          ><label>計算モード</label
+          ><select id="mode" onchange="calc()">
+            <option value="x">○倍希釈</option>
+            <option value="ratio">原液 : 水</option>
+          </select>
+          <div class="grid2">
+            <div>
+              <label>倍率 / 水の比率</label
+              ><input
+                id="ratio"
+                type="number"
+                min="1"
+                value="10"
+                oninput="calc()"
+              />
+            </div>
+            <div>
+              <label>作りたい量 (mL)</label
+              ><input
+                id="total"
+                type="number"
+                min="1"
+                value="1000"
+                oninput="calc()"
+              />
+            </div>
+          </div>
+          <div class="quick-row" style="margin-top: 10px">
+            <button class="secondary" onclick="setRatio(5)">5倍</button
+            ><button class="secondary" onclick="setRatio(10)">10倍</button
+            ><button class="secondary" onclick="setRatio(20)">20倍</button
+            ><button class="secondary" onclick="setTotal(500)">500mL</button
+            ><button class="secondary" onclick="setTotal(1000)">1000mL</button
+            ><button class="secondary" onclick="setTotal(1500)">1500mL</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title">
+            <h3>計算結果</h3>
+            <span class="muted tiny" id="formulaHint"></span>
+          </div>
+          <div class="result-card">
+            <div>
+              <div class="muted tiny">原液</div>
+              <div class="big-result chem-color" id="chem">100</div>
+              <div class="chem-color">mL</div>
+            </div>
+            <div style="font-size: 34px; color: #6f7a86">＋</div>
+            <div>
+              <div class="muted tiny">水</div>
+              <div class="big-result water-color" id="water">900</div>
+              <div class="water-color">mL</div>
+            </div>
+          </div>
+          <button
+            class="secondary"
+            style="width: 100%; margin-top: 12px"
+            onclick="saveFavorite()"
+          >
+            ★ お気に入りに保存
+          </button>
+        </div>
+        <div class="card">
+          <h3>お気に入り</h3>
+          <div id="favorites"></div>
+        </div>
+      </section>
+      <section id="cars" class="tab">
+        <div class="card">
+          <h2>車両管理</h2>
+          <label>車名</label
+          ><input id="carName" placeholder="例：レクサス GS" /><label
+            >ボディカラー</label
+          ><input id="carColor" placeholder="例：ホワイト" /><label
+            >車両写真</label
+          ><input
+            id="carImage"
+            type="file"
+            accept="image/*"
+            onchange="previewSelectedCarImage()"
+          />
+          <div class="photo-preview">
+            <img id="carPreview" alt="車両写真プレビュー" />
+          </div>
+          <div class="slider-row">
+            <span>拡大</span
+            ><input
+              id="photoZoom"
+              type="range"
+              min="50"
+              max="220"
+              value="100"
+              step="1"
+              oninput="updatePhotoPreview()"
+            /><output id="photoZoomOut">100%</output>
+          </div>
+          <div class="slider-row">
+            <span>左右位置</span
+            ><input
+              id="photoX"
+              type="range"
+              min="0"
+              max="100"
+              value="50"
+              step="1"
+              oninput="updatePhotoPreview()"
+            /><output id="photoXOut">50</output>
+          </div>
+          <div class="slider-row">
+            <span>上下位置</span
+            ><input
+              id="photoY"
+              type="range"
+              min="0"
+              max="100"
+              value="50"
+              step="1"
+              oninput="updatePhotoPreview()"
+            /><output id="photoYOut">50</output>
+          </div>
+          <button
+            class="secondary"
+            type="button"
+            style="width: 100%; margin-top: 10px"
+            onclick="resetPhotoPosition()"
+          >
+            写真位置をリセット
+          </button>
+          <label>現在のコーティング</label
+          ><input id="carCoating" placeholder="例：ブラックダイヤ" />
+          <div class="grid2">
+            <div>
+              <label>コーティング施工日</label
+              ><input id="coatDate" type="date" />
+            </div>
+            <div>
+              <label>メンテ周期 (日)</label
+              ><input id="maintDays" type="number" value="90" min="1" />
+            </div>
+          </div>
+          <button
+            class="primary"
+            style="margin-top: 14px; width: 100%"
+            onclick="saveCar()"
+          >
+            保存
+          </button>
+        </div>
+      </section>
+      <section id="history" class="tab">
+        <div class="card">
+          <h2>施工記録</h2>
+          <label>日付</label><input id="histDate" type="date" /><label
+            >種類</label
+          ><select id="histType">
+            <option>洗車</option>
+            <option>コーティング</option>
+            <option>メンテナンス</option>
+            <option>下地処理</option>
+          </select>
+          <div class="grid2">
+            <div>
+              <label>走行距離 (km)</label
+              ><input
+                id="histMileage"
+                type="number"
+                inputmode="numeric"
+                placeholder="例：12345"
+              />
+            </div>
+            <div>
+              <label>施工時間 (分)</label
+              ><input
+                id="histMinutes"
+                type="number"
+                inputmode="numeric"
+                placeholder="例：90"
+              />
+            </div>
+          </div>
+          <label>施工テンプレート</label>
+          <div class="template-row">
+            <button
+              class="secondary"
+              type="button"
+              onclick="applyProcessTemplate('standard')"
+            >
+              通常洗車
+            </button>
+            <button
+              class="secondary"
+              type="button"
+              onclick="applyProcessTemplate('reset')"
+            >
+              リセット洗車
+            </button>
+            <button
+              class="secondary"
+              type="button"
+              onclick="applyProcessTemplate('coating')"
+            >
+              コーティング施工
+            </button>
+            <button
+              class="secondary"
+              type="button"
+              onclick="clearProcessTemplate()"
+            >
+              全解除
+            </button>
+          </div>
+          <label>施工工程</label>
+          <div class="process-grid">
+            <label class="process-item"
+              ><input
+                type="checkbox"
+                name="histProcess"
+                value="プレウォッシュ"
+              />プレウォッシュ</label
+            ><label class="process-item"
+              ><input
+                type="checkbox"
+                name="histProcess"
+                value="コンタクト洗車"
+              />コンタクト洗車</label
+            ><label class="process-item"
+              ><input
+                type="checkbox"
+                name="histProcess"
+                value="鉄粉除去"
+              />鉄粉除去</label
+            ><label class="process-item"
+              ><input
+                type="checkbox"
+                name="histProcess"
+                value="スケール除去"
+              />スケール除去</label
+            ><label class="process-item"
+              ><input
+                type="checkbox"
+                name="histProcess"
+                value="脱脂"
+              />脱脂</label
+            ><label class="process-item"
+              ><input
+                type="checkbox"
+                name="histProcess"
+                value="研磨"
+              />研磨</label
+            ><label class="process-item"
+              ><input
+                type="checkbox"
+                name="histProcess"
+                value="コーティング"
+              />コーティング</label
+            ><label class="process-item"
+              ><input type="checkbox" name="histProcess" value="QD/仕上げ" />QD
+              / 仕上げ</label
+            >
+          </div>
+          <label>使用ケミカル・使用量</label>
+          <div id="chemicalUsageRows"></div>
+          <button
+            class="secondary"
+            type="button"
+            onclick="addChemicalUsageRow()"
+          >
+            ＋ ケミカルを追加
+          </button>
+          <div class="usage-note muted tiny">
+            施工を保存すると、入力した使用量を在庫から自動で差し引きます。
+          </div>
+          <label>Before / After</label>
+          <div class="ba-grid">
+            <div class="ba-box">
+              <div class="muted tiny">Before</div>
+              <img id="beforePreview" /><input
+                id="histBefore"
+                type="file"
+                accept="image/*"
+                onchange="previewHistoryImage('histBefore','beforePreview')"
+              />
+            </div>
+            <div class="ba-box">
+              <div class="muted tiny">After</div>
+              <img id="afterPreview" /><input
+                id="histAfter"
+                type="file"
+                accept="image/*"
+                onchange="previewHistoryImage('histAfter','afterPreview')"
+              />
+            </div>
+          </div>
+          <label>メモ</label
+          ><textarea
+            id="histMemo"
+            rows="3"
+            placeholder="汚れの状態、仕上がり、気づいた点など"
+          ></textarea
+          ><button
+            class="primary"
+            style="margin-top: 14px; width: 100%"
+            onclick="addHistory()"
+          >
+            記録する
+          </button>
+        </div>
+        <div class="card">
+          <div class="section-title">
+            <h3>自分のテンプレート</h3>
+            <button
+              class="ghost"
+              type="button"
+              onclick="saveCurrentAsTemplate()"
+            >
+              現在の工程を保存
+            </button>
+          </div>
+          <div id="customTemplates" class="muted">まだありません。</div>
+        </div>
+        <div class="card">
+          <h3>履歴</h3>
+          <div id="historyList"></div>
+        </div>
+      </section>
+      <section id="chemicals" class="tab">
+        <div class="card">
+          <div class="section-title">
+            <h2>ケミカル管理</h2>
+            <button
+              class="secondary"
+              type="button"
+              onclick="addChemicalPresets()"
+            >
+              定番プリセット追加
+            </button>
+          </div>
+          <div class="muted tiny">
+            未登録の商品だけ追加します。残量はあとから入力できます。
+          </div>
+          <label>商品名</label><input id="chemName" /><label>分類</label
+          ><select id="chemType">
+            <option>アルカリ</option>
+            <option>酸性</option>
+            <option>中性</option>
+            <option>鉄粉除去</option>
+            <option>脱脂</option>
+            <option>コーティング</option>
+            <option>QD</option>
+            <option>その他</option>
+          </select>
+          <div class="grid2">
+            <div>
+              <label>推奨倍率</label><input id="chemRatio" type="number" />
+            </div>
+            <div>
+              <label>容量 (mL)</label><input id="chemCapacity" type="number" />
+            </div>
+          </div>
+          <label>現在の残量 (mL)</label
+          ><input id="chemStock" type="number" /><label>ボトル写真</label
+          ><input id="chemImage" type="file" accept="image/*" /><button
+            class="primary"
+            style="margin-top: 14px; width: 100%"
+            onclick="addChemical()"
+          >
+            登録
+          </button>
+        </div>
+        <div class="card">
+          <h3>登録済み</h3>
+          <div id="chemicalList"></div>
+        </div>
+        <div id="chemicalEditor" class="card" style="display: none">
+          <div class="section-title">
+            <h3>ケミカル編集</h3>
+            <button class="ghost" onclick="closeChemicalEditor()">
+              閉じる
+            </button>
+          </div>
+          <input id="editChemIndex" type="hidden" />
+          <label>商品名</label><input id="editChemName" /> <label>分類</label
+          ><select id="editChemType">
+            <option>アルカリ</option>
+            <option>酸性</option>
+            <option>中性</option>
+            <option>鉄粉除去</option>
+            <option>脱脂</option>
+            <option>コーティング</option>
+            <option>QD</option>
+            <option>その他</option>
+          </select>
+          <div class="grid2">
+            <div>
+              <label>推奨倍率</label><input id="editChemRatio" type="number" />
+            </div>
+            <div>
+              <label>容量 (mL)</label
+              ><input id="editChemCapacity" type="number" />
+            </div>
+          </div>
+          <label>現在の残量 (mL)</label
+          ><input id="editChemStock" type="number" />
+          <div class="stock-actions">
+            <button class="secondary" onclick="setEditStockPercent(100)">
+              満タン</button
+            ><button class="secondary" onclick="setEditStockPercent(75)">
+              75%</button
+            ><button class="secondary" onclick="setEditStockPercent(50)">
+              50%</button
+            ><button class="secondary" onclick="setEditStockPercent(25)">
+              25%</button
+            ><button class="secondary" onclick="setEditStockPercent(0)">
+              空
+            </button>
+          </div>
+          <button
+            class="primary"
+            style="width: 100%; margin-top: 12px"
+            onclick="saveChemicalEdit()"
+          >
+            変更を保存
+          </button>
+        </div>
+      </section>
+      <section id="maintenance" class="tab">
+        <div class="card">
+          <h2>整備記録</h2>
+          <p class="muted">
+            オイル交換・タイヤ・ブレーキ・部品交換など、車の整備履歴を残せます。
+          </p>
+          <label>日付</label><input id="maintRecordDate" type="date" /><label
+            >走行距離 (km)</label
+          ><input
+            id="maintRecordMileage"
+            type="number"
+            inputmode="numeric"
+            placeholder="例：45123"
+          /><label>整備内容</label
+          ><textarea
+            id="maintRecordContent"
+            rows="4"
+            placeholder="例：エンジンオイル・オイルフィルター交換"
+          ></textarea
+          ><label>写真</label
+          ><input
+            id="maintRecordImage"
+            type="file"
+            accept="image/*"
+            onchange="previewMaintenanceImage()"
+          /><img
+            id="maintRecordPreview"
+            class="maintenance-preview"
+            alt="整備写真プレビュー"
+          /><button
+            class="primary"
+            style="width: 100%; margin-top: 14px"
+            onclick="addMaintenanceRecord()"
+          >
+            整備記録を保存
+          </button>
+        </div>
+        <div class="card">
+          <div class="section-title">
+            <h3>整備履歴</h3>
+            <span class="muted tiny" id="maintenanceCount"></span>
+          </div>
+          <div id="maintenanceList"></div>
+        </div>
+      </section>
+      <section id="settings" class="tab">
+        <div class="card">
+          <div class="section-title">
+            <h2>設定</h2>
+            <span class="version-badge">v3.2 β1</span>
+          </div>
+          <p class="muted">
+            β版のデータはこの端末内に保存されます。機種変更や不具合に備えて、JSONファイルへ定期的に保存してください。
+          </p>
+          <div class="settings-actions">
+            <button class="primary" type="button" onclick="exportBackup()">
+              バックアップを書き出す</button
+            ><label class="restore-btn" style="cursor: pointer"
+              >バックアップから復元<input
+                id="restoreFile"
+                type="file"
+                accept="application/json,.json"
+                style="display: none"
+                onchange="importBackup(this)" /></label
+            ><button class="danger" type="button" onclick="resetAllData()">
+              全データを初期化
+            </button>
+          </div>
+          <div class="settings-note tiny muted">
+            写真を含むデータはバックアップファイルが大きくなる場合があります。大事な施工記録は定期的に書き出してください。
+          </div>
+          <div id="backupStatus" class="backup-status tiny">
+            バックアップ状況を確認しています…
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title">
+            <h3>βテストの感想を送る</h3>
+            <span class="version-badge" id="testerId"></span>
+          </div>
+          <p class="muted tiny">
+            車名・写真・メモの内容は送信文へ含めません。共有先はiPhoneの共有画面で選べます。
+          </p>
+          <div class="feedback-grid">
+            <div>
+              <label>内容</label>
+              <select id="feedbackCategory">
+                <option value="感想">使ってみた感想</option>
+                <option value="不具合">不具合</option>
+                <option value="要望">欲しい機能</option>
+              </select>
+            </div>
+            <div>
+              <label>使いやすさ</label>
+              <select id="feedbackRating">
+                <option value="">選択してください</option>
+                <option value="5">5：とても使いやすい</option>
+                <option value="4">4：使いやすい</option>
+                <option value="3">3：普通</option>
+                <option value="2">2：使いにくい</option>
+                <option value="1">1：かなり使いにくい</option>
+              </select>
+            </div>
+          </div>
+          <label>一番よかった機能</label>
+          <input
+            id="feedbackUseful"
+            placeholder="例：ケミカル使用量と在庫の連動"
+          />
+          <label>感想・不具合・欲しい機能</label>
+          <textarea
+            id="feedbackComment"
+            rows="4"
+            placeholder="どの画面で、何をしたときに困ったかも書いてください"
+          ></textarea>
+          <label>買い切り版なら、いくらまでなら使いたい？</label>
+          <select id="feedbackPrice">
+            <option value="未回答">選択してください</option>
+            <option value="無料なら使う">無料なら使う</option>
+            <option value="980円">980円</option>
+            <option value="1,980円">1,980円</option>
+            <option value="2,980円以上">2,980円以上</option>
+          </select>
+          <div class="feedback-actions">
+            <button class="primary" type="button" onclick="shareFeedback()">
+              共有して送る
+            </button>
+            <button class="secondary" type="button" onclick="copyFeedback()">
+              内容をコピー
+            </button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>iPhoneでアプリとして使う</h3>
+          <div class="setup-steps">
+            <div class="setup-step">
+              <span class="setup-num">1</span>
+              <div>
+                <b>Safariでこのページを開く</b>
+                <div class="tiny muted">
+                  βテストで配布されたURLをSafariで表示します。
+                </div>
+              </div>
+            </div>
+            <div class="setup-step">
+              <span class="setup-num">2</span>
+              <div>
+                <b>共有ボタンをタップ</b>
+                <div class="tiny muted">画面下の共有メニューを開きます。</div>
+              </div>
+            </div>
+            <div class="setup-step">
+              <span class="setup-num">3</span>
+              <div>
+                <b>「ホーム画面に追加」</b>
+                <div class="tiny muted">
+                  次回から普通のアプリのように起動できます。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>アプリ情報</h3>
+          <div class="muted">
+            Detailing Manager<br />洗車・コーティング・整備・ケミカル・希釈管理
+          </div>
+          <p class="tiny muted">
+            データはこの端末のブラウザ内に保存されます。友達が同じURLを使っても、それぞれの端末で別のデータとして保存されます。
+          </p>
+          <p class="tiny muted">
+            このβ版は動作確認中です。重要な記録の唯一の保管場所にはせず、バックアップを併用してください。
+          </p>
+        </div>
+      </section>
+    </main>
+    <nav>
+      <button data-tab="home" class="active" onclick="go('home')">
+        ⌂<br />ホーム</button
+      ><button data-tab="cars" onclick="go('cars')">CAR<br />車両</button
+      ><button data-tab="history" onclick="go('history')">LOG<br />施工</button
+      ><button data-tab="chemicals" onclick="go('chemicals')">
+        CHEM<br />ケミカル</button
+      ><button data-tab="dilution" onclick="go('dilution')">
+        CALC<br />希釈</button
+      ><button data-tab="maintenance" onclick="go('maintenance')">
+        TOOL<br />整備</button
+      ><button data-tab="settings" onclick="go('settings')">
+        ⚙<br />設定
+      </button>
+    </nav>
+    <div id="setupOverlay" class="setup-overlay hidden">
+      <div class="setup-box">
+        <span class="version-badge">Detailing Manager v3.2 β1</span>
+        <h2>無料βテストへようこそ</h2>
+        <p class="muted">
+          愛車の洗車・コーティング・ケミカル在庫を、このiPhoneでまとめて管理できます。
+        </p>
+        <div class="beta-banner">
+          <b>テスト中のバージョンです</b>
+          <span>大切な記録は、設定からバックアップしてください。</span>
+        </div>
+        <div class="setup-steps">
+          <div class="setup-step">
+            <span class="setup-num">1</span>
+            <div>
+              <b>車両を登録</b>
+              <div class="tiny muted">愛車の写真・コーティング情報を保存</div>
+            </div>
+          </div>
+          <div class="setup-step">
+            <span class="setup-num">2</span>
+            <div>
+              <b>施工を記録</b>
+              <div class="tiny muted">工程・使用ケミカル・使用量まで記録</div>
+            </div>
+          </div>
+          <div class="setup-step">
+            <span class="setup-num">3</span>
+            <div>
+              <b>在庫を自動管理</b>
+              <div class="tiny muted">使用量に応じてケミカル残量を更新</div>
+            </div>
+          </div>
+        </div>
+        <button class="primary" style="width: 100%" onclick="finishSetup()">
+          車両登録からはじめる</button
+        ><button
+          class="secondary"
+          style="width: 100%; margin-top: 10px"
+          onclick="localStorage.setItem('dmSetupDone','1');document.getElementById('setupOverlay').classList.add('hidden')"
+        >
+          あとで設定する
+        </button>
+      </div>
+    </div>
+    <script>
+      const DM_VERSION = "3.2-beta.1";
+      const pad2 = (n) => String(n).padStart(2, "0");
+      const today = () => {
+        const d = new Date();
+        return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
       };
-      img.onerror=()=>resolve(original);
-      img.src=original;
-    };
-    reader.onerror=()=>resolve('');
-    reader.readAsDataURL(f);
-  })
-}let pendingCarImage='';
-async function previewSelectedCarImage(){
-  const v=await readFile($('carImage'));
-  if(v){pendingCarImage=v;$('carPreview').src=v;$('carPreview').style.display='block';updatePhotoPreview()}
-}
-function updatePhotoPreview(){
-  const z=+$('photoZoom').value||100,x=+$('photoX').value||50,y=+$('photoY').value||50;
-  $('photoZoomOut').textContent=z+'%';$('photoXOut').textContent=x;$('photoYOut').textContent=y;
-  const img=$('carPreview');
-  const tx=(x-50)*0.8, ty=(y-50)*0.8;
-  img.style.objectPosition='50% 50%';
-  img.style.transform=`translate(${tx}%, ${ty}%) scale(${z/100})`;
-}
-function resetPhotoPosition(){$('photoZoom').value=100;$('photoX').value=50;$('photoY').value=50;updatePhotoPreview()}
-async function saveCar(){let p=load('car',{}),img=pendingCarImage||await readFile($('carImage'))||p.image||'';if(save('car',{name:$('carName').value,color:$('carColor').value,coating:$('carCoating').value,coatDate:$('coatDate').value,maintDays:+$('maintDays').value||90,image:img,photoZoom:+$('photoZoom').value||100,photoX:+$('photoX').value||50,photoY:+$('photoY').value||50})){pendingCarImage='';go('home')}}function chemicalOptions(selected=''){
-  const arr=load('chemicals',[]);
-  return '<option value="">ケミカルを選択</option>'+arr.map((c,i)=>`<option value="${i}" ${String(i)===String(selected)?'selected':''}>${c.name||'名称なし'}${c.stock!==undefined?`（残 ${c.stock}mL）`:''}</option>`).join('');
-}
-function addChemicalUsageRow(chemIndex='',amount=''){
-  const box=$('chemicalUsageRows'); if(!box)return;
-  const row=document.createElement('div'); row.className='usage-row';
-  row.innerHTML=`<select class="usage-chem">${chemicalOptions(chemIndex)}</select><input class="usage-amount" type="number" min="0" step="1" inputmode="decimal" placeholder="使用mL" value="${amount}"><button class="ghost danger" type="button" onclick="this.parentElement.remove()">×</button>`;
-  box.appendChild(row);
-}
-function refreshChemicalUsageOptions(){
-  document.querySelectorAll('#chemicalUsageRows .usage-chem').forEach(sel=>{const v=sel.value;sel.innerHTML=chemicalOptions(v);if([...sel.options].some(o=>o.value===v))sel.value=v;});
-}
-function resetChemicalUsageRows(){const box=$('chemicalUsageRows');if(!box)return;box.innerHTML='';addChemicalUsageRow();}
-function getChemicalUsages(){
-  const chemicals=load('chemicals',[]);
-  return [...document.querySelectorAll('#chemicalUsageRows .usage-row')].map(row=>{
-    const sel=row.querySelector('.usage-chem'), idx=Number(sel.value), amount=Number(row.querySelector('.usage-amount').value||0);
-    const c=sel.value!==''?chemicals[idx]:null;
-    return c&&amount>0?{chemIndex:idx,name:c.name||'ケミカル',amount}:null;
-  }).filter(Boolean);
-}
-function deductChemicalStock(usages){
-  const arr=load('chemicals',[]);
-  usages.forEach(u=>{if(arr[u.chemIndex])arr[u.chemIndex].stock=Math.max(0,Number(arr[u.chemIndex].stock||0)-Number(u.amount||0));});
-  return save('chemicals',arr);
-}
-function suggestChemicalsForProcesses(processes){
-  const chems=load('chemicals',[]);
-  const rules=[
-    ['プレウォッシュ',c=>c.type==='アルカリ'||/green star|GS/i.test(c.name||'')],
-    ['コンタクト洗車',c=>c.type==='中性'||/スノー|snow|シャンプー/i.test(c.name||'')],
-    ['鉄粉除去',c=>c.type==='鉄粉除去'||/iron|鉄粉/i.test(c.name||'')],
-    ['スケール除去',c=>c.type==='酸性'||/酸性|scale|スケール/i.test(c.name||'')],
-    ['脱脂',c=>c.type==='脱脂'||/prep|プレップ/i.test(c.name||'')],
-    ['コーティング',c=>c.type==='コーティング'],
-    ['QD/仕上げ',c=>c.type==='QD'||/slick|QD|仕上げ/i.test(c.name||'')]
-  ];
-  const picks=[];
-  processes.forEach(proc=>{const r=rules.find(x=>x[0]===proc);if(!r)return;const i=chems.findIndex(r[1]);if(i>=0&&!picks.includes(i))picks.push(i);});
-  const box=$('chemicalUsageRows');if(!box)return;box.innerHTML='';
-  if(picks.length)picks.forEach(i=>addChemicalUsageRow(i,'')); else addChemicalUsageRow();
-}
-const PROCESS_TEMPLATES={
-standard:['プレウォッシュ','コンタクト洗車','QD/仕上げ'],
-reset:['プレウォッシュ','コンタクト洗車','鉄粉除去','スケール除去','脱脂','QD/仕上げ'],
-coating:['プレウォッシュ','コンタクト洗車','鉄粉除去','スケール除去','脱脂','研磨','コーティング']
-};
-function applyProcessTemplate(name){
-  const list=PROCESS_TEMPLATES[name]||[];
-  document.querySelectorAll('input[name="histProcess"]').forEach(x=>x.checked=list.includes(x.value));
-  const typeMap={standard:'洗車',reset:'下地処理',coating:'コーティング'};
-  if(typeMap[name]) $('histType').value=typeMap[name];
-  suggestChemicalsForProcesses(list);
-}
-function clearProcessTemplate(){
-  document.querySelectorAll('input[name="histProcess"]').forEach(x=>x.checked=false);
-  resetChemicalUsageRows();
-}
-function saveCurrentAsTemplate(){
-  const processes=[...document.querySelectorAll('input[name="histProcess"]:checked')].map(x=>x.value);
-  if(!processes.length){alert('保存する工程を選んでください。');return}
-  const name=prompt('テンプレート名を入力してください。','マイ洗車');
-  if(!name)return;
-  const arr=load('processTemplates',[]);
-  arr.push({name,processes,type:$('histType').value});
-  if(save('processTemplates',arr))render();
-}
-function applyCustomTemplate(i){
-  const arr=load('processTemplates',[]),t=arr[i];
-  if(!t)return;
-  document.querySelectorAll('input[name="histProcess"]').forEach(x=>x.checked=t.processes.includes(x.value));
-  if(t.type)$('histType').value=t.type;
-  suggestChemicalsForProcesses(t.processes||[]);
-}
-function deleteCustomTemplate(i){
-  const arr=load('processTemplates',[]);
-  arr.splice(i,1);
-  if(save('processTemplates',arr))render();
-}
-async function previewHistoryImage(inputId,previewId){let v=await readFile($(inputId)),img=$(previewId);if(v){img.src=v;img.style.display='block'}else{img.removeAttribute('src');img.style.display='none'}}async function addHistory(){let a=load('history',[]),pr=[...document.querySelectorAll('input[name="histProcess"]:checked')].map(x=>x.value),chemicalUsages=getChemicalUsages(),before=await readFile($('histBefore')),after=await readFile($('histAfter'));a.unshift({date:$('histDate').value||today(),type:$('histType').value,mileage:+$('histMileage').value||0,minutes:+$('histMinutes').value||0,processes:pr,chems:chemicalUsages.map(u=>u.name),chemicalUsages,memo:$('histMemo').value,before,after,image:after||before||''});if(save('history',a)){deductChemicalStock(chemicalUsages);$('histMileage').value='';$('histMinutes').value='';$('histMemo').value='';$('histBefore').value='';$('histAfter').value='';$('beforePreview').style.display='none';$('afterPreview').style.display='none';document.querySelectorAll('input[name="histProcess"]').forEach(x=>x.checked=false);resetChemicalUsageRows();render()}}const CHEMICAL_PRESETS=[
-{name:'Koch-Chemie Green Star',type:'アルカリ',ratio:10,capacity:0,stock:0},
-{name:'ながら洗車 スノーシャンプー',type:'中性',ratio:0,capacity:0,stock:0},
-{name:'ながら洗車 BASE',type:'その他',ratio:0,capacity:0,stock:0},
-{name:'ながら洗車 鉄粉除去剤',type:'鉄粉除去',ratio:0,capacity:0,stock:0},
-{name:'Detail Artist 酸性クリーナー',type:'酸性',ratio:0,capacity:0,stock:0},
-{name:'Detail Artist CLEAR',type:'その他',ratio:0,capacity:0,stock:0},
-{name:'OVERcoat Iron Remover',type:'鉄粉除去',ratio:0,capacity:0,stock:0},
-{name:'OVERcoat PREP',type:'脱脂',ratio:0,capacity:0,stock:0},
-{name:'OVERcoat UV',type:'コーティング',ratio:0,capacity:0,stock:0},
-{name:'LUMINUS PREP',type:'脱脂',ratio:0,capacity:0,stock:0},
-{name:'LUMINUS BLACK DIAMOND',type:'コーティング',ratio:0,capacity:0,stock:0},
-{name:'LUMINUS BLACK SLICK',type:'QD',ratio:0,capacity:0,stock:0},
-{name:'BONIX NATIVE',type:'コーティング',ratio:0,capacity:0,stock:0},
-{name:'BONIX BLEND',type:'コーティング',ratio:0,capacity:0,stock:0}
-];
-function addChemicalPresets(silent=false){
- let a=load('chemicals',[]),names=new Set(a.map(x=>(x.name||'').trim().toLowerCase())),added=0;
- CHEMICAL_PRESETS.forEach(x=>{if(!names.has(x.name.toLowerCase())){a.push({...x,image:'',preset:true});names.add(x.name.toLowerCase());added++}});
- if(save('chemicals',a)){render();if(!silent)alert(added?`${added}件のプリセットを追加しました。`:'プリセットはすべて登録済みです。')}
-}
-async function addChemical(){let a=load('chemicals',[]),img=await readFile($('chemImage')),cap=+$('chemCapacity').value||0,stock=+$('chemStock').value||0;if(cap>0&&stock===0)stock=cap;a.unshift({name:$('chemName').value,type:$('chemType').value,ratio:+$('chemRatio').value||0,capacity:cap,stock,image:img});if(save('chemicals',a)){['chemName','chemRatio','chemCapacity','chemStock','chemImage'].forEach(id=>$(id).value='');render()}}function saveFavorite(){let f=load('favorites',[]);f.unshift({chem:$('dilutionChemical').value||'未選択',mode:$('mode').value,ratio:+$('ratio').value,total:+$('total').value});save('favorites',f.slice(0,8));render()}function useFavorite(i){let f=load('favorites',[])[i];if(!f)return;$('mode').value=f.mode;$('ratio').value=f.ratio;$('total').value=f.total;[...$('dilutionChemical').options].forEach((o,j)=>{if(o.value===f.chem)$('dilutionChemical').selectedIndex=j});calc()}function deleteFavorite(i){let f=load('favorites',[]);f.splice(i,1);save('favorites',f);render()}async function previewMaintenanceImage(){const v=await readFile($('maintRecordImage')),img=$('maintRecordPreview');if(v){img.src=v;img.style.display='block'}else{img.removeAttribute('src');img.style.display='none'}}async function addMaintenanceRecord(){const records=load('maintenanceRecords',[]),image=await readFile($('maintRecordImage')),content=$('maintRecordContent').value.trim();if(!content){alert('整備内容を入力してください。');return}records.unshift({date:$('maintRecordDate').value||today(),mileage:+$('maintRecordMileage').value||0,content,image});if(save('maintenanceRecords',records)){$('maintRecordDate').value=today();$('maintRecordMileage').value='';$('maintRecordContent').value='';$('maintRecordImage').value='';$('maintRecordPreview').style.display='none';render()}}function delMaintenanceRecord(i){const records=load('maintenanceRecords',[]);records.splice(i,1);if(save('maintenanceRecords',records))render()}function delHistory(i){let a=load('history',[]);a.splice(i,1);save('history',a);render()}function openChemicalEditor(i){let a=load('chemicals',[]),c=a[i];if(!c)return;$('editChemIndex').value=i;$('editChemName').value=c.name||'';$('editChemType').value=c.type||'その他';$('editChemRatio').value=c.ratio||'';$('editChemCapacity').value=c.capacity||'';$('editChemStock').value=c.stock||'';$('chemicalEditor').style.display='block';$('chemicalEditor').scrollIntoView({behavior:'smooth',block:'start'})}function closeChemicalEditor(){$('chemicalEditor').style.display='none'}function setEditStockPercent(p){let cap=+$('editChemCapacity').value||0;if(cap<=0){alert('先に容量を入力してください。');return}$('editChemStock').value=Math.round(cap*p/100)}function saveChemicalEdit(){let i=+$('editChemIndex').value,a=load('chemicals',[]);if(!a[i])return;a[i]={...a[i],name:$('editChemName').value,type:$('editChemType').value,ratio:+$('editChemRatio').value||0,capacity:+$('editChemCapacity').value||0,stock:+$('editChemStock').value||0};if(save('chemicals',a)){closeChemicalEditor();render()}}function delChem(i){let a=load('chemicals',[]);a.splice(i,1);save('chemicals',a);render()}function daysSince(d){if(!d)return'—';let x=Math.floor((Date.now()-new Date(d+'T00:00:00'))/86400000);return x<0?`${-x}日後`:x===0?'今日':`${x}日前`}function nextMaintText(c){if(!c.coatDate||!c.maintDays)return'—';let d=new Date(c.coatDate+'T00:00:00');d.setDate(d.getDate()+c.maintDays);let x=Math.ceil((d-Date.now())/86400000);return x>=0?`${x}日後`:`${-x}日超過`}function applyChemicalPreset(){let c=load('chemicals',[]).find(x=>x.name===$('dilutionChemical').value);if(c&&c.ratio){$('mode').value='x';$('ratio').value=c.ratio;calc()}}
-function render(){let car=load('car',{}),h=load('history',[]),c=load('chemicals',[]),f=load('favorites',[]),mr=load('maintenanceRecords',[]);$('homeCar').textContent=car.name||'車両未登録';$('homeCoating').textContent=car.coating?`${car.coating}${car.color?' ・ '+car.color:''}`:'コーティング情報なし';let z=car.photoZoom||100,px=car.photoX??50,py=car.photoY??50;if(car.image){$('homeCarImage').src=car.image;$('homeCarImage').style.display='block';$('homeCarImage').style.objectPosition='50% 50%';let tx=(px-50)*0.8,ty=(py-50)*0.8;$('homeCarImage').style.transform=`translate(${tx}%, ${ty}%) scale(${z/100})`}else $('homeCarImage').style.display='none';$('carName').value=car.name||'';$('carColor').value=car.color||'';$('carCoating').value=car.coating||'';$('coatDate').value=car.coatDate||'';$('maintDays').value=car.maintDays||90;$('photoZoom').value=z;$('photoX').value=px;$('photoY').value=py;if(car.image){$('carPreview').src=car.image;$('carPreview').style.display='block'}else $('carPreview').style.display='none';updatePhotoPreview();let wash=h.find(x=>x.type==='洗車');$('lastWash').textContent=wash?daysSince(wash.date):'—';$('lastCoat').textContent=car.coatDate?daysSince(car.coatDate):'—';$('nextMaint').textContent=nextMaintText(car);$('recentHistory').innerHTML=h.length?h.slice(0,3).map(x=>`<div class="list-item row">${x.image?`<img class="thumb" src="${x.image}">`:''}<div style="flex:1"><div class="row between"><b>${x.type}</b><span class="muted tiny">${x.date}</span></div><div>${(x.chems||[]).map(q=>`<span class="tag">${q}</span>`).join('')}</div>${x.chemicalUsages&&x.chemicalUsages.length?`<div class="usage-history muted tiny">使用量：${x.chemicalUsages.map(u=>`${u.name} ${u.amount}mL`).join(' / ')}</div>`:''}<div class="muted tiny">${x.processes&&x.processes.length?'工程：'+x.processes.join(' / '):''}</div><div class="muted tiny">${x.mileage?x.mileage.toLocaleString()+' km':''}${x.minutes?' ・ '+x.minutes+'分':''}</div><div class="muted tiny">${x.memo||''}</div></div></div>`).join(''):'まだ記録がありません。';const pt=load('processTemplates',[]);
-$('customTemplates').innerHTML=pt.length?pt.map((t,i)=>`<div class="template-card">
-<div class="row between"><b>${t.name}</b><button class="ghost danger tiny" onclick="deleteCustomTemplate(${i})">削除</button></div>
-<div class="muted tiny" style="margin-top:6px">${t.processes.join(' / ')}</div>
-<button class="secondary tiny" style="margin-top:8px" onclick="applyCustomTemplate(${i})">この工程を使う</button>
-</div>`).join(''):'まだありません。';
-$('historyList').innerHTML=h.length?h.map((x,i)=>`<div class="list-item row">${x.image?`<img class="thumb" src="${x.image}">`:''}<div style="flex:1"><div class="row between"><b>${x.type}</b><span class="muted tiny">${x.date}</span></div><div>${(x.chems||[]).map(q=>`<span class="tag">${q}</span>`).join('')}</div>${x.chemicalUsages&&x.chemicalUsages.length?`<div class="usage-history muted tiny">使用量：${x.chemicalUsages.map(u=>`${u.name} ${u.amount}mL`).join(' / ')}</div>`:''}<div class="muted tiny">${x.processes&&x.processes.length?'工程：'+x.processes.join(' / '):''}</div><div class="muted tiny">${x.mileage?x.mileage.toLocaleString()+' km':''}${x.minutes?' ・ '+x.minutes+'分':''}</div><div class="muted tiny">${x.memo||''}</div>${(x.before||x.after)?`<div class="ba-grid" style="margin-top:8px">${x.before?`<div><div class="muted tiny">Before</div><img class="thumb" style="width:100%;height:110px" src="${x.before}"></div>`:''}${x.after?`<div><div class="muted tiny">After</div><img class="thumb" style="width:100%;height:110px" src="${x.after}"></div>`:''}</div>`:''}<button class="ghost danger tiny" onclick="delHistory(${i})">削除</button></div></div>`).join(''):'<span class="muted">まだありません。</span>';$('maintenanceCount').textContent=mr.length?`${mr.length}件`:'';$('maintenanceList').innerHTML=mr.length?mr.map((x,i)=>`<div class="list-item row">${x.image?`<img class="thumb" src="${x.image}">`:''}<div style="flex:1"><div class="row between"><b>${x.content||'整備記録'}</b><span class="muted tiny">${x.date||''}</span></div><div class="muted tiny" style="margin-top:6px">${x.mileage?x.mileage.toLocaleString()+' km':'走行距離 未入力'}</div><button class="ghost danger tiny" onclick="delMaintenanceRecord(${i})">削除</button></div></div>`).join(''):'<span class="muted">まだ整備記録がありません。</span>';$('chemicalList').innerHTML=c.length?c.map((x,i)=>{let cap=+x.capacity||0,stock=+x.stock||0,pct=cap>0?Math.max(0,Math.min(100,Math.round(stock/cap*100))):0;return `<div class="list-item row">${x.image?`<img class="mini-img" src="${x.image}">`:''}<div style="flex:1"><div class="row between"><b>${x.name||'名称なし'}</b><span class="tag">${x.type}</span></div><div class="muted tiny">推奨 ${x.ratio?x.ratio+'倍':'—'} / ${cap?`残量 ${stock}/${cap}mL (${pct}%)`:`残量 ${stock||0}mL`}</div><div class="progress"><i style="width:${pct}%"></i></div><div class="stock-actions"><button class="secondary tiny" onclick="openChemicalEditor(${i})">編集</button><button class="ghost danger tiny" onclick="delChem(${i})">削除</button></div></div></div>`}).join(''):'<span class="muted">まだありません。</span>';refreshChemicalUsageOptions();let sel=$('dilutionChemical'),cur=sel.value;sel.innerHTML='<option value="">未選択</option>'+c.map(x=>`<option value="${x.name}">${x.name}${x.ratio?'（'+x.ratio+'倍）':''}</option>`).join('');if([...sel.options].some(o=>o.value===cur))sel.value=cur;$('favorites').innerHTML=f.length?f.map((x,i)=>`<button class="fav-chip" onclick="useFavorite(${i})"><b>${x.chem}</b><span class="tiny muted">${x.mode==='x'?x.ratio+'倍':'1:'+x.ratio} / ${x.total}mL</span><span class="tiny danger" onclick="event.stopPropagation();deleteFavorite(${i})">削除</span></button>`).join(''):'<span class="muted">まだありません。</span>';calc()}
-const DM_DATA_KEYS=['car','history','chemicals','favorites','processTemplates','customTemplates','maintenanceRecords'];
-function exportBackup(){
- const data={app:'Detailing Manager',version:DM_VERSION,exportedAt:new Date().toISOString(),data:{}};
- DM_DATA_KEYS.forEach(k=>data.data[k]=load(k,k==='car'?{}:[]));
- const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');
- a.href=URL.createObjectURL(blob);a.download=`DetailingManager_backup_${today()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-}
-async function importBackup(input){
- const f=input.files&&input.files[0];if(!f)return;
- try{const obj=JSON.parse(await f.text());if(!obj||obj.app!=='Detailing Manager'||!obj.data)throw new Error();
-  if(!confirm('現在のデータをバックアップ内容で置き換えます。よろしいですか？')){input.value='';return;}
-  DM_DATA_KEYS.forEach(k=>{if(Object.prototype.hasOwnProperty.call(obj.data,k))localStorage.setItem(k,JSON.stringify(obj.data[k]))});
-  localStorage.setItem('dmSetupDone','1');alert('復元しました。');location.reload();
- }catch(e){alert('Detailing Managerのバックアップファイルを読み込めませんでした。');input.value='';}
-}
-function resetAllData(){if(!confirm('車両・施工履歴・ケミカルなど、すべてのデータを削除します。\nこの操作は元に戻せません。'))return;if(!confirm('本当に初期化しますか？'))return;DM_DATA_KEYS.forEach(k=>localStorage.removeItem(k));localStorage.removeItem('dmSetupDone');location.reload();}
-function finishSetup(){localStorage.setItem('dmSetupDone','1');document.getElementById('setupOverlay')?.classList.add('hidden');go('cars');}
+      const numberOr = (value, fallback) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+      };
+      const escapeHTML = (value) =>
+        String(value ?? "").replace(
+          /[&<>"']/g,
+          (char) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[char],
+        );
+      const safeImage = (value) =>
+        /^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(value || "")
+          ? value
+          : "";
+      const $ = (id) => document.getElementById(id),
+        load = (k, d) => {
+          try {
+            return JSON.parse(localStorage.getItem(k) || JSON.stringify(d));
+          } catch {
+            return d;
+          }
+        },
+        save = (k, v) => {
+          try {
+            localStorage.setItem(k, JSON.stringify(v));
+            return true;
+          } catch (e) {
+            alert(
+              "保存容量がいっぱいです。写真を減らすか、古い記録を削除してください。",
+            );
+            return false;
+          }
+        };
+      $("histDate").value = today();
+      $("maintRecordDate").value = today();
+      function go(id) {
+        document
+          .querySelectorAll(".tab")
+          .forEach((x) => x.classList.remove("active"));
+        $(id).classList.add("active");
+        document
+          .querySelectorAll("nav button")
+          .forEach((x) => x.classList.toggle("active", x.dataset.tab === id));
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      function round(n) {
+        return Math.round(n * 10) / 10;
+      }
+      function calc() {
+        let m = $("mode").value,
+          r = Math.max(1, +$("ratio").value || 1),
+          t = Math.max(0, +$("total").value || 0),
+          c,
+          w;
+        if (m === "x") {
+          c = t / r;
+          w = t - c;
+          $("formulaHint").textContent =
+            `${r}倍希釈 = 原液1 : 水${round(r - 1)}`;
+        } else {
+          c = t / (1 + r);
+          w = t - c;
+          $("formulaHint").textContent = `原液1 : 水${r}`;
+        }
+        $("chem").textContent = round(c);
+        $("water").textContent = round(w);
+      }
+      function setRatio(v) {
+        $("ratio").value = v;
+        calc();
+      }
+      function setTotal(v) {
+        $("total").value = v;
+        calc();
+      }
+      function resetDilution() {
+        $("mode").value = "x";
+        $("ratio").value = 10;
+        $("total").value = 1000;
+        $("dilutionChemical").selectedIndex = 0;
+        calc();
+      }
+      function readFile(input) {
+        return new Promise((resolve) => {
+          const f = input.files && input.files[0];
+          if (!f) return resolve("");
+          const reader = new FileReader();
+          reader.onload = () => {
+            const original = reader.result;
+            const img = new Image();
+            img.onload = () => {
+              try {
+                const MAX = 1200;
+                let w = img.naturalWidth || img.width,
+                  h = img.naturalHeight || img.height;
+                const scale = Math.min(1, MAX / Math.max(w, h));
+                w = Math.max(1, Math.round(w * scale));
+                h = Math.max(1, Math.round(h * scale));
 
-if(load('chemicals',[]).length===0){save('chemicals',CHEMICAL_PRESETS.map(x=>({...x,image:'',preset:true})));}
-if(!localStorage.getItem('dmSetupDone')&&!localStorage.getItem('car'))$('setupOverlay').classList.remove('hidden');render();if($('chemicalUsageRows')&&!$('chemicalUsageRows').children.length)addChemicalUsageRow();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
-</script></body></html>
+                const canvas = document.createElement("canvas");
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext("2d");
+
+                // iPhone/Safari は createImageBitmap の imageOrientation を使うと
+                // EXIF回転を適用した状態で描画できる。未対応時は通常描画へフォールバック。
+                if ("createImageBitmap" in window) {
+                  createImageBitmap(f, { imageOrientation: "from-image" })
+                    .then((bitmap) => {
+                      canvas.width = Math.max(
+                        1,
+                        Math.round(bitmap.width * scale),
+                      );
+                      canvas.height = Math.max(
+                        1,
+                        Math.round(bitmap.height * scale),
+                      );
+                      ctx.clearRect(0, 0, canvas.width, canvas.height);
+                      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+                      if (bitmap.close) bitmap.close();
+                      resolve(canvas.toDataURL("image/jpeg", 0.72));
+                    })
+                    .catch(() => {
+                      ctx.drawImage(img, 0, 0, w, h);
+                      resolve(canvas.toDataURL("image/jpeg", 0.72));
+                    });
+                } else {
+                  ctx.drawImage(img, 0, 0, w, h);
+                  resolve(canvas.toDataURL("image/jpeg", 0.72));
+                }
+              } catch (e) {
+                resolve(original);
+              }
+            };
+            img.onerror = () => resolve(original);
+            img.src = original;
+          };
+          reader.onerror = () => resolve("");
+          reader.readAsDataURL(f);
+        });
+      }
+      let pendingCarImage = "";
+      async function previewSelectedCarImage() {
+        const v = await readFile($("carImage"));
+        if (v) {
+          pendingCarImage = v;
+          $("carPreview").src = v;
+          $("carPreview").style.display = "block";
+          updatePhotoPreview();
+        }
+      }
+      function updatePhotoPreview() {
+        const z = numberOr($("photoZoom").value, 100),
+          x = numberOr($("photoX").value, 50),
+          y = numberOr($("photoY").value, 50);
+        $("photoZoomOut").textContent = z + "%";
+        $("photoXOut").textContent = x;
+        $("photoYOut").textContent = y;
+        const img = $("carPreview");
+        const tx = (x - 50) * 0.8,
+          ty = (y - 50) * 0.8;
+        img.style.objectPosition = "50% 50%";
+        img.style.transform = `translate(${tx}%, ${ty}%) scale(${z / 100})`;
+      }
+      function resetPhotoPosition() {
+        $("photoZoom").value = 100;
+        $("photoX").value = 50;
+        $("photoY").value = 50;
+        updatePhotoPreview();
+      }
+      async function saveCar() {
+        const name = $("carName").value.trim();
+        if (!name) {
+          alert("車名を入力してください。");
+          return;
+        }
+        let p = load("car", {}),
+          img =
+            pendingCarImage || (await readFile($("carImage"))) || p.image || "";
+        if (
+          save("car", {
+            name,
+            color: $("carColor").value.trim(),
+            coating: $("carCoating").value.trim(),
+            coatDate: $("coatDate").value,
+            maintDays: +$("maintDays").value || 90,
+            image: img,
+            photoZoom: numberOr($("photoZoom").value, 100),
+            photoX: numberOr($("photoX").value, 50),
+            photoY: numberOr($("photoY").value, 50),
+          })
+        ) {
+          pendingCarImage = "";
+          go("home");
+        }
+      }
+      function chemicalOptions(selected = "") {
+        const arr = load("chemicals", []);
+        return (
+          '<option value="">ケミカルを選択</option>' +
+          arr
+            .map(
+              (c, i) =>
+                `<option value="${i}" ${String(i) === String(selected) ? "selected" : ""}>${escapeHTML(c.name || "名称なし")}${c.stock !== undefined ? `（残 ${numberOr(c.stock, 0)}mL）` : ""}</option>`,
+            )
+            .join("")
+        );
+      }
+      function addChemicalUsageRow(chemIndex = "", amount = "") {
+        const box = $("chemicalUsageRows");
+        if (!box) return;
+        const row = document.createElement("div");
+        row.className = "usage-row";
+        row.innerHTML = `<select class="usage-chem">${chemicalOptions(chemIndex)}</select><input class="usage-amount" type="number" min="0" step="1" inputmode="decimal" placeholder="使用mL" value="${amount}"><button class="ghost danger" type="button" onclick="this.parentElement.remove()">×</button>`;
+        box.appendChild(row);
+      }
+      function refreshChemicalUsageOptions() {
+        document
+          .querySelectorAll("#chemicalUsageRows .usage-chem")
+          .forEach((sel) => {
+            const v = sel.value;
+            sel.innerHTML = chemicalOptions(v);
+            if ([...sel.options].some((o) => o.value === v)) sel.value = v;
+          });
+      }
+      function resetChemicalUsageRows() {
+        const box = $("chemicalUsageRows");
+        if (!box) return;
+        box.innerHTML = "";
+        addChemicalUsageRow();
+      }
+      function getChemicalUsages() {
+        const chemicals = load("chemicals", []);
+        return [...document.querySelectorAll("#chemicalUsageRows .usage-row")]
+          .map((row) => {
+            const sel = row.querySelector(".usage-chem"),
+              idx = Number(sel.value),
+              amount = Number(row.querySelector(".usage-amount").value || 0);
+            const c = sel.value !== "" ? chemicals[idx] : null;
+            return c && amount > 0
+              ? { chemIndex: idx, name: c.name || "ケミカル", amount }
+              : null;
+          })
+          .filter(Boolean);
+      }
+      function deductChemicalStock(usages) {
+        const arr = load("chemicals", []);
+        usages.forEach((u) => {
+          if (arr[u.chemIndex])
+            arr[u.chemIndex].stock = Math.max(
+              0,
+              Number(arr[u.chemIndex].stock || 0) - Number(u.amount || 0),
+            );
+        });
+        return save("chemicals", arr);
+      }
+      function suggestChemicalsForProcesses(processes) {
+        const chems = load("chemicals", []);
+        const rules = [
+          [
+            "プレウォッシュ",
+            (c) => c.type === "アルカリ" || /green star|GS/i.test(c.name || ""),
+          ],
+          [
+            "コンタクト洗車",
+            (c) =>
+              c.type === "中性" || /スノー|snow|シャンプー/i.test(c.name || ""),
+          ],
+          [
+            "鉄粉除去",
+            (c) => c.type === "鉄粉除去" || /iron|鉄粉/i.test(c.name || ""),
+          ],
+          [
+            "スケール除去",
+            (c) =>
+              c.type === "酸性" || /酸性|scale|スケール/i.test(c.name || ""),
+          ],
+          [
+            "脱脂",
+            (c) => c.type === "脱脂" || /prep|プレップ/i.test(c.name || ""),
+          ],
+          ["コーティング", (c) => c.type === "コーティング"],
+          [
+            "QD/仕上げ",
+            (c) => c.type === "QD" || /slick|QD|仕上げ/i.test(c.name || ""),
+          ],
+        ];
+        const picks = [];
+        processes.forEach((proc) => {
+          const r = rules.find((x) => x[0] === proc);
+          if (!r) return;
+          const i = chems.findIndex(r[1]);
+          if (i >= 0 && !picks.includes(i)) picks.push(i);
+        });
+        const box = $("chemicalUsageRows");
+        if (!box) return;
+        box.innerHTML = "";
+        if (picks.length) picks.forEach((i) => addChemicalUsageRow(i, ""));
+        else addChemicalUsageRow();
+      }
+      const PROCESS_TEMPLATES = {
+        standard: ["プレウォッシュ", "コンタクト洗車", "QD/仕上げ"],
+        reset: [
+          "プレウォッシュ",
+          "コンタクト洗車",
+          "鉄粉除去",
+          "スケール除去",
+          "脱脂",
+          "QD/仕上げ",
+        ],
+        coating: [
+          "プレウォッシュ",
+          "コンタクト洗車",
+          "鉄粉除去",
+          "スケール除去",
+          "脱脂",
+          "研磨",
+          "コーティング",
+        ],
+      };
+      function applyProcessTemplate(name) {
+        const list = PROCESS_TEMPLATES[name] || [];
+        document
+          .querySelectorAll('input[name="histProcess"]')
+          .forEach((x) => (x.checked = list.includes(x.value)));
+        const typeMap = {
+          standard: "洗車",
+          reset: "下地処理",
+          coating: "コーティング",
+        };
+        if (typeMap[name]) $("histType").value = typeMap[name];
+        suggestChemicalsForProcesses(list);
+      }
+      function clearProcessTemplate() {
+        document
+          .querySelectorAll('input[name="histProcess"]')
+          .forEach((x) => (x.checked = false));
+        resetChemicalUsageRows();
+      }
+      function saveCurrentAsTemplate() {
+        const processes = [
+          ...document.querySelectorAll('input[name="histProcess"]:checked'),
+        ].map((x) => x.value);
+        if (!processes.length) {
+          alert("保存する工程を選んでください。");
+          return;
+        }
+        const name = prompt("テンプレート名を入力してください。", "マイ洗車");
+        if (!name) return;
+        const arr = load("processTemplates", []);
+        arr.push({ name, processes, type: $("histType").value });
+        if (save("processTemplates", arr)) render();
+      }
+      function applyCustomTemplate(i) {
+        const arr = load("processTemplates", []),
+          t = arr[i];
+        if (!t) return;
+        document
+          .querySelectorAll('input[name="histProcess"]')
+          .forEach((x) => (x.checked = t.processes.includes(x.value)));
+        if (t.type) $("histType").value = t.type;
+        suggestChemicalsForProcesses(t.processes || []);
+      }
+      function deleteCustomTemplate(i) {
+        if (!confirm("このテンプレートを削除しますか？")) return;
+        const arr = load("processTemplates", []);
+        arr.splice(i, 1);
+        if (save("processTemplates", arr)) render();
+      }
+      async function previewHistoryImage(inputId, previewId) {
+        let v = await readFile($(inputId)),
+          img = $(previewId);
+        if (v) {
+          img.src = v;
+          img.style.display = "block";
+        } else {
+          img.removeAttribute("src");
+          img.style.display = "none";
+        }
+      }
+      async function addHistory() {
+        let a = load("history", []),
+          pr = [
+            ...document.querySelectorAll('input[name="histProcess"]:checked'),
+          ].map((x) => x.value),
+          chemicalUsages = getChemicalUsages(),
+          before = await readFile($("histBefore")),
+          after = await readFile($("histAfter"));
+        a.unshift({
+          date: $("histDate").value || today(),
+          type: $("histType").value,
+          mileage: +$("histMileage").value || 0,
+          minutes: +$("histMinutes").value || 0,
+          processes: pr,
+          chems: chemicalUsages.map((u) => u.name),
+          chemicalUsages,
+          memo: $("histMemo").value,
+          before,
+          after,
+          image: after || before || "",
+        });
+        if (save("history", a)) {
+          deductChemicalStock(chemicalUsages);
+          $("histMileage").value = "";
+          $("histMinutes").value = "";
+          $("histMemo").value = "";
+          $("histBefore").value = "";
+          $("histAfter").value = "";
+          $("beforePreview").style.display = "none";
+          $("afterPreview").style.display = "none";
+          document
+            .querySelectorAll('input[name="histProcess"]')
+            .forEach((x) => (x.checked = false));
+          resetChemicalUsageRows();
+          render();
+        }
+      }
+      const CHEMICAL_PRESETS = [
+        {
+          name: "Koch-Chemie Green Star",
+          type: "アルカリ",
+          ratio: 10,
+          capacity: 0,
+          stock: 0,
+        },
+        {
+          name: "ながら洗車 スノーシャンプー",
+          type: "中性",
+          ratio: 0,
+          capacity: 0,
+          stock: 0,
+        },
+        {
+          name: "ながら洗車 BASE",
+          type: "その他",
+          ratio: 0,
+          capacity: 0,
+          stock: 0,
+        },
+        {
+          name: "ながら洗車 鉄粉除去剤",
+          type: "鉄粉除去",
+          ratio: 0,
+          capacity: 0,
+          stock: 0,
+        },
+        {
+          name: "Detail Artist 酸性クリーナー",
+          type: "酸性",
+          ratio: 0,
+          capacity: 0,
+          stock: 0,
+        },
+        {
+          name: "Detail Artist CLEAR",
+          type: "その他",
+          ratio: 0,
+          capacity: 0,
+          stock: 0,
+        },
+        {
+          name: "OVERcoat Iron Remover",
+          type: "鉄粉除去",
+          ratio: 0,
+          capacity: 0,
+          stock: 0,
+        },
+        {
+          name: "OVERcoat PREP",
+          type: "脱脂",
+          ratio: 0,
+          capacity: 0,
+          stock: 0,
+        },
+        {
+          name: "OVERcoat UV",
+          type: "コーティング",
+          ratio: 0,
+          capacity: 0,
+          stock: 0,
+        },
+        { name: "LUMINUS PREP", type: "脱脂", ratio: 0, capacity: 0, stock: 0 },
+        {
+          name: "LUMINUS BLACK DIAMOND",
+          type: "コーティング",
+          ratio: 0,
+          capacity: 0,
+          stock: 0,
+        },
+        {
+          name: "LUMINUS BLACK SLICK",
+          type: "QD",
+          ratio: 0,
+          capacity: 0,
+          stock: 0,
+        },
+        {
+          name: "BONIX NATIVE",
+          type: "コーティング",
+          ratio: 0,
+          capacity: 0,
+          stock: 0,
+        },
+        {
+          name: "BONIX BLEND",
+          type: "コーティング",
+          ratio: 0,
+          capacity: 0,
+          stock: 0,
+        },
+      ];
+      function addChemicalPresets(silent = false) {
+        let a = load("chemicals", []),
+          names = new Set(a.map((x) => (x.name || "").trim().toLowerCase())),
+          added = 0;
+        CHEMICAL_PRESETS.forEach((x) => {
+          if (!names.has(x.name.toLowerCase())) {
+            a.push({ ...x, image: "", preset: true });
+            names.add(x.name.toLowerCase());
+            added++;
+          }
+        });
+        if (save("chemicals", a)) {
+          render();
+          if (!silent)
+            alert(
+              added
+                ? `${added}件のプリセットを追加しました。`
+                : "プリセットはすべて登録済みです。",
+            );
+        }
+      }
+      async function addChemical() {
+        const name = $("chemName").value.trim();
+        if (!name) {
+          alert("商品名を入力してください。");
+          return;
+        }
+        let a = load("chemicals", []),
+          img = await readFile($("chemImage")),
+          cap = +$("chemCapacity").value || 0,
+          stock = +$("chemStock").value || 0;
+        if (cap > 0 && stock === 0) stock = cap;
+        a.unshift({
+          name,
+          type: $("chemType").value,
+          ratio: +$("chemRatio").value || 0,
+          capacity: cap,
+          stock,
+          image: img,
+        });
+        if (save("chemicals", a)) {
+          [
+            "chemName",
+            "chemRatio",
+            "chemCapacity",
+            "chemStock",
+            "chemImage",
+          ].forEach((id) => ($(id).value = ""));
+          render();
+        }
+      }
+      function saveFavorite() {
+        let f = load("favorites", []);
+        f.unshift({
+          chem: $("dilutionChemical").value || "未選択",
+          mode: $("mode").value,
+          ratio: +$("ratio").value,
+          total: +$("total").value,
+        });
+        save("favorites", f.slice(0, 8));
+        render();
+      }
+      function useFavorite(i) {
+        let f = load("favorites", [])[i];
+        if (!f) return;
+        $("mode").value = f.mode;
+        $("ratio").value = f.ratio;
+        $("total").value = f.total;
+        [...$("dilutionChemical").options].forEach((o, j) => {
+          if (o.value === f.chem) $("dilutionChemical").selectedIndex = j;
+        });
+        calc();
+      }
+      function deleteFavorite(i) {
+        if (!confirm("このお気に入りを削除しますか？")) return;
+        let f = load("favorites", []);
+        f.splice(i, 1);
+        save("favorites", f);
+        render();
+      }
+      async function previewMaintenanceImage() {
+        const v = await readFile($("maintRecordImage")),
+          img = $("maintRecordPreview");
+        if (v) {
+          img.src = v;
+          img.style.display = "block";
+        } else {
+          img.removeAttribute("src");
+          img.style.display = "none";
+        }
+      }
+      async function addMaintenanceRecord() {
+        const records = load("maintenanceRecords", []),
+          image = await readFile($("maintRecordImage")),
+          content = $("maintRecordContent").value.trim();
+        if (!content) {
+          alert("整備内容を入力してください。");
+          return;
+        }
+        records.unshift({
+          date: $("maintRecordDate").value || today(),
+          mileage: +$("maintRecordMileage").value || 0,
+          content,
+          image,
+        });
+        if (save("maintenanceRecords", records)) {
+          $("maintRecordDate").value = today();
+          $("maintRecordMileage").value = "";
+          $("maintRecordContent").value = "";
+          $("maintRecordImage").value = "";
+          $("maintRecordPreview").style.display = "none";
+          render();
+        }
+      }
+      function delMaintenanceRecord(i) {
+        if (!confirm("この整備記録を削除しますか？")) return;
+        const records = load("maintenanceRecords", []);
+        records.splice(i, 1);
+        if (save("maintenanceRecords", records)) render();
+      }
+      function delHistory(i) {
+        if (!confirm("この施工記録を削除しますか？")) return;
+        let a = load("history", []);
+        a.splice(i, 1);
+        save("history", a);
+        render();
+      }
+      function openChemicalEditor(i) {
+        let a = load("chemicals", []),
+          c = a[i];
+        if (!c) return;
+        $("editChemIndex").value = i;
+        $("editChemName").value = c.name || "";
+        $("editChemType").value = c.type || "その他";
+        $("editChemRatio").value = c.ratio || "";
+        $("editChemCapacity").value = c.capacity || "";
+        $("editChemStock").value = c.stock || "";
+        $("chemicalEditor").style.display = "block";
+        $("chemicalEditor").scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+      function closeChemicalEditor() {
+        $("chemicalEditor").style.display = "none";
+      }
+      function setEditStockPercent(p) {
+        let cap = +$("editChemCapacity").value || 0;
+        if (cap <= 0) {
+          alert("先に容量を入力してください。");
+          return;
+        }
+        $("editChemStock").value = Math.round((cap * p) / 100);
+      }
+      function saveChemicalEdit() {
+        let i = +$("editChemIndex").value,
+          a = load("chemicals", []);
+        if (!a[i]) return;
+        const name = $("editChemName").value.trim();
+        if (!name) {
+          alert("商品名を入力してください。");
+          return;
+        }
+        a[i] = {
+          ...a[i],
+          name,
+          type: $("editChemType").value,
+          ratio: +$("editChemRatio").value || 0,
+          capacity: +$("editChemCapacity").value || 0,
+          stock: +$("editChemStock").value || 0,
+        };
+        if (save("chemicals", a)) {
+          closeChemicalEditor();
+          render();
+        }
+      }
+      function delChem(i) {
+        if (!confirm("このケミカルを削除しますか？")) return;
+        let a = load("chemicals", []);
+        a.splice(i, 1);
+        save("chemicals", a);
+        render();
+      }
+      function dateSerial(dateString) {
+        const [year, month, day] = String(dateString || "")
+          .split("-")
+          .map(Number);
+        if (!year || !month || !day) return null;
+        return Math.floor(Date.UTC(year, month - 1, day) / 86400000);
+      }
+      function todaySerial() {
+        const d = new Date();
+        return Math.floor(
+          Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000,
+        );
+      }
+      function daysSince(d) {
+        const serial = dateSerial(d);
+        if (serial === null) return "—";
+        const x = todaySerial() - serial;
+        return x < 0 ? `${-x}日後` : x === 0 ? "今日" : `${x}日前`;
+      }
+      function nextMaintText(c) {
+        if (!c.coatDate || !c.maintDays) return "—";
+        const coatSerial = dateSerial(c.coatDate);
+        if (coatSerial === null) return "—";
+        const x = coatSerial + Number(c.maintDays) - todaySerial();
+        return x >= 0 ? `${x}日後` : `${-x}日超過`;
+      }
+      function applyChemicalPreset() {
+        let c = load("chemicals", []).find(
+          (x) => x.name === $("dilutionChemical").value,
+        );
+        if (c && c.ratio) {
+          $("mode").value = "x";
+          $("ratio").value = c.ratio;
+          calc();
+        }
+      }
+      function historyMarkup(entry, index = null, compact = false) {
+        const image = safeImage(entry.image);
+        const before = safeImage(entry.before);
+        const after = safeImage(entry.after);
+        const chemicalTags = (entry.chems || [])
+          .map((name) => `<span class="tag">${escapeHTML(name)}</span>`)
+          .join("");
+        const usages =
+          entry.chemicalUsages && entry.chemicalUsages.length
+            ? `<div class="usage-history muted tiny">使用量：${entry.chemicalUsages
+                .map(
+                  (usage) =>
+                    `${escapeHTML(usage.name)} ${numberOr(usage.amount, 0)}mL`,
+                )
+                .join(" / ")}</div>`
+            : "";
+        const processes =
+          entry.processes && entry.processes.length
+            ? `工程：${entry.processes.map(escapeHTML).join(" / ")}`
+            : "";
+        const mileage = numberOr(entry.mileage, 0);
+        const minutes = numberOr(entry.minutes, 0);
+        const beforeAfter =
+          !compact && (before || after)
+            ? `<div class="ba-grid" style="margin-top:8px">${before ? `<div><div class="muted tiny">Before</div><img class="thumb" style="width:100%;height:110px" src="${before}" alt="施工前"></div>` : ""}${after ? `<div><div class="muted tiny">After</div><img class="thumb" style="width:100%;height:110px" src="${after}" alt="施工後"></div>` : ""}</div>`
+            : "";
+        const deleteButton =
+          index === null
+            ? ""
+            : `<button class="ghost danger tiny" onclick="delHistory(${index})">削除</button>`;
+        return `<div class="list-item row">${image ? `<img class="thumb" src="${image}" alt="施工写真">` : ""}<div style="flex:1"><div class="row between"><b>${escapeHTML(entry.type || "施工")}</b><span class="muted tiny">${escapeHTML(entry.date || "")}</span></div><div>${chemicalTags}</div>${usages}<div class="muted tiny">${processes}</div><div class="muted tiny">${mileage ? mileage.toLocaleString() + " km" : ""}${minutes ? " ・ " + minutes + "分" : ""}</div><div class="muted tiny">${escapeHTML(entry.memo || "").replace(/\n/g, "<br>")}</div>${beforeAfter}${deleteButton}</div></div>`;
+      }
+      function render() {
+        let car = load("car", {}),
+          h = load("history", []),
+          c = load("chemicals", []),
+          f = load("favorites", []),
+          mr = load("maintenanceRecords", []);
+        $("homeCar").textContent = car.name || "車両未登録";
+        $("homeCoating").textContent = car.coating
+          ? `${car.coating}${car.color ? " ・ " + car.color : ""}`
+          : "コーティング情報なし";
+        let z = numberOr(car.photoZoom, 100),
+          px = car.photoX ?? 50,
+          py = car.photoY ?? 50;
+        const carImage = safeImage(car.image);
+        if (carImage) {
+          $("homeCarImage").src = carImage;
+          $("homeCarImage").style.display = "block";
+          $("homeCarImage").style.objectPosition = "50% 50%";
+          let tx = (px - 50) * 0.8,
+            ty = (py - 50) * 0.8;
+          $("homeCarImage").style.transform =
+            `translate(${tx}%, ${ty}%) scale(${z / 100})`;
+        } else $("homeCarImage").style.display = "none";
+        $("carName").value = car.name || "";
+        $("carColor").value = car.color || "";
+        $("carCoating").value = car.coating || "";
+        $("coatDate").value = car.coatDate || "";
+        $("maintDays").value = car.maintDays || 90;
+        $("photoZoom").value = z;
+        $("photoX").value = px;
+        $("photoY").value = py;
+        if (carImage) {
+          $("carPreview").src = carImage;
+          $("carPreview").style.display = "block";
+        } else $("carPreview").style.display = "none";
+        updatePhotoPreview();
+        let wash = h.find((x) => x.type === "洗車");
+        $("lastWash").textContent = wash ? daysSince(wash.date) : "—";
+        $("lastCoat").textContent = car.coatDate
+          ? daysSince(car.coatDate)
+          : "—";
+        $("nextMaint").textContent = nextMaintText(car);
+        $("recentHistory").innerHTML = h.length
+          ? h
+              .slice(0, 3)
+              .map((x) => historyMarkup(x, null, true))
+              .join("")
+          : "まだ記録がありません。";
+        const pt = load("processTemplates", []);
+        $("customTemplates").innerHTML = pt.length
+          ? pt
+              .map(
+                (t, i) => `<div class="template-card">
+<div class="row between"><b>${escapeHTML(t.name)}</b><button class="ghost danger tiny" onclick="deleteCustomTemplate(${i})">削除</button></div>
+<div class="muted tiny" style="margin-top:6px">${(t.processes || []).map(escapeHTML).join(" / ")}</div>
+<button class="secondary tiny" style="margin-top:8px" onclick="applyCustomTemplate(${i})">この工程を使う</button>
+</div>`,
+              )
+              .join("")
+          : "まだありません。";
+        $("historyList").innerHTML = h.length
+          ? h.map((x, i) => historyMarkup(x, i, false)).join("")
+          : '<span class="muted">まだありません。</span>';
+        $("maintenanceCount").textContent = mr.length ? `${mr.length}件` : "";
+        $("maintenanceList").innerHTML = mr.length
+          ? mr
+              .map((x, i) => {
+                const image = safeImage(x.image);
+                const mileage = numberOr(x.mileage, 0);
+                return `<div class="list-item row">${image ? `<img class="thumb" src="${image}" alt="整備写真">` : ""}<div style="flex:1"><div class="row between"><b>${escapeHTML(x.content || "整備記録")}</b><span class="muted tiny">${escapeHTML(x.date || "")}</span></div><div class="muted tiny" style="margin-top:6px">${mileage ? mileage.toLocaleString() + " km" : "走行距離 未入力"}</div><button class="ghost danger tiny" onclick="delMaintenanceRecord(${i})">削除</button></div></div>`;
+              })
+              .join("")
+          : '<span class="muted">まだ整備記録がありません。</span>';
+        $("chemicalList").innerHTML = c.length
+          ? c
+              .map((x, i) => {
+                let cap = +x.capacity || 0,
+                  stock = +x.stock || 0,
+                  image = safeImage(x.image),
+                  pct =
+                    cap > 0
+                      ? Math.max(
+                          0,
+                          Math.min(100, Math.round((stock / cap) * 100)),
+                        )
+                      : 0;
+                return `<div class="list-item row">${image ? `<img class="mini-img" src="${image}" alt="ケミカル写真">` : ""}<div style="flex:1"><div class="row between"><b>${escapeHTML(x.name || "名称なし")}</b><span class="tag">${escapeHTML(x.type || "その他")}</span></div><div class="muted tiny">推奨 ${x.ratio ? numberOr(x.ratio, 0) + "倍" : "—"} / ${cap ? `残量 ${stock}/${cap}mL (${pct}%)` : `残量 ${stock || 0}mL`}</div><div class="progress"><i style="width:${pct}%"></i></div><div class="stock-actions"><button class="secondary tiny" onclick="openChemicalEditor(${i})">編集</button><button class="ghost danger tiny" onclick="delChem(${i})">削除</button></div></div></div>`;
+              })
+              .join("")
+          : '<span class="muted">まだありません。</span>';
+        refreshChemicalUsageOptions();
+        let sel = $("dilutionChemical"),
+          cur = sel.value;
+        sel.innerHTML =
+          '<option value="">未選択</option>' +
+          c
+            .map(
+              (x) =>
+                `<option value="${escapeHTML(x.name)}">${escapeHTML(x.name)}${x.ratio ? "（" + numberOr(x.ratio, 0) + "倍）" : ""}</option>`,
+            )
+            .join("");
+        if ([...sel.options].some((o) => o.value === cur)) sel.value = cur;
+        $("favorites").innerHTML = f.length
+          ? f
+              .map(
+                (x, i) =>
+                  `<button class="fav-chip" onclick="useFavorite(${i})"><b>${escapeHTML(x.chem)}</b><span class="tiny muted">${x.mode === "x" ? numberOr(x.ratio, 0) + "倍" : "1:" + numberOr(x.ratio, 0)} / ${numberOr(x.total, 0)}mL</span><span class="tiny danger" onclick="event.stopPropagation();deleteFavorite(${i})">削除</span></button>`,
+              )
+              .join("")
+          : '<span class="muted">まだありません。</span>';
+        calc();
+        renderBetaStatus();
+      }
+      const DM_DATA_KEYS = [
+        "car",
+        "history",
+        "chemicals",
+        "favorites",
+        "processTemplates",
+        "customTemplates",
+        "maintenanceRecords",
+      ];
+      function getTesterId() {
+        let id = localStorage.getItem("dmTesterId");
+        if (id) return id;
+        let token;
+        try {
+          const values = new Uint32Array(1);
+          crypto.getRandomValues(values);
+          token = values[0].toString(36).toUpperCase();
+        } catch {
+          token = Math.random().toString(36).slice(2).toUpperCase();
+        }
+        id = `DM-${token.padStart(6, "0").slice(-6)}`;
+        localStorage.setItem("dmTesterId", id);
+        return id;
+      }
+      function renderBetaStatus() {
+        if ($("testerId")) $("testerId").textContent = getTesterId();
+        const status = $("backupStatus");
+        if (!status) return;
+        const raw = localStorage.getItem("dmLastBackupAt");
+        const savedAt = raw ? new Date(raw) : null;
+        if (!savedAt || Number.isNaN(savedAt.getTime())) {
+          status.className = "backup-status tiny";
+          status.textContent =
+            "まだバックアップされていません。最初の記録後に書き出してください。";
+          return;
+        }
+        const elapsedDays = Math.max(
+          0,
+          Math.floor((Date.now() - savedAt.getTime()) / 86400000),
+        );
+        status.className = `backup-status tiny${elapsedDays <= 7 ? " fresh" : ""}`;
+        status.textContent = `最終バックアップ：${savedAt.toLocaleString("ja-JP")}（${elapsedDays === 0 ? "今日" : elapsedDays + "日前"}）`;
+      }
+      function buildFeedbackText() {
+        const history = load("history", []);
+        const chemicals = load("chemicals", []);
+        const maintenance = load("maintenanceRecords", []);
+        return [
+          "【Detailing Manager βテスト】",
+          `テスターID：${getTesterId()}`,
+          `バージョン：${DM_VERSION}`,
+          `内容：${$("feedbackCategory").value}`,
+          `使いやすさ：${$("feedbackRating").value || "未回答"} / 5`,
+          `一番よかった機能：${$("feedbackUseful").value.trim() || "未回答"}`,
+          `買い切り希望価格：${$("feedbackPrice").value}`,
+          "",
+          "感想・不具合・欲しい機能：",
+          $("feedbackComment").value.trim() || "未入力",
+          "",
+          `利用状況：施工 ${history.length}件 / ケミカル ${chemicals.length}件 / 整備 ${maintenance.length}件`,
+          `端末情報：${navigator.userAgent}`,
+        ].join("\n");
+      }
+      async function writeClipboard(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.select();
+        const copied = document.execCommand("copy");
+        area.remove();
+        if (!copied) throw new Error("copy failed");
+      }
+      async function copyFeedback() {
+        try {
+          await writeClipboard(buildFeedbackText());
+          alert(
+            "フィードバック内容をコピーしました。LINEなどに貼り付けて送ってください。",
+          );
+        } catch {
+          alert("コピーできませんでした。共有して送るボタンを使ってください。");
+        }
+      }
+      async function shareFeedback() {
+        const text = buildFeedbackText();
+        if (!navigator.share) {
+          await copyFeedback();
+          return;
+        }
+        try {
+          await navigator.share({
+            title: "Detailing Manager βテスト",
+            text,
+          });
+        } catch (error) {
+          if (error && error.name === "AbortError") return;
+          await copyFeedback();
+        }
+      }
+      function exportBackup() {
+        const data = {
+          app: "Detailing Manager",
+          version: DM_VERSION,
+          exportedAt: new Date().toISOString(),
+          data: {},
+        };
+        DM_DATA_KEYS.forEach(
+          (k) => (data.data[k] = load(k, k === "car" ? {} : [])),
+        );
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+            type: "application/json",
+          }),
+          a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `DetailingManager_backup_${today()}.json`;
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        localStorage.setItem("dmLastBackupAt", new Date().toISOString());
+        renderBetaStatus();
+        setTimeout(() => {
+          URL.revokeObjectURL(a.href);
+          a.remove();
+        }, 1000);
+      }
+      async function importBackup(input) {
+        const f = input.files && input.files[0];
+        if (!f) return;
+        try {
+          const obj = JSON.parse(await f.text());
+          if (!obj || obj.app !== "Detailing Manager" || !obj.data)
+            throw new Error();
+          if (
+            !confirm(
+              "現在のデータをバックアップ内容で置き換えます。よろしいですか？",
+            )
+          ) {
+            input.value = "";
+            return;
+          }
+          DM_DATA_KEYS.forEach((k) => {
+            if (Object.prototype.hasOwnProperty.call(obj.data, k))
+              localStorage.setItem(k, JSON.stringify(obj.data[k]));
+          });
+          localStorage.setItem("dmSetupDone", "1");
+          alert("復元しました。");
+          location.reload();
+        } catch (e) {
+          alert(
+            "Detailing Managerのバックアップファイルを読み込めませんでした。",
+          );
+          input.value = "";
+        }
+      }
+      function resetAllData() {
+        if (
+          !confirm(
+            "車両・施工履歴・ケミカルなど、すべてのデータを削除します。\nこの操作は元に戻せません。",
+          )
+        )
+          return;
+        if (!confirm("本当に初期化しますか？")) return;
+        DM_DATA_KEYS.forEach((k) => localStorage.removeItem(k));
+        localStorage.removeItem("dmSetupDone");
+        localStorage.removeItem("dmLastBackupAt");
+        localStorage.removeItem("dmTesterId");
+        location.reload();
+      }
+      function finishSetup() {
+        localStorage.setItem("dmSetupDone", "1");
+        document.getElementById("setupOverlay")?.classList.add("hidden");
+        go("cars");
+      }
+
+      if (load("chemicals", []).length === 0) {
+        save(
+          "chemicals",
+          CHEMICAL_PRESETS.map((x) => ({ ...x, image: "", preset: true })),
+        );
+      }
+      if (!localStorage.getItem("dmSetupDone") && !localStorage.getItem("car"))
+        $("setupOverlay").classList.remove("hidden");
+      render();
+      if ($("chemicalUsageRows") && !$("chemicalUsageRows").children.length)
+        addChemicalUsageRow();
+      if ("serviceWorker" in navigator)
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+    </script>
+  </body>
+</html>

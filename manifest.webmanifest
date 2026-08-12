@@ -1,6 +1,6 @@
 {
-  "name": "Detailing Manager",
-  "short_name": "Detailing",
+  "name": "Detailing Manager β",
+  "short_name": "Detailing β",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#070b10",
@@ -17,10 +17,8 @@
       "type": "image/png"
     }
   ],
-  "description": "洗車・コーティング・ケミカル在庫・希釈管理",
+  "description": "洗車・コーティング・整備・ケミカル在庫・希釈管理の無料β版",
   "id": "./",
   "scope": "./",
-  "display_override": [
-    "standalone"
-  ]
+  "display_override": ["standalone"]
 }
