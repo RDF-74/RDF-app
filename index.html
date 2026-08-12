@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icon-192.png" />
-    <title>Detailing Manager β</title>
+    <title>Detailing Manager v3.3 β</title>
     <style>
       :root {
         --bg: #070b10;
@@ -572,10 +572,107 @@
         background: #10281d;
         color: #89e4b4;
       }
+      .car-switcher {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        margin: 12px 0;
+        padding: 12px 14px;
+        border: 1px solid #27445d;
+        border-radius: 18px;
+        background: #0e1b26;
+      }
+      .car-switcher label {
+        margin: 0;
+        color: #9fd5ff;
+        font-weight: 800;
+      }
+      .car-switcher select {
+        margin: 0;
+      }
+      .car-list {
+        display: grid;
+        gap: 10px;
+      }
+      .car-card {
+        display: grid;
+        grid-template-columns: 78px minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+        padding: 11px;
+        border: 1px solid #293846;
+        border-radius: 17px;
+        background: #0b1218;
+      }
+      .car-card.active {
+        border-color: #318bd0;
+        box-shadow: inset 0 0 0 1px #318bd0;
+      }
+      .car-card img,
+      .car-placeholder {
+        width: 78px;
+        height: 64px;
+        border-radius: 13px;
+        object-fit: cover;
+        background: #15212c;
+        border: 1px solid #293846;
+      }
+      .car-placeholder {
+        display: grid;
+        place-items: center;
+        color: #6f8090;
+        font-weight: 900;
+      }
+      .car-card-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .car-card-actions button {
+        padding: 7px 9px;
+        font-size: 12px;
+      }
+      .filter-row {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        margin: 8px 0 4px;
+      }
+      .filter-row label {
+        margin: 0;
+      }
+      .car-record-tag {
+        display: inline-block;
+        margin: 5px 0;
+        padding: 4px 7px;
+        border: 1px solid #31526c;
+        border-radius: 999px;
+        background: #11283a;
+        color: #9dd6ff;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .form-actions {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        margin-top: 14px;
+      }
       @media (max-width: 430px) {
         .feedback-grid,
         .feedback-actions {
           grid-template-columns: 1fr;
+        }
+        .car-switcher,
+        .filter-row {
+          grid-template-columns: 1fr;
+        }
+        .car-switcher label,
+        .filter-row label {
+          margin-bottom: -4px;
         }
       }
       .setup-steps {
@@ -654,6 +751,13 @@
         <div class="beta-banner">
           <b>無料βテスト版</b>
           <span>大切な記録は、設定から定期的にバックアップしてください。</span>
+        </div>
+        <div class="car-switcher">
+          <label for="homeCarSelect">表示する車</label>
+          <select
+            id="homeCarSelect"
+            onchange="setActiveCar(this.value)"
+          ></select>
         </div>
         <div class="card hero">
           <div class="hero-media">
@@ -781,7 +885,28 @@
       </section>
       <section id="cars" class="tab">
         <div class="card">
-          <h2>車両管理</h2>
+          <div class="section-title">
+            <div>
+              <h2>登録車両</h2>
+              <span id="carCount" class="muted tiny">0 / 5台</span>
+            </div>
+            <button
+              id="carAddButton"
+              class="secondary"
+              type="button"
+              onclick="startNewCar()"
+            >
+              ＋ 車両追加
+            </button>
+          </div>
+          <div id="carList" class="car-list"></div>
+        </div>
+        <div class="card">
+          <div class="section-title">
+            <h2 id="carFormTitle">車両を追加</h2>
+            <span class="muted tiny">最大5台</span>
+          </div>
+          <input id="carEditId" type="hidden" />
           <label>車名</label
           ><input id="carName" placeholder="例：レクサス GS" /><label
             >ボディカラー</label
@@ -852,18 +977,21 @@
               ><input id="maintDays" type="number" value="90" min="1" />
             </div>
           </div>
-          <button
-            class="primary"
-            style="margin-top: 14px; width: 100%"
-            onclick="saveCar()"
-          >
-            保存
-          </button>
+          <div class="form-actions">
+            <button class="primary" id="carSaveButton" onclick="saveCar()">
+              車両を登録
+            </button>
+            <button class="secondary" type="button" onclick="startNewCar()">
+              入力をクリア
+            </button>
+          </div>
         </div>
       </section>
       <section id="history" class="tab">
         <div class="card">
           <h2>施工記録</h2>
+          <label>対象車両</label
+          ><select id="histCar"></select>
           <label>日付</label><input id="histDate" type="date" /><label
             >種類</label
           ><select id="histType">
@@ -1033,7 +1161,14 @@
           <div id="customTemplates" class="muted">まだありません。</div>
         </div>
         <div class="card">
-          <h3>履歴</h3>
+          <div class="section-title">
+            <h3>履歴</h3>
+            <span id="historyCount" class="muted tiny"></span>
+          </div>
+          <div class="filter-row">
+            <label for="historyFilter">車両で絞る</label>
+            <select id="historyFilter" onchange="render()"></select>
+          </div>
           <div id="historyList"></div>
         </div>
       </section>
@@ -1143,6 +1278,8 @@
           <p class="muted">
             オイル交換・タイヤ・ブレーキ・部品交換など、車の整備履歴を残せます。
           </p>
+          <label>対象車両</label
+          ><select id="maintCar"></select>
           <label>日付</label><input id="maintRecordDate" type="date" /><label
             >走行距離 (km)</label
           ><input
@@ -1179,6 +1316,10 @@
             <h3>整備履歴</h3>
             <span class="muted tiny" id="maintenanceCount"></span>
           </div>
+          <div class="filter-row">
+            <label for="maintenanceFilter">車両で絞る</label>
+            <select id="maintenanceFilter" onchange="render()"></select>
+          </div>
           <div id="maintenanceList"></div>
         </div>
       </section>
@@ -1186,7 +1327,7 @@
         <div class="card">
           <div class="section-title">
             <h2>設定</h2>
-            <span class="version-badge">v3.2 β1</span>
+            <span class="version-badge">v3.3 β1</span>
           </div>
           <p class="muted">
             β版のデータはこの端末内に保存されます。機種変更や不具合に備えて、JSONファイルへ定期的に保存してください。
@@ -1330,7 +1471,7 @@
     </nav>
     <div id="setupOverlay" class="setup-overlay hidden">
       <div class="setup-box">
-        <span class="version-badge">Detailing Manager v3.2 β1</span>
+        <span class="version-badge">Detailing Manager v3.3 β1</span>
         <h2>無料βテストへようこそ</h2>
         <p class="muted">
           愛車の洗車・コーティング・ケミカル在庫を、このiPhoneでまとめて管理できます。
@@ -1374,7 +1515,8 @@
       </div>
     </div>
     <script>
-      const DM_VERSION = "3.2-beta.1";
+      const DM_VERSION = "3.3-beta.1";
+      const MAX_CARS = 5;
       const pad2 = (n) => String(n).padStart(2, "0");
       const today = () => {
         const d = new Date();
@@ -1419,6 +1561,109 @@
             return false;
           }
         };
+      function createId(prefix = "car") {
+        let token;
+        try {
+          const values = new Uint32Array(2);
+          crypto.getRandomValues(values);
+          token = [...values].map((value) => value.toString(36)).join("");
+        } catch {
+          token = `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+        }
+        return `${prefix}-${token.slice(0, 16)}`;
+      }
+      function normalizeCar(car) {
+        const rawId = String(car && car.id ? car.id : "");
+        const id = /^[a-zA-Z0-9_-]+$/.test(rawId) ? rawId : createId();
+        return {
+          ...(car || {}),
+          id,
+          name: String((car && car.name) || "").trim(),
+          color: String((car && car.color) || "").trim(),
+          coating: String((car && car.coating) || "").trim(),
+          coatDate: String((car && car.coatDate) || ""),
+          maintDays: Math.max(1, numberOr(car && car.maintDays, 90)),
+          image: safeImage(car && car.image),
+          photoZoom: numberOr(car && car.photoZoom, 100),
+          photoX: numberOr(car && car.photoX, 50),
+          photoY: numberOr(car && car.photoY, 50),
+        };
+      }
+      function getCars() {
+        const cars = load("cars", []);
+        return Array.isArray(cars) ? cars : [];
+      }
+      function getActiveCarId() {
+        const cars = getCars();
+        const savedId = load("activeCarId", "");
+        return cars.some((car) => car.id === savedId)
+          ? savedId
+          : cars[0]?.id || "";
+      }
+      function getActiveCar() {
+        const id = getActiveCarId();
+        return getCars().find((car) => car.id === id) || null;
+      }
+      function carNameById(id) {
+        return getCars().find((car) => car.id === id)?.name || "車両未設定";
+      }
+      function syncLegacyCar(car) {
+        if (car) save("car", { ...car });
+        else localStorage.removeItem("car");
+      }
+      function migrateMultiCarData() {
+        const rawCars = load("cars", []);
+        let cars = Array.isArray(rawCars)
+          ? rawCars.slice(0, MAX_CARS).map(normalizeCar)
+          : [];
+        const seen = new Set();
+        cars = cars.map((car) => {
+          if (!seen.has(car.id)) {
+            seen.add(car.id);
+            return car;
+          }
+          const replacement = { ...car, id: createId() };
+          seen.add(replacement.id);
+          return replacement;
+        });
+        const legacyCar = load("car", {});
+        if (
+          !cars.length &&
+          legacyCar &&
+          typeof legacyCar === "object" &&
+          Object.keys(legacyCar).length
+        ) {
+          cars = [normalizeCar(legacyCar)];
+        }
+        let activeId = load("activeCarId", "");
+        if (!cars.some((car) => car.id === activeId))
+          activeId = cars[0]?.id || "";
+        const migrateRecords = (key) => {
+          const records = load(key, []);
+          if (!Array.isArray(records)) return [];
+          return records.map((record) => ({
+            ...record,
+            carId: cars.some((car) => car.id === record.carId)
+              ? record.carId
+              : activeId,
+          }));
+        };
+        save("cars", cars);
+        save("activeCarId", activeId);
+        save("history", migrateRecords("history"));
+        save("maintenanceRecords", migrateRecords("maintenanceRecords"));
+        syncLegacyCar(cars.find((car) => car.id === activeId) || null);
+      }
+      function attachUnassignedRecords(carId) {
+        ["history", "maintenanceRecords"].forEach((key) => {
+          const records = load(key, []);
+          if (!Array.isArray(records)) return;
+          const updated = records.map((record) =>
+            record.carId ? record : { ...record, carId },
+          );
+          save(key, updated);
+        });
+      }
       $("histDate").value = today();
       $("maintRecordDate").value = today();
       function go(id) {
@@ -1430,6 +1675,12 @@
           .querySelectorAll("nav button")
           .forEach((x) => x.classList.toggle("active", x.dataset.tab === id));
         render();
+        if (
+          id === "cars" &&
+          !$("carEditId").value &&
+          getCars().length < MAX_CARS
+        )
+          clearCarForm();
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
       function round(n) {
@@ -1468,6 +1719,56 @@
         $("total").value = 1000;
         $("dilutionChemical").selectedIndex = 0;
         calc();
+      }
+      function carOptions(selected = "", includeAll = false) {
+        const cars = getCars();
+        const all = includeAll
+          ? '<option value="all">すべての車両</option>'
+          : "";
+        return (
+          all +
+          cars
+            .map(
+              (car) =>
+                `<option value="${car.id}" ${car.id === selected ? "selected" : ""}>${escapeHTML(car.name || "名称なし")}</option>`,
+            )
+            .join("")
+        );
+      }
+      function updateSelector(id, selected, includeAll = false) {
+        const select = $(id);
+        if (!select) return;
+        const fallback = includeAll ? "all" : getActiveCarId();
+        const desired = selected || fallback;
+        select.innerHTML = carOptions(desired, includeAll);
+        if ([...select.options].some((option) => option.value === desired))
+          select.value = desired;
+        else if (
+          [...select.options].some((option) => option.value === fallback)
+        )
+          select.value = fallback;
+      }
+      function renderCarSelectors(resetToActive = false) {
+        const activeId = getActiveCarId();
+        updateSelector("homeCarSelect", activeId);
+        updateSelector(
+          "histCar",
+          resetToActive ? activeId : $("histCar")?.value || activeId,
+        );
+        updateSelector(
+          "maintCar",
+          resetToActive ? activeId : $("maintCar")?.value || activeId,
+        );
+        updateSelector(
+          "historyFilter",
+          resetToActive ? activeId : $("historyFilter")?.value || activeId,
+          true,
+        );
+        updateSelector(
+          "maintenanceFilter",
+          resetToActive ? activeId : $("maintenanceFilter")?.value || activeId,
+          true,
+        );
       }
       function readFile(input) {
         return new Promise((resolve) => {
@@ -1529,6 +1830,128 @@
         });
       }
       let pendingCarImage = "";
+      function clearCarForm() {
+        $("carEditId").value = "";
+        $("carName").value = "";
+        $("carColor").value = "";
+        $("carCoating").value = "";
+        $("coatDate").value = "";
+        $("maintDays").value = 90;
+        $("carImage").value = "";
+        $("photoZoom").value = 100;
+        $("photoX").value = 50;
+        $("photoY").value = 50;
+        $("carPreview").removeAttribute("src");
+        $("carPreview").style.display = "none";
+        $("carFormTitle").textContent = "車両を追加";
+        $("carSaveButton").textContent = "車両を登録";
+        pendingCarImage = "";
+        updatePhotoPreview();
+      }
+      function fillCarForm(car) {
+        if (!car) {
+          clearCarForm();
+          return;
+        }
+        $("carEditId").value = car.id;
+        $("carName").value = car.name || "";
+        $("carColor").value = car.color || "";
+        $("carCoating").value = car.coating || "";
+        $("coatDate").value = car.coatDate || "";
+        $("maintDays").value = numberOr(car.maintDays, 90);
+        $("photoZoom").value = numberOr(car.photoZoom, 100);
+        $("photoX").value = numberOr(car.photoX, 50);
+        $("photoY").value = numberOr(car.photoY, 50);
+        const image = safeImage(car.image);
+        if (image) {
+          $("carPreview").src = image;
+          $("carPreview").style.display = "block";
+        } else {
+          $("carPreview").removeAttribute("src");
+          $("carPreview").style.display = "none";
+        }
+        $("carFormTitle").textContent = `${car.name || "車両"}を編集`;
+        $("carSaveButton").textContent = "変更を保存";
+        pendingCarImage = "";
+        updatePhotoPreview();
+      }
+      function startNewCar() {
+        if (getCars().length >= MAX_CARS) {
+          alert("登録できる車両は最大5台です。");
+          return;
+        }
+        clearCarForm();
+        $("carFormTitle").scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+      function editCar(id) {
+        const car = getCars().find((item) => item.id === id);
+        if (!car) return;
+        save("activeCarId", id);
+        syncLegacyCar(car);
+        fillCarForm(car);
+        renderCarSelectors(true);
+        $("carFormTitle").scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+      function setActiveCar(id) {
+        const car = getCars().find((item) => item.id === id);
+        if (!car) return;
+        save("activeCarId", id);
+        syncLegacyCar(car);
+        $("carEditId").value = id;
+        if ($("histCar")) $("histCar").value = id;
+        if ($("maintCar")) $("maintCar").value = id;
+        if ($("historyFilter")) $("historyFilter").value = id;
+        if ($("maintenanceFilter")) $("maintenanceFilter").value = id;
+        pendingCarImage = "";
+        render();
+      }
+      function deleteCar(id) {
+        const cars = getCars();
+        const car = cars.find((item) => item.id === id);
+        if (!car) return;
+        const previousActiveId = getActiveCarId();
+        const history = load("history", []);
+        const maintenance = load("maintenanceRecords", []);
+        const historyCount = history.filter(
+          (record) => record.carId === id,
+        ).length;
+        const maintenanceCount = maintenance.filter(
+          (record) => record.carId === id,
+        ).length;
+        const detail =
+          historyCount || maintenanceCount
+            ? `\nこの車両の施工${historyCount}件・整備${maintenanceCount}件も削除されます。`
+            : "";
+        if (!confirm(`「${car.name}」を削除しますか？${detail}`)) return;
+        if (
+          (historyCount || maintenanceCount) &&
+          !confirm("関連する記録も含めて本当に削除しますか？")
+        )
+          return;
+        const remaining = cars.filter((item) => item.id !== id);
+        if (!save("cars", remaining)) return;
+        save(
+          "history",
+          history.filter((record) => record.carId !== id),
+        );
+        save(
+          "maintenanceRecords",
+          maintenance.filter((record) => record.carId !== id),
+        );
+        const nextId =
+          previousActiveId === id ? remaining[0]?.id || "" : previousActiveId;
+        save("activeCarId", nextId);
+        syncLegacyCar(remaining.find((item) => item.id === nextId) || null);
+        $("carEditId").value = nextId;
+        pendingCarImage = "";
+        render();
+      }
       async function previewSelectedCarImage() {
         const v = await readFile($("carImage"));
         if (v) {
@@ -1563,25 +1986,41 @@
           alert("車名を入力してください。");
           return;
         }
-        let p = load("car", {}),
-          img =
-            pendingCarImage || (await readFile($("carImage"))) || p.image || "";
-        if (
-          save("car", {
-            name,
-            color: $("carColor").value.trim(),
-            coating: $("carCoating").value.trim(),
-            coatDate: $("coatDate").value,
-            maintDays: +$("maintDays").value || 90,
-            image: img,
-            photoZoom: numberOr($("photoZoom").value, 100),
-            photoX: numberOr($("photoX").value, 50),
-            photoY: numberOr($("photoY").value, 50),
-          })
-        ) {
-          pendingCarImage = "";
-          go("home");
+        const cars = getCars();
+        const editId = $("carEditId").value;
+        const index = cars.findIndex((car) => car.id === editId);
+        if (index < 0 && cars.length >= MAX_CARS) {
+          alert("登録できる車両は最大5台です。");
+          return;
         }
+        const previous = index >= 0 ? cars[index] : null;
+        const image =
+          pendingCarImage ||
+          (await readFile($("carImage"))) ||
+          safeImage(previous && previous.image);
+        const car = normalizeCar({
+          ...(previous || {}),
+          id: previous?.id || createId(),
+          name,
+          color: $("carColor").value.trim(),
+          coating: $("carCoating").value.trim(),
+          coatDate: $("coatDate").value,
+          maintDays: +$("maintDays").value || 90,
+          image,
+          photoZoom: numberOr($("photoZoom").value, 100),
+          photoX: numberOr($("photoX").value, 50),
+          photoY: numberOr($("photoY").value, 50),
+        });
+        if (index >= 0) cars[index] = car;
+        else cars.push(car);
+        if (!save("cars", cars)) return;
+        save("activeCarId", car.id);
+        syncLegacyCar(car);
+        attachUnassignedRecords(car.id);
+        $("carEditId").value = car.id;
+        renderCarSelectors(true);
+        pendingCarImage = "";
+        go("home");
       }
       function chemicalOptions(selected = "") {
         const arr = load("chemicals", []);
@@ -1768,6 +2207,12 @@
         }
       }
       async function addHistory() {
+        const carId = $("histCar").value;
+        if (!getCars().some((car) => car.id === carId)) {
+          alert("先に対象車両を登録してください。");
+          go("cars");
+          return;
+        }
         let a = load("history", []),
           pr = [
             ...document.querySelectorAll('input[name="histProcess"]:checked'),
@@ -1776,6 +2221,7 @@
           before = await readFile($("histBefore")),
           after = await readFile($("histAfter"));
         a.unshift({
+          carId,
           date: $("histDate").value || today(),
           type: $("histType").value,
           mileage: +$("histMileage").value || 0,
@@ -1990,6 +2436,12 @@
         }
       }
       async function addMaintenanceRecord() {
+        const carId = $("maintCar").value;
+        if (!getCars().some((car) => car.id === carId)) {
+          alert("先に対象車両を登録してください。");
+          go("cars");
+          return;
+        }
         const records = load("maintenanceRecords", []),
           image = await readFile($("maintRecordImage")),
           content = $("maintRecordContent").value.trim();
@@ -1998,6 +2450,7 @@
           return;
         }
         records.unshift({
+          carId,
           date: $("maintRecordDate").value || today(),
           mileage: +$("maintRecordMileage").value || 0,
           content,
@@ -2147,14 +2600,18 @@
           index === null
             ? ""
             : `<button class="ghost danger tiny" onclick="delHistory(${index})">削除</button>`;
-        return `<div class="list-item row">${image ? `<img class="thumb" src="${image}" alt="施工写真">` : ""}<div style="flex:1"><div class="row between"><b>${escapeHTML(entry.type || "施工")}</b><span class="muted tiny">${escapeHTML(entry.date || "")}</span></div><div>${chemicalTags}</div>${usages}<div class="muted tiny">${processes}</div><div class="muted tiny">${mileage ? mileage.toLocaleString() + " km" : ""}${minutes ? " ・ " + minutes + "分" : ""}</div><div class="muted tiny">${escapeHTML(entry.memo || "").replace(/\n/g, "<br>")}</div>${beforeAfter}${deleteButton}</div></div>`;
+        const carTag = `<span class="car-record-tag">${escapeHTML(carNameById(entry.carId))}</span>`;
+        return `<div class="list-item row">${image ? `<img class="thumb" src="${image}" alt="施工写真">` : ""}<div style="flex:1"><div class="row between"><b>${escapeHTML(entry.type || "施工")}</b><span class="muted tiny">${escapeHTML(entry.date || "")}</span></div>${carTag}<div>${chemicalTags}</div>${usages}<div class="muted tiny">${processes}</div><div class="muted tiny">${mileage ? mileage.toLocaleString() + " km" : ""}${minutes ? " ・ " + minutes + "分" : ""}</div><div class="muted tiny">${escapeHTML(entry.memo || "").replace(/\n/g, "<br>")}</div>${beforeAfter}${deleteButton}</div></div>`;
       }
       function render() {
-        let car = load("car", {}),
+        const cars = getCars();
+        const activeId = getActiveCarId();
+        let car = cars.find((item) => item.id === activeId) || {},
           h = load("history", []),
           c = load("chemicals", []),
           f = load("favorites", []),
           mr = load("maintenanceRecords", []);
+        renderCarSelectors();
         $("homeCar").textContent = car.name || "車両未登録";
         $("homeCoating").textContent = car.coating
           ? `${car.coating}${car.color ? " ・ " + car.color : ""}`
@@ -2172,27 +2629,38 @@
           $("homeCarImage").style.transform =
             `translate(${tx}%, ${ty}%) scale(${z / 100})`;
         } else $("homeCarImage").style.display = "none";
-        $("carName").value = car.name || "";
-        $("carColor").value = car.color || "";
-        $("carCoating").value = car.coating || "";
-        $("coatDate").value = car.coatDate || "";
-        $("maintDays").value = car.maintDays || 90;
-        $("photoZoom").value = z;
-        $("photoX").value = px;
-        $("photoY").value = py;
-        if (carImage) {
-          $("carPreview").src = carImage;
-          $("carPreview").style.display = "block";
-        } else $("carPreview").style.display = "none";
-        updatePhotoPreview();
-        let wash = h.find((x) => x.type === "洗車");
+        const currentEditId = $("carEditId").value;
+        if (!currentEditId || !cars.some((item) => item.id === currentEditId)) {
+          if (car.id) fillCarForm(car);
+          else clearCarForm();
+        }
+        $("carCount").textContent = `${cars.length} / ${MAX_CARS}台`;
+        $("carAddButton").disabled = cars.length >= MAX_CARS;
+        $("carAddButton").textContent =
+          cars.length >= MAX_CARS ? "上限5台" : "＋ 車両追加";
+        $("carList").innerHTML = cars.length
+          ? cars
+              .map((item) => {
+                const image = safeImage(item.image);
+                const recordCount = h.filter(
+                  (record) => record.carId === item.id,
+                ).length;
+                return `<div class="car-card ${item.id === activeId ? "active" : ""}">${image ? `<img src="${image}" alt="${escapeHTML(item.name)}">` : '<div class="car-placeholder">CAR</div>'}<div><div class="row between"><b>${escapeHTML(item.name || "名称なし")}</b>${item.id === activeId ? '<span class="tag">表示中</span>' : ""}</div><div class="muted tiny">${escapeHTML(item.color || "カラー未登録")} / 施工 ${recordCount}件</div><div class="car-card-actions"><button class="secondary" onclick="setActiveCar('${item.id}')">この車を表示</button><button class="ghost" onclick="editCar('${item.id}')">編集</button><button class="ghost danger" onclick="deleteCar('${item.id}')">削除</button></div></div></div>`;
+              })
+              .join("")
+          : '<span class="muted">まだ車両がありません。「車両追加」から登録してください。</span>';
+        const activeHistory = h.filter((record) => record.carId === activeId);
+        const activeMaintenance = mr.filter(
+          (record) => record.carId === activeId,
+        );
+        let wash = activeHistory.find((x) => x.type === "洗車");
         $("lastWash").textContent = wash ? daysSince(wash.date) : "—";
         $("lastCoat").textContent = car.coatDate
           ? daysSince(car.coatDate)
           : "—";
         $("nextMaint").textContent = nextMaintText(car);
-        $("recentHistory").innerHTML = h.length
-          ? h
+        $("recentHistory").innerHTML = activeHistory.length
+          ? activeHistory
               .slice(0, 3)
               .map((x) => historyMarkup(x, null, true))
               .join("")
@@ -2209,16 +2677,35 @@
               )
               .join("")
           : "まだありません。";
-        $("historyList").innerHTML = h.length
-          ? h.map((x, i) => historyMarkup(x, i, false)).join("")
+        const historyFilter = $("historyFilter").value || activeId;
+        const filteredHistory =
+          historyFilter === "all"
+            ? h.map((record, index) => ({ record, index }))
+            : h
+                .map((record, index) => ({ record, index }))
+                .filter((item) => item.record.carId === historyFilter);
+        $("historyCount").textContent = `${filteredHistory.length}件`;
+        $("historyList").innerHTML = filteredHistory.length
+          ? filteredHistory
+              .map((item) => historyMarkup(item.record, item.index, false))
+              .join("")
           : '<span class="muted">まだありません。</span>';
-        $("maintenanceCount").textContent = mr.length ? `${mr.length}件` : "";
-        $("maintenanceList").innerHTML = mr.length
-          ? mr
-              .map((x, i) => {
+        const maintenanceFilter = $("maintenanceFilter").value || activeId;
+        const filteredMaintenance =
+          maintenanceFilter === "all"
+            ? mr.map((record, index) => ({ record, index }))
+            : mr
+                .map((record, index) => ({ record, index }))
+                .filter((item) => item.record.carId === maintenanceFilter);
+        $("maintenanceCount").textContent = `${filteredMaintenance.length}件`;
+        $("maintenanceList").innerHTML = filteredMaintenance.length
+          ? filteredMaintenance
+              .map((item) => {
+                const x = item.record,
+                  i = item.index;
                 const image = safeImage(x.image);
                 const mileage = numberOr(x.mileage, 0);
-                return `<div class="list-item row">${image ? `<img class="thumb" src="${image}" alt="整備写真">` : ""}<div style="flex:1"><div class="row between"><b>${escapeHTML(x.content || "整備記録")}</b><span class="muted tiny">${escapeHTML(x.date || "")}</span></div><div class="muted tiny" style="margin-top:6px">${mileage ? mileage.toLocaleString() + " km" : "走行距離 未入力"}</div><button class="ghost danger tiny" onclick="delMaintenanceRecord(${i})">削除</button></div></div>`;
+                return `<div class="list-item row">${image ? `<img class="thumb" src="${image}" alt="整備写真">` : ""}<div style="flex:1"><div class="row between"><b>${escapeHTML(x.content || "整備記録")}</b><span class="muted tiny">${escapeHTML(x.date || "")}</span></div><span class="car-record-tag">${escapeHTML(carNameById(x.carId))}</span><div class="muted tiny" style="margin-top:6px">${mileage ? mileage.toLocaleString() + " km" : "走行距離 未入力"}</div><button class="ghost danger tiny" onclick="delMaintenanceRecord(${i})">削除</button></div></div>`;
               })
               .join("")
           : '<span class="muted">まだ整備記録がありません。</span>';
@@ -2263,6 +2750,8 @@
         renderBetaStatus();
       }
       const DM_DATA_KEYS = [
+        "cars",
+        "activeCarId",
         "car",
         "history",
         "chemicals",
@@ -2309,6 +2798,7 @@
         const history = load("history", []);
         const chemicals = load("chemicals", []);
         const maintenance = load("maintenanceRecords", []);
+        const cars = getCars();
         return [
           "【Detailing Manager βテスト】",
           `テスターID：${getTesterId()}`,
@@ -2321,7 +2811,7 @@
           "感想・不具合・欲しい機能：",
           $("feedbackComment").value.trim() || "未入力",
           "",
-          `利用状況：施工 ${history.length}件 / ケミカル ${chemicals.length}件 / 整備 ${maintenance.length}件`,
+          `利用状況：車両 ${cars.length}台 / 施工 ${history.length}件 / ケミカル ${chemicals.length}件 / 整備 ${maintenance.length}件`,
           `端末情報：${navigator.userAgent}`,
         ].join("\n");
       }
@@ -2373,9 +2863,10 @@
           exportedAt: new Date().toISOString(),
           data: {},
         };
-        DM_DATA_KEYS.forEach(
-          (k) => (data.data[k] = load(k, k === "car" ? {} : [])),
-        );
+        DM_DATA_KEYS.forEach((k) => {
+          const fallback = k === "car" ? {} : k === "activeCarId" ? "" : [];
+          data.data[k] = load(k, fallback);
+        });
         const blob = new Blob([JSON.stringify(data, null, 2)], {
             type: "application/json",
           }),
@@ -2411,6 +2902,7 @@
             if (Object.prototype.hasOwnProperty.call(obj.data, k))
               localStorage.setItem(k, JSON.stringify(obj.data[k]));
           });
+          migrateMultiCarData();
           localStorage.setItem("dmSetupDone", "1");
           alert("復元しました。");
           location.reload();
@@ -2441,13 +2933,14 @@
         go("cars");
       }
 
+      migrateMultiCarData();
       if (load("chemicals", []).length === 0) {
         save(
           "chemicals",
           CHEMICAL_PRESETS.map((x) => ({ ...x, image: "", preset: true })),
         );
       }
-      if (!localStorage.getItem("dmSetupDone") && !localStorage.getItem("car"))
+      if (!localStorage.getItem("dmSetupDone") && getCars().length === 0)
         $("setupOverlay").classList.remove("hidden");
       render();
       if ($("chemicalUsageRows") && !$("chemicalUsageRows").children.length)
