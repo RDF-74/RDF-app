@@ -1327,7 +1327,7 @@
         <div class="card">
           <div class="section-title">
             <h2>設定</h2>
-            <span class="version-badge">v3.3 β2</span>
+            <span class="version-badge">v3.3 β3</span>
           </div>
           <p class="muted">
             β版のデータはこの端末内に保存されます。機種変更や不具合に備えて、JSONファイルへ定期的に保存してください。
@@ -1347,7 +1347,7 @@
             </button>
           </div>
           <div class="settings-note tiny muted">
-            写真を含むデータはバックアップファイルが大きくなる場合があります。大事な施工記録は定期的に書き出してください。
+            写真は保存前に最大1200px・約180KBを目安に自動圧縮します。大事な施工記録は定期的に書き出してください。
           </div>
           <div id="storageStatus" class="backup-status fresh tiny">
             端末内データ量を確認しています…
@@ -1474,7 +1474,7 @@
     </nav>
     <div id="setupOverlay" class="setup-overlay hidden">
       <div class="setup-box">
-        <span class="version-badge">Detailing Manager v3.3 β2</span>
+        <span class="version-badge">Detailing Manager v3.3 β3</span>
         <h2>無料βテストへようこそ</h2>
         <p class="muted">
           愛車の洗車・コーティング・ケミカル在庫を、このiPhoneでまとめて管理できます。
@@ -1518,10 +1518,12 @@
       </div>
     </div>
     <script>
-      const DM_VERSION = "3.3-beta.2";
+      const DM_VERSION = "3.3-beta.3";
       const MAX_CARS = 5;
       const MULTI_CAR_SCHEMA_KEY = "dmMultiCarSchema";
-      const MULTI_CAR_SCHEMA_VERSION = "2";
+      const MULTI_CAR_SCHEMA_VERSION = "3";
+      const PHOTO_MAX_EDGE = 1200;
+      const PHOTO_TARGET_BYTES = 180 * 1024;
       const pad2 = (n) => String(n).padStart(2, "0");
       const today = () => {
         const d = new Date();
@@ -1648,23 +1650,31 @@
         let activeId = String(source.activeCarId || "");
         if (!cars.some((car) => car.id === activeId))
           activeId = cars[0]?.id || "";
-        const migrateRecords = (records) => {
+        const migrateRecords = (records, removePhotoAlias = false) => {
           if (!Array.isArray(records)) return [];
           return records.map((record) => {
             const safeRecord =
               record && typeof record === "object" ? record : {};
-            return {
+            const migratedRecord = {
               ...safeRecord,
               carId: cars.some((car) => car.id === safeRecord.carId)
                 ? safeRecord.carId
                 : activeId,
             };
+            if (
+              removePhotoAlias &&
+              migratedRecord.image &&
+              (migratedRecord.image === migratedRecord.before ||
+                migratedRecord.image === migratedRecord.after)
+            )
+              delete migratedRecord.image;
+            return migratedRecord;
           });
         };
         return {
           cars,
           activeCarId: activeId,
-          history: migrateRecords(source.history),
+          history: migrateRecords(source.history, true),
           maintenanceRecords: migrateRecords(source.maintenanceRecords),
         };
       }
@@ -1851,64 +1861,153 @@
           true,
         );
       }
-      function readFile(input) {
-        return new Promise((resolve) => {
-          const f = input.files && input.files[0];
-          if (!f) return resolve("");
+      const photoInputCache = new WeakMap();
+      function dataUrlBytes(value) {
+        const comma = String(value || "").indexOf(",");
+        if (comma < 0) return 0;
+        const base64Length = value.length - comma - 1;
+        return Math.max(0, Math.ceil((base64Length * 3) / 4) - 2);
+      }
+      function blobToDataUrl(blob) {
+        return new Promise((resolve, reject) => {
           const reader = new FileReader();
-          reader.onload = () => {
-            const original = reader.result;
-            const img = new Image();
-            img.onload = () => {
-              try {
-                const MAX = 1200;
-                let w = img.naturalWidth || img.width,
-                  h = img.naturalHeight || img.height;
-                const scale = Math.min(1, MAX / Math.max(w, h));
-                w = Math.max(1, Math.round(w * scale));
-                h = Math.max(1, Math.round(h * scale));
-
-                const canvas = document.createElement("canvas");
-                canvas.width = w;
-                canvas.height = h;
-                const ctx = canvas.getContext("2d");
-
-                // iPhone/Safari は createImageBitmap の imageOrientation を使うと
-                // EXIF回転を適用した状態で描画できる。未対応時は通常描画へフォールバック。
-                if ("createImageBitmap" in window) {
-                  createImageBitmap(f, { imageOrientation: "from-image" })
-                    .then((bitmap) => {
-                      canvas.width = Math.max(
-                        1,
-                        Math.round(bitmap.width * scale),
-                      );
-                      canvas.height = Math.max(
-                        1,
-                        Math.round(bitmap.height * scale),
-                      );
-                      ctx.clearRect(0, 0, canvas.width, canvas.height);
-                      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-                      if (bitmap.close) bitmap.close();
-                      resolve(canvas.toDataURL("image/jpeg", 0.72));
-                    })
-                    .catch(() => {
-                      ctx.drawImage(img, 0, 0, w, h);
-                      resolve(canvas.toDataURL("image/jpeg", 0.72));
-                    });
-                } else {
-                  ctx.drawImage(img, 0, 0, w, h);
-                  resolve(canvas.toDataURL("image/jpeg", 0.72));
-                }
-              } catch (e) {
-                resolve(original);
-              }
-            };
-            img.onerror = () => resolve(original);
-            img.src = original;
-          };
-          reader.onerror = () => resolve("");
-          reader.readAsDataURL(f);
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(reader.error || new Error("read"));
+          reader.readAsDataURL(blob);
         });
+      }
+      function fileToDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(reader.error || new Error("read"));
+          reader.readAsDataURL(file);
+        });
+      }
+      async function loadPhotoSource(file) {
+        if ("createImageBitmap" in window) {
+          try {
+            const bitmap = await createImageBitmap(file, {
+              imageOrientation: "from-image",
+            });
+            return {
+              source: bitmap,
+              width: bitmap.width,
+              height: bitmap.height,
+              release: () => bitmap.close?.(),
+            };
+          } catch {}
+        }
+        const dataUrl = await fileToDataUrl(file);
+        const image = new Image();
+        await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = reject;
+          image.src = dataUrl;
+        });
+        return {
+          source: image,
+          width: image.naturalWidth || image.width,
+          height: image.naturalHeight || image.height,
+          release: () => {},
+        };
+      }
+      function canvasToPhoto(canvas, mime, quality) {
+        return new Promise((resolve) => {
+          if (canvas.toBlob) {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob || (mime === "image/webp" && blob.type !== mime)) {
+                  resolve(null);
+                  return;
+                }
+                resolve({ blob, bytes: blob.size });
+              },
+              mime,
+              quality,
+            );
+            return;
+          }
+          try {
+            const dataUrl = canvas.toDataURL(mime, quality);
+            if (!dataUrl.startsWith(`data:${mime}`)) {
+              resolve(null);
+              return;
+            }
+            resolve({ dataUrl, bytes: dataUrlBytes(dataUrl) });
+          } catch {
+            resolve(null);
+          }
+        });
+      }
+      async function photoResultToDataUrl(result) {
+        return result.dataUrl || blobToDataUrl(result.blob);
+      }
+      async function compressPhoto(file) {
+        const loaded = await loadPhotoSource(file);
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        if (!context || !loaded.width || !loaded.height)
+          throw new Error("canvas");
+        const edgeSteps = [1200, 1080, 960, 840, 720, 640, 560];
+        const qualities = [0.82, 0.74, 0.66, 0.58, 0.5, 0.44];
+        let mime = "image/webp";
+        let smallest = null;
+        let previousSize = "";
+        try {
+          for (const edge of edgeSteps) {
+            const maxEdge = Math.min(PHOTO_MAX_EDGE, edge);
+            const scale = Math.min(
+              1,
+              maxEdge / Math.max(loaded.width, loaded.height),
+            );
+            const width = Math.max(1, Math.round(loaded.width * scale));
+            const height = Math.max(1, Math.round(loaded.height * scale));
+            const sizeKey = `${width}x${height}`;
+            if (sizeKey === previousSize) continue;
+            previousSize = sizeKey;
+            canvas.width = width;
+            canvas.height = height;
+            context.clearRect(0, 0, width, height);
+            context.drawImage(loaded.source, 0, 0, width, height);
+            for (const quality of qualities) {
+              let result = await canvasToPhoto(canvas, mime, quality);
+              if (!result && mime === "image/webp") {
+                mime = "image/jpeg";
+                result = await canvasToPhoto(canvas, mime, quality);
+              }
+              if (!result) continue;
+              if (!smallest || result.bytes < smallest.bytes) smallest = result;
+              if (result.bytes <= PHOTO_TARGET_BYTES)
+                return await photoResultToDataUrl(result);
+            }
+          }
+          if (!smallest) throw new Error("encode");
+          return await photoResultToDataUrl(smallest);
+        } finally {
+          loaded.release();
+        }
+      }
+      async function readFile(input) {
+        const file = input?.files?.[0];
+        if (!file) return "";
+        const cached = photoInputCache.get(input);
+        if (cached?.file === file) return cached.dataUrl;
+        if (file.type && !file.type.startsWith("image/")) {
+          alert("画像ファイルを選んでください。");
+          return "";
+        }
+        try {
+          const dataUrl = await compressPhoto(file);
+          photoInputCache.set(input, { file, dataUrl });
+          return dataUrl;
+        } catch (error) {
+          console.error("Photo compression failed", error);
+          alert(
+            "この写真を圧縮できませんでした。HEIC・JPEG・PNGなど、別の写真を選び直してください。元の大きな写真は保存していません。",
+          );
+          return "";
+        }
       }
       let pendingCarImage = "";
       function clearCarForm() {
@@ -2309,7 +2408,6 @@
           memo: $("histMemo").value,
           before,
           after,
-          image: after || before || "",
         });
         if (save("history", a)) {
           deductChemicalStock(chemicalUsages);
@@ -2648,9 +2746,9 @@
         }
       }
       function historyMarkup(entry, index = null, compact = false) {
-        const image = safeImage(entry.image);
         const before = safeImage(entry.before);
         const after = safeImage(entry.after);
+        const image = after || before || safeImage(entry.image);
         const chemicalTags = (entry.chems || [])
           .map((name) => `<span class="tag">${escapeHTML(name)}</span>`)
           .join("");
