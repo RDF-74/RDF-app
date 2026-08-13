@@ -1,8 +1,8 @@
-Detailing Manager v3.5 β2
+Detailing Manager v3.6 β2
 メーカー商品カタログ 表記確認メモ
 
 確認日：2026年8月13日
-収録数：7メーカー / 255商品
+収録数：8メーカー / 300商品
 
 収録方針
 ・各メーカーの公式サイトに掲載されている商品名・ブランド表記を優先
@@ -46,6 +46,20 @@ VONIXX（54商品）
 https://www.vonixx.com.br/
 ユーザー指定の「ボニックス」は正式ブランド表記「VONIXX」として収録しています。
 NATIVE、BLENDを含む洗浄・下地処理・保護・研磨製品を収録しています。
+
+Labocosmetica（45商品）
+https://www.labocosmetica.it/negozio/
+公式カタログ掲載58件から、タオル、ブラシ、ボトル、パッド、複数商品のセットを除いた単品ケミカル45商品を収録しています。
+アクセント記号、©、2.0、SiO2、Upgrade Formulaなどを公式掲載表記に合わせています。
+
+仕上がり方向別診断の主な確認元
+https://products.labocosmetica.com/en-us/perfecta-2-0/
+https://gyeon.co/product/wetcoat/
+https://gyeon.co/product/quickdetailer/
+https://gyeon.co/product/ceramicdetailer/
+https://www.vonixx.com.br/produto/native-spray-wax/
+艶・滑り・撥水・防汚などの仕上がり傾向は、メーカーの製品説明をもとに購入候補を並べ替えるための定性的な目安として整理しています。
+表示上の傾向は性能値や耐久期間の保証ではありません。
 
 注意
 商品ラインナップ、名称、販売地域はメーカー側で変更されることがあります。

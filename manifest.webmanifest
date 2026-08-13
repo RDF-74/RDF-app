@@ -1,5 +1,5 @@
 {
-  "name": "Detailing Manager v3.5 β",
+  "name": "Detailing Manager v3.6 β",
   "short_name": "Detailing β",
   "start_url": "./",
   "display": "standalone",
@@ -17,7 +17,7 @@
       "type": "image/png"
     }
   ],
-  "description": "最大5台の洗車・整備記録、7メーカー255商品の管理、希釈計算、汚れ別・Green Starガイドに対応した無料β版",
+  "description": "最大5台の洗車・整備記録、8メーカー300商品の管理、仕上がり方向別の商品診断、希釈計算、汚れ別ガイドに対応した無料β版",
   "id": "./",
   "scope": "./",
   "display_override": ["standalone"]
