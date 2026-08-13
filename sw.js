@@ -1,28 +1,10 @@
-const CACHE = "detailing-v3.4-beta.3";
+const CACHE = "detailing-v3.4-beta.4";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
-  "./assets/chem-alkaline.webp",
-  "./assets/chem-neutral.webp",
-  "./assets/chem-polish.webp",
-  "./assets/chem-iron.webp",
-  "./assets/chem-acid.webp",
-  "./assets/chem-glass.webp",
-  "./assets/chem-prep.webp",
-  "./assets/chem-coating.webp",
-  "./assets/chem-qd.webp",
-  "./assets/guide-road-film.webp",
-  "./assets/guide-water-spots.webp",
-  "./assets/guide-iron.webp",
-  "./assets/guide-bugs.webp",
-  "./assets/guide-wheel.webp",
-  "./assets/guide-glass.webp",
-  "./assets/guide-trim.webp",
-  "./assets/guide-tar.webp",
-  "./assets/guide-bird.webp",
 ];
 self.addEventListener("install", (e) =>
   e.waitUntil(

@@ -1,0 +1,21 @@
+Detailing Manager v3.4 β4
+GitHub Pages更新手順
+
+1. このZIPを展開する
+2. GitHubのRDF-appリポジトリを開く
+3. リポジトリ直下へ以下のファイルを上書きする
+   ・index.html
+   ・sw.js
+   ・manifest.webmanifest
+   ・icon-192.png
+   ・icon-512.png
+4. Commit changesで更新を確定する
+5. GitHub Pagesの反映後、Safariを一度閉じてページを開き直す
+
+v3.4 β4は画像18枚をindex.htmlに内蔵しています。
+assetsフォルダをGitHubへ追加する必要はありません。
+
+画像が古い表示のままの場合
+・Safariの更新ボタンを押す
+・ホーム画面から起動している場合は、アプリを完全に閉じて再起動する
+・GitHub Pagesの反映まで数分待つ
