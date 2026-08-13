@@ -1095,6 +1095,140 @@
         color: #9fb0bf;
         font-size: 11px;
       }
+      .gs-hero {
+        overflow: hidden;
+        padding: 0;
+      }
+      .gs-hero-main {
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr);
+        gap: 14px;
+        align-items: center;
+        padding: 16px;
+        background: linear-gradient(135deg, #183b22, #0e2016 62%, #101b24);
+      }
+      .gs-hero-main img {
+        width: 92px;
+        height: 92px;
+        border: 1px solid #3e6a4a;
+        border-radius: 20px;
+        object-fit: cover;
+        background: #102019;
+      }
+      .gs-product-label {
+        display: inline-block;
+        margin-bottom: 6px;
+        color: #8dd5a3;
+        font-size: 11px;
+        font-weight: 850;
+        letter-spacing: 0.05em;
+      }
+      .gs-ratio-explain {
+        margin: 0 14px 14px;
+        padding: 12px;
+        border: 1px solid #357252;
+        border-radius: 15px;
+        background: #10291d;
+        color: #c8f0d5;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+      .gs-ratio-explain b {
+        color: #f2fff6;
+      }
+      .gs-use-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .gs-use-card {
+        padding: 14px;
+        border: 1px solid #2d4236;
+        border-radius: 19px;
+        background: linear-gradient(180deg, #14231a, #0e1712);
+      }
+      .gs-use-head {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+      .gs-use-head h3 {
+        margin: 0 0 3px;
+      }
+      .gs-ratio-badge {
+        flex: 0 0 auto;
+        padding: 7px 9px;
+        border: 1px solid #3c7853;
+        border-radius: 999px;
+        background: #153421;
+        color: #a7e6b9;
+        font-size: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+      .gs-ratio-buttons {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin-top: 11px;
+      }
+      .gs-ratio-buttons button {
+        padding: 7px 10px;
+        border-color: #35664a;
+        background: #142c1e;
+        color: #b9e8c7;
+        font-size: 12px;
+      }
+      .gs-recipe {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+        margin-top: 11px;
+      }
+      .gs-recipe div {
+        padding: 9px 6px;
+        border: 1px solid #31526c;
+        border-radius: 13px;
+        background: #102333;
+        text-align: center;
+      }
+      .gs-recipe b {
+        display: block;
+        color: #dff3ff;
+        font-size: 15px;
+      }
+      .gs-tool-note {
+        margin-top: 10px;
+        padding: 10px 11px;
+        border: 1px solid #344957;
+        border-radius: 13px;
+        background: #101b23;
+        color: #aebfcb;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      .gs-source-link {
+        display: block;
+        margin-top: 10px;
+        color: #72c1ff;
+        font-size: 12px;
+      }
+      @media (max-width: 390px) {
+        .gs-hero-main {
+          grid-template-columns: 78px minmax(0, 1fr);
+        }
+        .gs-hero-main img {
+          width: 78px;
+          height: 78px;
+        }
+        .gs-use-head {
+          display: grid;
+        }
+        .gs-ratio-badge {
+          justify-self: start;
+        }
+      }
       .manual-mode-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1817,6 +1951,20 @@
             ><small>どの汚れに何を使うか確認</small></span
           ><span aria-hidden="true">›</span>
         </button>
+        <button
+          class="guide-entry"
+          type="button"
+          onclick="openGreenStarGuide()"
+        >
+          <img
+            data-bundled-image="assets/chem-alkaline.webp"
+            alt="アルカリ性クリーナーのイメージ"
+          />
+          <span
+            ><b>Green Star 使い方・希釈ガイド</b
+            ><small>車外・内装・床・アクティブフォームの公式倍率</small></span
+          ><span aria-hidden="true">›</span>
+        </button>
         <div class="card">
           <div class="section-title">
             <h2>ケミカル管理</h2>
@@ -1957,6 +2105,174 @@
           </p>
         </div>
       </section>
+      <section id="green-star-guide" class="tab">
+        <div class="card gs-hero">
+          <div class="guide-head" style="padding: 14px 14px 0">
+            <button class="ghost" type="button" onclick="go('chemicals')">
+              ←
+            </button>
+            <div>
+              <h2>Green Star 使い方ガイド</h2>
+              <div class="muted tiny">用途別の希釈と安全な使い方</div>
+            </div>
+          </div>
+          <div class="gs-hero-main">
+            <img
+              data-bundled-image="assets/chem-alkaline.webp"
+              alt="Green Starのイメージ"
+            />
+            <div>
+              <span class="gs-product-label">KOCH-CHEMIE</span>
+              <h2 style="margin: 0 0 5px">Green Star</h2>
+              <div class="muted tiny">
+                リン酸塩・溶剤を含まない高濃縮アルカリ性万能クリーナー
+              </div>
+            </div>
+          </div>
+          <div class="gs-ratio-explain">
+            <b>このページの「1：10」は、原液1＋水10（合計11）です。</b
+            ><br />「10倍希釈＝原液1＋水9」とは量が違います。下のボタンは希釈計算を自動で「原液：水」モードに切り替えます。
+          </div>
+        </div>
+
+        <div class="guide-warning">
+          冷えた面で作業し、乾かす前に十分すすいでください。最初は弱い濃度から目立たない場所で適合性を確認し、商品ラベル・SDS・施工対象の指定を優先してください。
+        </div>
+
+        <div class="gs-use-list">
+          <article class="gs-use-card">
+            <div class="gs-use-head">
+              <div>
+                <h3>車外・エンジン</h3>
+                <div class="muted tiny">泥・道路汚れ・油汚れのプレ洗浄</div>
+              </div>
+              <span class="gs-ratio-badge">原液1：水5〜30</span>
+            </div>
+            <div class="guide-steps">
+              <div class="guide-step">
+                <span>1</span><span>汚れが軽いほど水を多くし、弱めから試す</span>
+              </div>
+              <div class="guide-step">
+                <span>2</span><span>対象面全体へ均一に塗布し、短時間なじませる</span>
+              </div>
+              <div class="guide-step">
+                <span>3</span><span>乾燥させず、高圧水などで十分にすすぐ</span>
+              </div>
+            </div>
+            <div class="gs-ratio-buttons">
+              <button type="button" onclick="openGreenStarDilution(5)">1：5を計算</button>
+              <button type="button" onclick="openGreenStarDilution(10)">1：10を計算</button>
+              <button type="button" onclick="openGreenStarDilution(20)">1：20を計算</button>
+              <button type="button" onclick="openGreenStarDilution(30)">1：30を計算</button>
+            </div>
+          </article>
+
+          <article class="gs-use-card">
+            <div class="gs-use-head">
+              <div>
+                <h3>内装・布地</h3>
+                <div class="muted tiny">樹脂内装・布シート・カーペット</div>
+              </div>
+              <span class="gs-ratio-badge">原液1：水10〜20</span>
+            </div>
+            <div class="guide-steps">
+              <div class="guide-step">
+                <span>1</span><span>色落ち・素材への影響を目立たない場所で確認</span>
+              </div>
+              <div class="guide-step">
+                <span>2</span><span>必要最小限を塗布して汚れを浮かせる</span>
+              </div>
+              <div class="guide-step">
+                <span>3</span><span>湿らせた布またはリンサー・湿式バキュームで残留分を除去</span>
+              </div>
+            </div>
+            <div class="gs-ratio-buttons">
+              <button type="button" onclick="openGreenStarDilution(10)">1：10を計算</button>
+              <button type="button" onclick="openGreenStarDilution(20)">1：20を計算</button>
+            </div>
+            <div class="gs-tool-note">
+              リンサーなど発泡しやすい機器で使う場合、Koch-Chemieは消泡剤Kocentschäumerの併用を推奨しています。
+            </div>
+          </article>
+
+          <article class="gs-use-card">
+            <div class="gs-use-head">
+              <div>
+                <h3>作業場・工業用床</h3>
+                <div class="muted tiny">床面の油汚れ・一般清掃</div>
+              </div>
+              <span class="gs-ratio-badge">原液1：水40〜120</span>
+            </div>
+            <div class="guide-steps">
+              <div class="guide-step">
+                <span>1</span><span>床材の耐アルカリ性を確認して希釈液を作る</span>
+              </div>
+              <div class="guide-step">
+                <span>2</span><span>洗浄後は汚水とケミカル残留分を除去する</span>
+              </div>
+            </div>
+            <div class="gs-ratio-buttons">
+              <button type="button" onclick="openGreenStarDilution(40)">1：40を計算</button>
+              <button type="button" onclick="openGreenStarDilution(80)">1：80を計算</button>
+              <button type="button" onclick="openGreenStarDilution(120)">1：120を計算</button>
+            </div>
+          </article>
+
+          <article class="gs-use-card">
+            <div class="gs-use-head">
+              <div>
+                <h3>Gentle Snow Foamと混ぜる（公式）</h3>
+                <div class="muted tiny">頑固な汚れ・虫汚れ用のアクティブフォーム</div>
+              </div>
+              <span class="gs-ratio-badge">GS 10〜30mL</span>
+            </div>
+            <div class="gs-recipe">
+              <div><span class="tiny muted">水</span><b>1L</b></div>
+              <div><span class="tiny muted">Gentle Snow Foam</span><b>約20mL</b></div>
+              <div><span class="tiny muted">Green Star</span><b>10〜30mL</b></div>
+            </div>
+            <div class="guide-steps">
+              <div class="guide-step">
+                <span>1</span><span>水1LへGentle Snow Foam約20mLを入れて先に混ぜる</span>
+              </div>
+              <div class="guide-step">
+                <span>2</span><span>Green Starを10〜30mL追加してアクティブフォームにする</span>
+              </div>
+              <div class="guide-step">
+                <span>3</span><span>フォームスプレイヤーで塗布し、乾燥前に十分すすぐ</span>
+              </div>
+            </div>
+            <div class="guide-warning">
+              この混合レシピはGentle Snow Foamとの組み合わせです。他社品や酸性・保護成分入りを含む任意のシャンプーには、そのまま流用しないでください。メーカー双方が混合を認めていない商品同士は混ぜません。
+            </div>
+          </article>
+
+          <article class="gs-use-card">
+            <h3>フォームガン／フォームキャノンの注意</h3>
+            <div class="gs-tool-note">
+              ボトル内の濃度と、車体に届く最終濃度は同じではありません。吸い上げ量や水量が機種ごとに違うため、固定のボトル倍率にはできません。機器の説明書を優先し、弱め・短時間から確認してください。蓄圧スプレーなど完成液をそのまま噴霧する器具は、上の「原液：水」で計算できます。
+            </div>
+          </article>
+        </div>
+
+        <div class="card">
+          <b>参照したメーカー情報</b>
+          <a
+            class="gs-source-link"
+            href="https://www.koch-chemie.com/en/products/green_star"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Koch-Chemie Green Star 公式製品情報 ↗</a
+          >
+          <a
+            class="gs-source-link"
+            href="https://www.koch-chemie.com/us/products/gentle_snow_foam"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Koch-Chemie Gentle Snow Foam 公式製品情報 ↗</a
+          >
+        </div>
+      </section>
       <section id="coating-manual" class="tab">
         <div class="card">
           <div class="guide-head">
@@ -2083,7 +2399,7 @@
         <div class="card">
           <div class="section-title">
             <h2>設定</h2>
-            <span class="version-badge">v3.5 β1</span>
+            <span class="version-badge">v3.5 β2</span>
           </div>
           <p class="muted">
             β版のデータはこの端末内に保存されます。機種変更や不具合に備えて、JSONファイルへ定期的に保存してください。
@@ -2336,7 +2652,7 @@
     </div>
     <div id="setupOverlay" class="setup-overlay hidden">
       <div class="setup-box">
-        <span class="version-badge">Detailing Manager v3.5 β1</span>
+        <span class="version-badge">Detailing Manager v3.5 β2</span>
         <h2>無料βテストへようこそ</h2>
         <p class="muted">
           愛車の洗車・コーティング・ケミカル在庫を、このiPhoneでまとめて管理できます。
@@ -2380,7 +2696,7 @@
       </div>
     </div>
     <script>
-      const DM_VERSION = "3.5-beta.1";
+      const DM_VERSION = "3.5-beta.2";
       const MAX_CARS = 5;
       const MULTI_CAR_SCHEMA_KEY = "dmMultiCarSchema";
       const MULTI_CAR_SCHEMA_VERSION = "3";
@@ -2388,6 +2704,20 @@
       const PHOTO_TARGET_BYTES = 180 * 1024;
       const UPDATE_SEEN_KEY = "dmLastSeenVersion";
       const UPDATE_HISTORY = [
+        {
+          version: "3.5-beta.2",
+          label: "v3.5 β2",
+          date: "2026年8月13日",
+          title: "Green Star専用ガイドを追加",
+          summary: "用途別の公式希釈とアクティブフォームを確認",
+          changes: [
+            "車外・エンジン、内装・布地、床の用途別希釈範囲を追加",
+            "原液1：水10と10倍希釈の違いを見分けやすく表示",
+            "用途ごとの倍率から原液：水モードの希釈計算へ直接移動",
+            "Gentle Snow FoamへGreen Starを加える公式アクティブフォーム手順を追加",
+            "フォームガンの追加希釈と、乾燥・素材適合性への注意を追加",
+          ],
+        },
         {
           version: "3.5-beta.1",
           label: "v3.5 β1",
@@ -3050,6 +3380,24 @@
         activeGuideFilter = GUIDE_FILTERS.includes(filter) ? filter : "すべて";
         go("guide");
         renderGuide();
+      }
+      function openGreenStarGuide() {
+        go("green-star-guide");
+      }
+      function openGreenStarDilution(waterParts) {
+        const ratio = Math.max(1, Number(waterParts) || 1);
+        go("dilution");
+        const greenStar = load("chemicals", []).find(isGreenStarChemical);
+        const selector = $("dilutionChemical");
+        if (greenStar && selector) {
+          const displayName = chemicalDisplayName(greenStar);
+          if ([...selector.options].some((option) => option.value === displayName))
+            selector.value = displayName;
+        }
+        $("mode").value = "ratio";
+        $("ratio").value = ratio;
+        if (!(Number($("total").value) > 0)) $("total").value = 1000;
+        calc();
       }
       function coatingPrepCarId() {
         return getActiveCarId() || COATING_PREP_UNASSIGNED_CAR;
@@ -4625,6 +4973,16 @@
         const nameKey = normalizeCatalogText(name);
         return nameKey.startsWith(makerKey) ? name : `${manufacturer} ${name}`;
       }
+      function isGreenStarChemical(chemical) {
+        if (!chemical) return false;
+        if (chemical.catalogId === "Koch-Chemie::Green Star") return true;
+        const name = normalizeCatalogText(chemical.name);
+        const manufacturer = normalizeCatalogText(chemical.manufacturer);
+        if (name === "greenstar" && (!manufacturer || manufacturer === "kochchemie"))
+          return true;
+        const displayName = normalizeCatalogText(chemicalDisplayName(chemical));
+        return displayName.includes("kochchemie") && displayName.includes("greenstar");
+      }
       function catalogItemMatchesChemical(item, chemical) {
         if (!item || !chemical) return false;
         if (chemical.catalogId && chemical.catalogId === item.id) return true;
@@ -5219,7 +5577,7 @@
                           Math.min(100, Math.round((stock / cap) * 100)),
                         )
                       : 0;
-                return `<div class="list-item row"><img class="mini-img" src="${image}" alt="${escapeHTML(x.type || "ケミカル")}のイメージ"><div style="flex:1">${x.manufacturer ? `<span class="chemical-maker">${escapeHTML(x.manufacturer)}</span>` : ""}<div class="row between"><b>${escapeHTML(x.name || "名称なし")}</b><span class="tag">${escapeHTML(x.type || "その他")}</span></div>${x.purpose ? `<div class="muted tiny">${escapeHTML(x.purpose)}</div>` : ""}<div class="muted tiny">推奨 ${x.ratio ? numberOr(x.ratio, 0) + "倍" : "—"} / ${cap ? `残量 ${stock}/${cap}mL (${pct}%)` : `残量 ${stock || 0}mL`}</div><div class="progress"><i style="width:${pct}%"></i></div><div class="stock-actions"><button class="secondary tiny" onclick="openChemicalEditor(${i})">編集</button><button class="ghost danger tiny" onclick="delChem(${i})">削除</button></div></div></div>`;
+                return `<div class="list-item row"><img class="mini-img" src="${image}" alt="${escapeHTML(x.type || "ケミカル")}のイメージ"><div style="flex:1">${x.manufacturer ? `<span class="chemical-maker">${escapeHTML(x.manufacturer)}</span>` : ""}<div class="row between"><b>${escapeHTML(x.name || "名称なし")}</b><span class="tag">${escapeHTML(x.type || "その他")}</span></div>${x.purpose ? `<div class="muted tiny">${escapeHTML(x.purpose)}</div>` : ""}<div class="muted tiny">推奨 ${x.ratio ? numberOr(x.ratio, 0) + "倍" : "—"} / ${cap ? `残量 ${stock}/${cap}mL (${pct}%)` : `残量 ${stock || 0}mL`}</div><div class="progress"><i style="width:${pct}%"></i></div><div class="stock-actions">${isGreenStarChemical(x) ? '<button class="secondary tiny" onclick="openGreenStarGuide()">使い方</button>' : ""}<button class="secondary tiny" onclick="openChemicalEditor(${i})">編集</button><button class="ghost danger tiny" onclick="delChem(${i})">削除</button></div></div></div>`;
               })
               .join("")
           : '<span class="muted">まだありません。</span>';

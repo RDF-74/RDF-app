@@ -1,4 +1,4 @@
-Detailing Manager v3.5 β1
+Detailing Manager v3.5 β2
 メーカー商品カタログ 表記確認メモ
 
 確認日：2026年8月13日
@@ -35,6 +35,12 @@ Q² / Q²M、EVO、REDEFINEDなどの記号・シリーズ名を公式表記に�
 Koch-Chemie（45商品）
 https://www.koch-chemie.com/en/products
 ハイフンを含むメーカー名と、製品コード（H9.02、F6.01など）を公式表記に合わせています。
+
+Green Star使い方・希釈ガイド
+https://www.koch-chemie.com/en/products/green_star
+https://www.koch-chemie.com/en/company/expertblog/dilution-guide
+https://www.koch-chemie.com/us/products/gentle_snow_foam
+用途別希釈、原液：水の考え方、Gentle Snow Foamとのアクティブフォーム手順を確認しています。
 
 VONIXX（54商品）
 https://www.vonixx.com.br/
