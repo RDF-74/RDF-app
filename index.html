@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icon-192.png" />
-    <title>Detailing Manager v3.3 β</title>
+    <title>Detailing Manager v3.4 β</title>
     <style>
       :root {
         --bg: #070b10;
@@ -788,6 +788,317 @@
         font-size: 11px;
         font-weight: 800;
       }
+      .guide-entry {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 70px minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        margin-top: 12px;
+        padding: 10px 12px;
+        border: 1px solid #315f82;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #102c42, #0c1924);
+        color: #eff8ff;
+        text-align: left;
+      }
+      .guide-entry img {
+        width: 70px;
+        height: 58px;
+        border-radius: 12px;
+        object-fit: cover;
+      }
+      .guide-entry small {
+        display: block;
+        margin-top: 3px;
+        color: #9fc7e3;
+        font-weight: 500;
+      }
+      .guide-head {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+      }
+      .guide-head h2 {
+        margin-bottom: 3px;
+      }
+      .guide-filters {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 4px 0 10px;
+        scrollbar-width: none;
+      }
+      .guide-filters::-webkit-scrollbar {
+        display: none;
+      }
+      .guide-filter {
+        flex: 0 0 auto;
+        min-height: 38px;
+        padding: 8px 12px;
+        border: 1px solid #2d3d4b;
+        border-radius: 999px;
+        background: #111c25;
+        color: #aebbc7;
+        font-size: 12px;
+      }
+      .guide-filter.active {
+        border-color: #318bd0;
+        background: #12304a;
+        color: #9ed7ff;
+      }
+      .guide-list {
+        display: grid;
+        gap: 13px;
+      }
+      .guide-card {
+        overflow: hidden;
+        border: 1px solid #293846;
+        border-radius: 22px;
+        background: linear-gradient(180deg, #131e28, #0d151d);
+      }
+      .guide-card-image {
+        position: relative;
+        height: 190px;
+        overflow: hidden;
+        background: #101820;
+      }
+      .guide-card-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .guide-part {
+        position: absolute;
+        top: 11px;
+        left: 11px;
+        padding: 6px 9px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 999px;
+        background: rgba(5, 12, 18, 0.78);
+        color: #e7f5ff;
+        font-size: 11px;
+        font-weight: 850;
+        backdrop-filter: blur(8px);
+      }
+      .guide-card-body {
+        padding: 15px;
+      }
+      .guide-chemical {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        margin: 11px 0;
+        padding: 9px;
+        border: 1px solid #31526c;
+        border-radius: 14px;
+        background: #10283a;
+      }
+      .guide-chemical img {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        object-fit: cover;
+      }
+      .guide-steps {
+        display: grid;
+        gap: 7px;
+        margin-top: 11px;
+      }
+      .guide-step {
+        display: grid;
+        grid-template-columns: 25px minmax(0, 1fr);
+        gap: 8px;
+        align-items: start;
+        color: #cbd5df;
+        font-size: 13px;
+      }
+      .guide-step span:first-child {
+        display: grid;
+        place-items: center;
+        width: 25px;
+        height: 25px;
+        border-radius: 999px;
+        background: #18344a;
+        color: #9bd6ff;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .guide-warning {
+        margin-top: 12px;
+        padding: 10px 11px;
+        border: 1px solid #654d24;
+        border-radius: 13px;
+        background: #261e10;
+        color: #e9cf91;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      .guide-matches {
+        margin-top: 9px;
+        color: #9fb0bf;
+        font-size: 11px;
+      }
+      .manual-mode-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .manual-mode {
+        min-height: 70px;
+        padding: 10px 8px;
+        border: 1px solid #2c3c4b;
+        border-radius: 15px;
+        background: #101a23;
+        color: #adbac7;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+      .manual-mode b {
+        display: block;
+        margin-bottom: 3px;
+        color: #e8eef4;
+      }
+      .manual-mode.active {
+        border-color: #318bd0;
+        background: #12304a;
+        color: #9fd6f8;
+        box-shadow: inset 0 0 0 1px #318bd0;
+      }
+      .manual-progress-card {
+        position: sticky;
+        top: calc(86px + env(safe-area-inset-top));
+        z-index: 8;
+        padding: 12px 14px;
+        border: 1px solid #31526c;
+        border-radius: 16px;
+        background: rgba(13, 27, 39, 0.96);
+        backdrop-filter: blur(12px);
+      }
+      .manual-progress-track {
+        height: 8px;
+        margin-top: 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #0a1117;
+      }
+      .manual-progress-track i {
+        display: block;
+        width: 0;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #3aa7ff, #4bd38b);
+        transition: width 0.25s ease;
+      }
+      .manual-step-list {
+        display: grid;
+        gap: 11px;
+        margin-top: 12px;
+      }
+      .manual-step {
+        display: grid;
+        grid-template-columns: 34px 76px minmax(0, 1fr);
+        gap: 11px;
+        align-items: start;
+        padding: 12px;
+        border: 1px solid #293846;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #131e28, #0d151d);
+      }
+      .manual-step.done {
+        border-color: #266247;
+        background: linear-gradient(180deg, #12271d, #0d1913);
+      }
+      .manual-step-check {
+        appearance: none;
+        display: grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        margin: 4px 0 0;
+        border: 2px solid #466072;
+        border-radius: 999px;
+        background: #0b131a;
+      }
+      .manual-step-check:checked {
+        border-color: #4bd38b;
+        background: #1f784b;
+      }
+      .manual-step-check:checked::after {
+        content: "✓";
+        color: white;
+        font-size: 17px;
+        font-weight: 900;
+      }
+      .manual-step-image {
+        width: 76px;
+        height: 76px;
+        border-radius: 14px;
+        object-fit: cover;
+      }
+      .manual-step-number {
+        color: #77c5ff;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+      }
+      .manual-step h3 {
+        margin: 2px 0 4px;
+        font-size: 16px;
+      }
+      .manual-step-detail {
+        margin-top: 8px;
+        color: #c4d0da;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      .manual-optional {
+        display: inline-flex;
+        margin-left: 6px;
+        padding: 3px 6px;
+        border: 1px solid #665124;
+        border-radius: 999px;
+        color: #dfc67c;
+        font-size: 9px;
+        vertical-align: middle;
+      }
+      .manual-candidate {
+        margin-top: 7px;
+        color: #95a6b5;
+        font-size: 10px;
+      }
+      .manual-actions {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 9px;
+        margin-top: 13px;
+      }
+      @media (min-width: 620px) {
+        .guide-list {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 430px) {
+        .manual-mode-grid {
+          grid-template-columns: 1fr;
+        }
+        .manual-mode {
+          min-height: 0;
+          text-align: left;
+        }
+        .manual-step {
+          grid-template-columns: 32px 62px minmax(0, 1fr);
+          gap: 9px;
+        }
+        .manual-step-image {
+          width: 62px;
+          height: 62px;
+        }
+      }
       .form-actions {
         display: grid;
         grid-template-columns: 1fr auto;
@@ -940,6 +1251,20 @@
           <button class="primary" onclick="go('history')">＋ 洗車を記録</button
           ><button class="greenbtn" onclick="go('dilution')">希釈計算</button>
         </div>
+        <button class="guide-entry" type="button" onclick="openGuide()">
+          <img src="assets/guide-water-spots.webp" alt="水ジミのイラスト" />
+          <span
+            ><b>この汚れ、何を使う？</b
+            ><small>パーツと汚れからケミカルを探す</small></span
+          ><span aria-hidden="true">›</span>
+        </button>
+        <button class="guide-entry" type="button" onclick="openCoatingManual()">
+          <img src="assets/chem-coating.webp" alt="コーティングのイメージ" />
+          <span
+            ><b>コーティング前の手順書</b
+            ><small>下地処理をチェックしながら進める</small></span
+          ><span aria-hidden="true">›</span>
+        </button>
         <div class="card">
           <div class="section-title">
             <h3>最近の施工</h3>
@@ -1323,6 +1648,13 @@
         </div>
       </section>
       <section id="chemicals" class="tab">
+        <button class="guide-entry" type="button" onclick="openGuide()">
+          <img src="assets/guide-iron.webp" alt="鉄粉汚れのイラスト" />
+          <span
+            ><b>汚れ別ケミカルガイド</b
+            ><small>どの汚れに何を使うか確認</small></span
+          ><span aria-hidden="true">›</span>
+        </button>
         <div class="card">
           <div class="section-title">
             <h2>ケミカル管理</h2>
@@ -1422,6 +1754,112 @@
           </button>
         </div>
       </section>
+      <section id="guide" class="tab">
+        <div class="card">
+          <div class="guide-head">
+            <button class="ghost" type="button" onclick="go('home')">←</button>
+            <div>
+              <h2>汚れ別ケミカルガイド</h2>
+              <div class="muted tiny">
+                パーツと汚れから、安全な落とし方を確認
+              </div>
+            </div>
+          </div>
+          <div class="guide-warning">
+            同時に複数のケミカルを混ぜないでください。目立たない場所で試し、商品記載の使用方法・対応素材・希釈倍率を優先してください。
+          </div>
+          <button
+            class="guide-entry"
+            type="button"
+            onclick="openCoatingManual()"
+          >
+            <img src="assets/chem-coating.webp" alt="コーティングのイメージ" />
+            <span
+              ><b>コーティング前の手順書</b
+              ><small>車の状態に合う下地処理を確認</small></span
+            ><span aria-hidden="true">›</span>
+          </button>
+        </div>
+        <div id="guideFilters" class="guide-filters"></div>
+        <div id="guideList" class="guide-list"></div>
+        <div class="card">
+          <b>落ちない場合</b>
+          <p class="muted tiny" style="margin-bottom: 0">
+            白い輪ジミが凹凸になっている、鳥フン跡が変色している、傷のように残る場合は、汚れではなく塗装へのダメージかもしれません。無理に擦らず、研磨または専門店への相談を検討してください。
+          </p>
+        </div>
+      </section>
+      <section id="coating-manual" class="tab">
+        <div class="card">
+          <div class="guide-head">
+            <button class="ghost" type="button" onclick="openGuide()">←</button>
+            <div>
+              <h2>コーティング前の手順書</h2>
+              <div class="muted tiny">
+                塗装状態に合わせて必要な下地処理を確認
+              </div>
+            </div>
+          </div>
+          <div class="guide-warning">
+            日陰または屋内の冷えたボディで作業し、薬剤ごとに完全にすすいでください。コーティング商品の温度・湿度・乾燥時間・施工面の指定を最優先します。
+          </div>
+          <div id="manualModeButtons" class="manual-mode-grid"></div>
+        </div>
+        <div class="manual-progress-card">
+          <div class="row between">
+            <b id="manualProgressTitle">進捗</b>
+            <span id="manualProgressText" class="tiny muted">0 / 0</span>
+          </div>
+          <div class="manual-progress-track">
+            <i id="manualProgressBar"></i>
+          </div>
+        </div>
+        <div id="manualStepList" class="manual-step-list"></div>
+        <div class="card">
+          <b>施工直前の最終確認</b>
+          <div class="setup-steps">
+            <div class="setup-step">
+              <span class="setup-num">1</span>
+              <div>
+                <b>完全に乾いている</b>
+                <div class="tiny muted">ミラー・モール・隙間の水も除去</div>
+              </div>
+            </div>
+            <div class="setup-step">
+              <span class="setup-num">2</span>
+              <div>
+                <b>油分・拭き筋・ホコリがない</b>
+                <div class="tiny muted">検査ライトでパネルごとに確認</div>
+              </div>
+            </div>
+            <div class="setup-step">
+              <span class="setup-num">3</span>
+              <div>
+                <b>施工環境と道具が整っている</b>
+                <div class="tiny muted">
+                  アプリケーター、拭き取りクロス、タイマーを準備
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="manual-actions">
+            <button
+              class="primary"
+              type="button"
+              onclick="applyCoatingPrepToHistory()"
+            >
+              完了工程を施工記録へ
+            </button>
+            <button
+              class="secondary"
+              type="button"
+              onclick="resetCoatingPrep()"
+            >
+              リセット
+            </button>
+          </div>
+        </div>
+      </section>
       <section id="maintenance" class="tab">
         <div class="card">
           <h2>整備記録</h2>
@@ -1477,7 +1915,7 @@
         <div class="card">
           <div class="section-title">
             <h2>設定</h2>
-            <span class="version-badge">v3.3 β4</span>
+            <span class="version-badge">v3.4 β3</span>
           </div>
           <p class="muted">
             β版のデータはこの端末内に保存されます。機種変更や不具合に備えて、JSONファイルへ定期的に保存してください。
@@ -1664,7 +2102,7 @@
     </div>
     <div id="setupOverlay" class="setup-overlay hidden">
       <div class="setup-box">
-        <span class="version-badge">Detailing Manager v3.3 β4</span>
+        <span class="version-badge">Detailing Manager v3.4 β3</span>
         <h2>無料βテストへようこそ</h2>
         <p class="muted">
           愛車の洗車・コーティング・ケミカル在庫を、このiPhoneでまとめて管理できます。
@@ -1708,7 +2146,7 @@
       </div>
     </div>
     <script>
-      const DM_VERSION = "3.3-beta.4";
+      const DM_VERSION = "3.4-beta.3";
       const MAX_CARS = 5;
       const MULTI_CAR_SCHEMA_KEY = "dmMultiCarSchema";
       const MULTI_CAR_SCHEMA_VERSION = "3";
@@ -1716,6 +2154,46 @@
       const PHOTO_TARGET_BYTES = 180 * 1024;
       const UPDATE_SEEN_KEY = "dmLastSeenVersion";
       const UPDATE_HISTORY = [
+        {
+          version: "3.4-beta.3",
+          label: "v3.4 β3",
+          date: "2026年8月13日",
+          title: "手順書を車両ごとに安全に保存",
+          summary: "車両別の進捗と施工記録の入力保護",
+          changes: [
+            "手順書の選択コースとチェック進捗を車両ごとに保存",
+            "v3.4 β2のチェック状態を現在の車両へ自動移行",
+            "施工記録へ反映する際、選択済みの工程や入力中の内容を保持",
+            "別の車両の施工記録を入力中の場合は誤反映を防止",
+          ],
+        },
+        {
+          version: "3.4-beta.2",
+          label: "v3.4 β2",
+          date: "2026年8月13日",
+          title: "コーティング前の手順書を追加",
+          summary: "状態別チェックリストと施工記録への反映",
+          changes: [
+            "軽い下地処理・標準リセット・研磨ありの3コースを追加",
+            "必要なケミカル・目的・作業方法・注意点を工程ごとに表示",
+            "必須工程の進捗とチェック状態を端末内に保存",
+            "登録済みケミカルから各工程に合う候補を自動表示",
+            "完了した工程を施工記録へまとめて反映可能",
+          ],
+        },
+        {
+          version: "3.4-beta.1",
+          label: "v3.4 β1",
+          date: "2026年8月13日",
+          title: "汚れ別ケミカルガイドを追加",
+          summary: "ケミカル画像とイラスト付き汚れガイド",
+          changes: [
+            "デフォルトケミカルに用途別のオリジナル画像を追加",
+            "ボディ・ホイール・ガラス・樹脂の汚れ別ガイドを追加",
+            "汚れごとにおすすめの種類・作業手順・注意点を表示",
+            "登録済みケミカルから、汚れに合う候補を自動表示",
+          ],
+        },
         {
           version: "3.3-beta.4",
           label: "v3.3 β4",
@@ -1782,6 +2260,387 @@
           return false;
         }
       })();
+      const CHEMICAL_TYPE_VISUALS = {
+        アルカリ: "assets/chem-alkaline.webp",
+        中性: "assets/chem-neutral.webp",
+        酸性: "assets/chem-acid.webp",
+        鉄粉除去: "assets/chem-iron.webp",
+        脱脂: "assets/chem-prep.webp",
+        コーティング: "assets/chem-coating.webp",
+        QD: "assets/chem-qd.webp",
+        その他: "assets/chem-polish.webp",
+      };
+      const GUIDE_FILTERS = ["すべて", "ボディ", "足回り", "ガラス", "樹脂"];
+      const GUIDE_ITEMS = [
+        {
+          id: "road-film",
+          part: "ボディ",
+          title: "黒ずみ・道路汚れ",
+          symptom: "下回りやドア後方に付く、灰色〜茶色の薄い汚れ",
+          image: "assets/guide-road-film.webp",
+          chemical: "アルカリ性プレウォッシュ",
+          chemicalImage: "assets/chem-alkaline.webp",
+          matchTypes: ["アルカリ"],
+          matchWords: ["green star", "apc", "アルカリ"],
+          steps: [
+            "水で砂や泥を十分に流す",
+            "指定倍率に薄めたアルカリを均一に塗布",
+            "乾く前に流し、中性シャンプーで洗う",
+          ],
+          warning:
+            "炎天下や熱いパネルでは使わない。強い濃度や長時間放置はコーティングへ影響するため、商品指定を優先。",
+        },
+        {
+          id: "water-spots",
+          part: "ボディ",
+          title: "白い輪ジミ・軽いスケール",
+          symptom: "洗車後も残る白い輪や、ザラつきのないミネラル汚れ",
+          image: "assets/guide-water-spots.webp",
+          chemical: "酸性クリーナー（軽度）",
+          chemicalImage: "assets/chem-acid.webp",
+          matchTypes: ["酸性"],
+          matchWords: ["酸性", "scale", "スケール"],
+          steps: [
+            "先に中性シャンプーで砂や油分を落とす",
+            "目立たない場所で試し、クロスで優しく塗布",
+            "短時間で拭き取り、十分に水ですすぐ",
+          ],
+          warning:
+            "凹凸やクレーター状の跡は塗装ダメージの可能性があり、酸性では消えません。ガラス・メッキ・無塗装樹脂への使用可否も確認。",
+        },
+        {
+          id: "iron",
+          part: "ボディ",
+          title: "オレンジ色の点・鉄粉",
+          symptom: "白い塗装で目立つ小さな茶色い点、触ると軽くザラつく",
+          image: "assets/guide-iron.webp",
+          chemical: "鉄粉除去剤",
+          chemicalImage: "assets/chem-iron.webp",
+          matchTypes: ["鉄粉除去"],
+          matchWords: ["iron", "鉄粉"],
+          steps: [
+            "ボディを洗い、砂や泥を取り除く",
+            "冷えたパネルへ鉄粉除去剤を塗布",
+            "紫色の反応を確認し、乾く前に十分すすぐ",
+          ],
+          warning:
+            "炎天下で乾燥させない。臭いが強いため換気し、商品がホイールやコーティングへ対応するか確認。",
+        },
+        {
+          id: "bugs",
+          part: "ボディ",
+          title: "虫汚れ",
+          symptom: "フロントバンパーやミラーに固着した虫の跡",
+          image: "assets/guide-bugs.webp",
+          chemical: "中性シャンプー／虫取り剤",
+          chemicalImage: "assets/chem-neutral.webp",
+          matchTypes: ["中性"],
+          matchWords: ["シャンプー", "snow", "スノー", "虫"],
+          steps: [
+            "水と泡をかけ、数分ふやかす",
+            "柔らかいクロスを当てて汚れを浮かせる",
+            "一方向へ優しく拭き、たっぷりすすぐ",
+          ],
+          warning:
+            "乾いたまま擦ると傷になります。長期間放置した変色は塗装ダメージの可能性があります。",
+        },
+        {
+          id: "wheel",
+          part: "足回り",
+          title: "ホイールの黒いブレーキダスト",
+          symptom: "スポークや奥側に付く黒い粉、茶色い固着汚れ",
+          image: "assets/guide-wheel.webp",
+          chemical: "アルカリ洗浄剤＋鉄粉除去剤",
+          chemicalImage: "assets/chem-iron.webp",
+          matchTypes: ["アルカリ", "鉄粉除去"],
+          matchWords: ["green star", "iron", "鉄粉", "ホイール"],
+          steps: [
+            "ホイールが完全に冷えていることを確認",
+            "アルカリで油汚れを落とし、十分にすすぐ",
+            "残る鉄粉へ鉄粉除去剤を使い、再度すすぐ",
+          ],
+          warning:
+            "薬剤を混ぜたり重ねたままにしない。アルマイト・ポリッシュ・特殊塗装は対応可否を必ず確認。",
+        },
+        {
+          id: "glass",
+          part: "ガラス",
+          title: "油膜・ワイパーの拭き筋",
+          symptom: "夜間や雨天で白くギラつく、ワイパー跡が残る",
+          image: "assets/guide-glass.webp",
+          chemical: "ガラスクリーナー／専用油膜除去剤",
+          chemicalImage: "assets/chem-glass.webp",
+          matchTypes: [],
+          matchWords: ["clear", "glass", "ガラス", "油膜"],
+          steps: [
+            "濡れたクロスで砂やホコリを先に除去",
+            "クリーナーをクロス側へ少量付けて拭く",
+            "別の乾いたクロスで筋が消えるまで仕上げる",
+          ],
+          warning:
+            "通常のガラスクリーナーで落ちない油膜は専用品が必要です。車内側のフィルム面には研磨剤を使わないでください。",
+        },
+        {
+          id: "trim",
+          part: "樹脂",
+          title: "無塗装樹脂の白い残り",
+          symptom: "黒い樹脂に残るワックスやケミカルの白い跡",
+          image: "assets/guide-trim.webp",
+          chemical: "薄めた中性洗剤／樹脂対応クリーナー",
+          chemicalImage: "assets/chem-neutral.webp",
+          matchTypes: ["中性"],
+          matchWords: ["シャンプー", "snow", "スノー", "樹脂"],
+          steps: [
+            "中性シャンプーと柔らかいブラシで洗う",
+            "溝に沿って軽く動かし、十分にすすぐ",
+            "完全に乾かし、必要なら樹脂保護剤で整える",
+          ],
+          warning:
+            "強い酸性・アルカリやメラミンスポンジは、ムラや白化を悪化させる場合があります。",
+        },
+        {
+          id: "tar",
+          part: "ボディ",
+          title: "黒い点状のタール・ピッチ",
+          symptom: "ロッカーパネルやタイヤ後方に付く、粘りのある黒い点",
+          image: "assets/guide-tar.webp",
+          chemical: "専用タール・ピッチクリーナー",
+          chemicalImage: "assets/chem-prep.webp",
+          matchTypes: [],
+          matchWords: ["tar", "タール", "ピッチ"],
+          steps: [
+            "通常洗車で周囲の砂を完全に落とす",
+            "専用品をクロスへ取り、汚れに短時間当てる",
+            "柔らかくなった汚れを拭き、洗浄して仕上げる",
+          ],
+          warning:
+            "爪や硬い道具で削らない。溶剤系は樹脂・再塗装面・コーティングへの対応可否を確認。",
+        },
+        {
+          id: "bird",
+          part: "ボディ",
+          title: "鳥フン",
+          symptom: "塗装上に固まった白〜茶色の付着物",
+          image: "assets/guide-bird.webp",
+          chemical: "水＋中性シャンプー",
+          chemicalImage: "assets/chem-neutral.webp",
+          matchTypes: ["中性"],
+          matchWords: ["シャンプー", "snow", "スノー"],
+          steps: [
+            "濡らした柔らかいクロスを数分かぶせる",
+            "十分に柔らかくしてから、持ち上げるように除去",
+            "中性シャンプーで洗い、跡を確認する",
+          ],
+          warning:
+            "酸性成分で塗装を傷めるため早めに除去。乾いたまま擦らず、跡が変色していれば研磨が必要な場合があります。",
+        },
+      ];
+      const COATING_PREP_PROGRESS_KEY = "dmCoatingPrepProgress";
+      const COATING_PREP_MODE_KEY = "dmCoatingPrepMode";
+      const COATING_PREP_STORE_SCHEMA = 2;
+      const COATING_PREP_UNASSIGNED_CAR = "__unassigned__";
+      const COATING_PREP_MODES = [
+        {
+          id: "light",
+          label: "軽い下地処理",
+          description: "塗装良好・汚れ少なめ",
+        },
+        {
+          id: "reset",
+          label: "標準リセット",
+          description: "水ジミ・鉄粉が気になる",
+        },
+        {
+          id: "polish",
+          label: "研磨あり",
+          description: "傷・くすみも整える",
+        },
+      ];
+      const COATING_PREP_STEPS = [
+        {
+          id: "environment",
+          modes: ["light", "reset", "polish"],
+          title: "作業環境と道具を整える",
+          purpose: "直射日光を避け、ボディが冷えた状態を作る",
+          image: "assets/chem-coating.webp",
+          chemical: "ケミカルなし",
+          matchTypes: [],
+          matchWords: [],
+          process: "",
+          detail:
+            "日陰または屋内で、照明・手袋・清潔なクロス・アプリケーター・タイマーを準備。コーティングの施工温度と湿度も先に確認します。",
+          warning: "雨、強風、結露、高温パネルの状態では開始しないでください。",
+        },
+        {
+          id: "prewash",
+          modes: ["light", "reset", "polish"],
+          title: "予洗い・プレウォッシュ",
+          purpose: "触れる前に砂・泥・道路汚れを減らす",
+          image: "assets/chem-alkaline.webp",
+          chemical: "アルカリまたは中性プレウォッシュ",
+          matchTypes: ["アルカリ", "中性"],
+          matchWords: ["green star", "foam", "スノー", "シャンプー"],
+          process: "プレウォッシュ",
+          detail:
+            "水で砂を流し、汚れに合わせた濃度で泡を均一に塗布。指定時間だけ反応させ、乾く前に上から下へ十分すすぎます。",
+          warning:
+            "希釈倍率と対応素材は商品表示を優先。薬剤をパネル上で乾燥させないでください。",
+        },
+        {
+          id: "contact-wash",
+          modes: ["light", "reset", "polish"],
+          title: "中性シャンプーでコンタクト洗車",
+          purpose: "残った汚れを傷を増やさず取り除く",
+          image: "assets/chem-neutral.webp",
+          chemical: "中性シャンプー",
+          matchTypes: ["中性"],
+          matchWords: ["snow", "スノー", "シャンプー"],
+          process: "コンタクト洗車",
+          detail:
+            "たっぷりの潤滑と清潔なミットを使い、上から下へ区画ごとに洗います。下回り用のミットやクロスは分けます。",
+          warning: "汚れたミットを使い続けず、強い力で往復しないでください。",
+        },
+        {
+          id: "tar-spot",
+          modes: ["light", "reset", "polish"],
+          title: "虫・タールを部分除去",
+          purpose: "洗車で残った固着物だけを先に処理する",
+          image: "assets/guide-tar.webp",
+          chemical: "虫取り剤／タール・ピッチクリーナー",
+          matchTypes: [],
+          matchWords: ["tar", "タール", "ピッチ", "虫"],
+          process: "",
+          optional: true,
+          detail:
+            "付着がある部分だけを専用品で柔らかくし、強く擦らず除去。処理後は残留成分を洗い流します。",
+          warning:
+            "溶剤系は再塗装面・樹脂・既存コーティングへの対応可否を確認してください。",
+        },
+        {
+          id: "iron-removal",
+          modes: ["reset", "polish"],
+          title: "鉄粉を化学除去",
+          purpose: "塗装に刺さった鉄粉を溶かして減らす",
+          image: "assets/chem-iron.webp",
+          chemical: "鉄粉除去剤",
+          matchTypes: ["鉄粉除去"],
+          matchWords: ["iron", "鉄粉"],
+          process: "鉄粉除去",
+          optional: true,
+          detail:
+            "冷えたボディへ塗布し、反応を確認。必要な場所だけ軽く補助し、製品指定時間内にたっぷりの水ですすぎます。",
+          warning:
+            "乾燥させないでください。次の薬剤へ進む前に、完全にすすぎ切ります。",
+        },
+        {
+          id: "water-spot",
+          modes: ["reset", "polish"],
+          title: "軽い水ジミ・スケールを除去",
+          purpose: "コーティングの密着を妨げるミネラル汚れを落とす",
+          image: "assets/chem-acid.webp",
+          chemical: "酸性クリーナー",
+          matchTypes: ["酸性"],
+          matchWords: ["酸性", "scale", "スケール", "waterspot"],
+          process: "スケール除去",
+          optional: true,
+          detail:
+            "鉄粉除去剤を完全にすすいだ後、商品指示どおり乾湿状態を整え、パネルごとに短時間で処理して十分にすすぎます。",
+          warning:
+            "薬剤同士を混ぜないでください。陥没した水ジミは研磨が必要で、酸性を繰り返しても消えません。",
+        },
+        {
+          id: "clay",
+          modes: ["reset", "polish"],
+          title: "残るザラつきを粘土処理",
+          purpose: "化学除去後も残る付着物だけを機械的に除去",
+          image: "assets/guide-iron.webp",
+          chemical: "クレイ＋専用潤滑剤",
+          matchTypes: [],
+          matchWords: ["clay", "クレイ", "粘土", "lube"],
+          process: "",
+          optional: true,
+          detail:
+            "ビニール越しに触ってザラつく場所だけ、潤滑剤を切らさず直線的に軽く滑らせます。面を頻繁に確認します。",
+          warning:
+            "粘土処理は微細傷が入る場合があります。研磨しない車では必要最小限にしてください。",
+        },
+        {
+          id: "masking",
+          modes: ["polish"],
+          title: "樹脂・エッジをマスキング",
+          purpose: "研磨粉の付着や薄い塗装部への負担を防ぐ",
+          image: "assets/chem-polish.webp",
+          chemical: "自動車用マスキングテープ",
+          matchTypes: [],
+          matchWords: [],
+          process: "",
+          detail:
+            "無塗装樹脂、ゴム、エンブレム周辺、鋭いプレスラインや塗装エッジを保護し、研磨範囲を区切ります。",
+          warning: "塗装状態や膜厚に不安がある場合は研磨を中止してください。",
+        },
+        {
+          id: "polishing",
+          modes: ["polish"],
+          title: "テスト研磨から塗装を整える",
+          purpose: "洗車傷・くすみ・残った固着跡を必要範囲だけ改善",
+          image: "assets/chem-polish.webp",
+          chemical: "コンパウンド＋適合するバフ",
+          matchTypes: ["その他"],
+          matchWords: ["base", "polish", "コンパウンド", "研磨"],
+          process: "研磨",
+          detail:
+            "目立たない小範囲で弱い組み合わせから試し、照明で結果を確認してから全体へ展開。研磨粉は都度除去します。",
+          warning:
+            "エッジを攻めず、熱を持たせない。膜厚や再塗装歴が不明なら無理をしないでください。",
+        },
+        {
+          id: "final-wash-dry",
+          modes: ["light", "reset", "polish"],
+          title: "最終洗浄・完全乾燥",
+          purpose: "薬剤、研磨粉、潤滑剤を残さない",
+          image: "assets/chem-neutral.webp",
+          chemical: "中性シャンプー／純水",
+          matchTypes: ["中性"],
+          matchWords: ["シャンプー", "snow", "スノー"],
+          process: "",
+          detail:
+            "必要に応じて中性シャンプーで再洗浄し、十分にすすぐ。モール・ミラー・エンブレム・隙間の水まで除去します。",
+          warning:
+            "残った水が施工中に垂れると、コーティングのムラや定着不良につながります。",
+        },
+        {
+          id: "panel-prep",
+          modes: ["light", "reset", "polish"],
+          title: "パネルごとに脱脂",
+          purpose: "油分・研磨油・古いワックス残りを除去する",
+          image: "assets/chem-prep.webp",
+          chemical: "コーティング前用パネルプレップ",
+          matchTypes: ["脱脂"],
+          matchWords: ["prep", "脱脂", "eraser"],
+          process: "脱脂",
+          detail:
+            "清潔なクロスへ適量取り、パネルごとに拭く。別の乾いたクロスで拭き筋と残留物を除去し、指定時間待ちます。",
+          warning:
+            "脱脂後は素手で触れず、薬剤を乾燥放置しないでください。待ち時間はコーティング商品の指定を優先します。",
+        },
+        {
+          id: "inspection",
+          modes: ["light", "reset", "polish"],
+          title: "ライトで最終検査",
+          purpose: "油膜・水分・ホコリ・磨き残しがないか確認",
+          image: "assets/chem-coating.webp",
+          chemical: "検査ライト＋清潔なクロス",
+          matchTypes: [],
+          matchWords: [],
+          process: "",
+          detail:
+            "角度を変えて全パネルを確認。拭き筋やホコリがあれば、その箇所だけ再度プレップして仕上げます。",
+          warning:
+            "準備が整うまでコーティング容器を開けず、施工後の濡れ・洗車禁止時間も先に確保してください。",
+        },
+      ];
+      let activeGuideFilter = "すべて";
+      let activeCoatingPrepMode = "reset";
       const pad2 = (n) => String(n).padStart(2, "0");
       const today = () => {
         const d = new Date();
@@ -1807,6 +2666,383 @@
         /^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(value || "")
           ? value
           : "";
+      function safeBundledImage(value) {
+        return /^assets\/(?:chem|guide)-[a-z0-9-]+\.webp$/i.test(value || "")
+          ? value
+          : "";
+      }
+      function chemicalDisplayImage(chemical) {
+        const uploaded = safeImage(chemical && chemical.image);
+        if (uploaded) return uploaded;
+        const bundled = safeBundledImage(chemical && chemical.visual);
+        if (bundled) return bundled;
+        const name = String((chemical && chemical.name) || "").toLowerCase();
+        if (/green star|アルカリ|apc/.test(name))
+          return CHEMICAL_TYPE_VISUALS.アルカリ;
+        if (/snow|スノー|シャンプー/.test(name))
+          return CHEMICAL_TYPE_VISUALS.中性;
+        if (/iron|鉄粉/.test(name)) return CHEMICAL_TYPE_VISUALS.鉄粉除去;
+        if (/酸性|scale|スケール/.test(name)) return CHEMICAL_TYPE_VISUALS.酸性;
+        if (/clear|glass|ガラス/.test(name)) return "assets/chem-glass.webp";
+        if (/prep|脱脂/.test(name)) return CHEMICAL_TYPE_VISUALS.脱脂;
+        if (/slick|detailer|\bqd\b/.test(name)) return CHEMICAL_TYPE_VISUALS.QD;
+        if (/base|polish|クリーナー/.test(name))
+          return CHEMICAL_TYPE_VISUALS.その他;
+        return (
+          CHEMICAL_TYPE_VISUALS[(chemical && chemical.type) || "その他"] ||
+          CHEMICAL_TYPE_VISUALS.その他
+        );
+      }
+      function matchingChemicalNames(matchTypes = [], matchWords = []) {
+        const matches = load("chemicals", []).filter((chemical) => {
+          const name = String(chemical.name || "").toLowerCase();
+          return (
+            matchTypes.includes(chemical.type) ||
+            matchWords.some((word) => name.includes(word.toLowerCase()))
+          );
+        });
+        return [
+          ...new Set(matches.map((chemical) => chemical.name).filter(Boolean)),
+        ].slice(0, 4);
+      }
+      function guideMatchingChemicals(item) {
+        return matchingChemicalNames(item.matchTypes, item.matchWords);
+      }
+      function renderGuide() {
+        const filters = document.getElementById("guideFilters");
+        const list = document.getElementById("guideList");
+        if (!filters || !list) return;
+        filters.innerHTML = GUIDE_FILTERS.map(
+          (filter) =>
+            `<button class="guide-filter${filter === activeGuideFilter ? " active" : ""}" type="button" aria-pressed="${filter === activeGuideFilter}" onclick="setGuideFilter('${filter}')">${escapeHTML(filter)}</button>`,
+        ).join("");
+        const items = GUIDE_ITEMS.filter(
+          (item) =>
+            activeGuideFilter === "すべて" || item.part === activeGuideFilter,
+        );
+        list.innerHTML = items
+          .map((item) => {
+            const matches = guideMatchingChemicals(item);
+            return `<article class="guide-card">
+              <div class="guide-card-image">
+                <img src="${safeBundledImage(item.image)}" alt="${escapeHTML(item.title)}のイラスト">
+                <span class="guide-part">${escapeHTML(item.part)}</span>
+              </div>
+              <div class="guide-card-body">
+                <h3>${escapeHTML(item.title)}</h3>
+                <div class="muted tiny">見分け方：${escapeHTML(item.symptom)}</div>
+                <div class="guide-chemical">
+                  <img src="${safeBundledImage(item.chemicalImage)}" alt="">
+                  <div><div class="muted tiny">おすすめの種類</div><b>${escapeHTML(item.chemical)}</b></div>
+                </div>
+                <div class="guide-steps">
+                  ${item.steps
+                    .map(
+                      (step, index) =>
+                        `<div class="guide-step"><span>${index + 1}</span><span>${escapeHTML(step)}</span></div>`,
+                    )
+                    .join("")}
+                </div>
+                <div class="guide-warning">注意：${escapeHTML(item.warning)}</div>
+                <div class="guide-matches">登録済み候補：${matches.length ? matches.map(escapeHTML).join(" / ") : "該当なし（ケミカル管理から追加できます）"}</div>
+              </div>
+            </article>`;
+          })
+          .join("");
+      }
+      function setGuideFilter(filter) {
+        if (!GUIDE_FILTERS.includes(filter)) return;
+        activeGuideFilter = filter;
+        renderGuide();
+      }
+      function openGuide(filter = "すべて") {
+        activeGuideFilter = GUIDE_FILTERS.includes(filter) ? filter : "すべて";
+        go("guide");
+        renderGuide();
+      }
+      function coatingPrepCarId() {
+        return getActiveCarId() || COATING_PREP_UNASSIGNED_CAR;
+      }
+      function coatingPrepCarName() {
+        return getActiveCar()?.name || "車両未設定";
+      }
+      function emptyCoatingPrepProgress() {
+        return Object.fromEntries(
+          COATING_PREP_MODES.map((mode) => [mode.id, []]),
+        );
+      }
+      function normalizeCoatingPrepProgress(value) {
+        const normalized = emptyCoatingPrepProgress();
+        COATING_PREP_MODES.forEach((mode) => {
+          const validIds = new Set(
+            COATING_PREP_STEPS.filter((step) =>
+              step.modes.includes(mode.id),
+            ).map((step) => step.id),
+          );
+          const ids = Array.isArray(value && value[mode.id])
+            ? value[mode.id]
+            : [];
+          normalized[mode.id] = [
+            ...new Set(ids.filter((id) => validIds.has(id))),
+          ];
+        });
+        return normalized;
+      }
+      function normalizeCoatingPrepStore(raw) {
+        const vehicles = [];
+        const seen = new Set();
+        (Array.isArray(raw && raw.vehicles) ? raw.vehicles : []).forEach(
+          (entry) => {
+            const carId = String((entry && entry.carId) || "");
+            if (!carId || seen.has(carId)) return;
+            seen.add(carId);
+            vehicles.push({
+              carId,
+              mode: COATING_PREP_MODES.some((mode) => mode.id === entry.mode)
+                ? entry.mode
+                : "reset",
+              progress: normalizeCoatingPrepProgress(entry.progress),
+            });
+          },
+        );
+        return { schema: COATING_PREP_STORE_SCHEMA, vehicles };
+      }
+      function coatingPrepStore() {
+        const raw = load(COATING_PREP_PROGRESS_KEY, {});
+        if (
+          raw &&
+          raw.schema === COATING_PREP_STORE_SCHEMA &&
+          Array.isArray(raw.vehicles)
+        )
+          return normalizeCoatingPrepStore(raw);
+        let legacyMode = "reset";
+        let hasLegacyMode = false;
+        try {
+          hasLegacyMode = localStorage.getItem(COATING_PREP_MODE_KEY) !== null;
+          legacyMode = load(COATING_PREP_MODE_KEY, "reset");
+        } catch {}
+        const hasLegacyProgress = COATING_PREP_MODES.some((mode) =>
+          Array.isArray(raw && raw[mode.id]),
+        );
+        const migrated = {
+          schema: COATING_PREP_STORE_SCHEMA,
+          vehicles: [],
+        };
+        if (hasLegacyProgress || hasLegacyMode) {
+          migrated.vehicles.push({
+            carId: coatingPrepCarId(),
+            mode: COATING_PREP_MODES.some((mode) => mode.id === legacyMode)
+              ? legacyMode
+              : "reset",
+            progress: normalizeCoatingPrepProgress(raw),
+          });
+          if (save(COATING_PREP_PROGRESS_KEY, migrated)) {
+            try {
+              localStorage.removeItem(COATING_PREP_MODE_KEY);
+            } catch {}
+          }
+        }
+        return migrated;
+      }
+      function coatingPrepEntry(store, create = false) {
+        const carId = coatingPrepCarId();
+        let entry = store.vehicles.find((item) => item.carId === carId);
+        if (!entry && create) {
+          entry = {
+            carId,
+            mode: "reset",
+            progress: emptyCoatingPrepProgress(),
+          };
+          store.vehicles.push(entry);
+        }
+        return entry || null;
+      }
+      function coatingPrepSavedMode() {
+        return coatingPrepEntry(coatingPrepStore())?.mode || "reset";
+      }
+      function coatingPrepMode() {
+        return (
+          COATING_PREP_MODES.find(
+            (mode) => mode.id === activeCoatingPrepMode,
+          ) || COATING_PREP_MODES[1]
+        );
+      }
+      function coatingPrepSteps() {
+        return COATING_PREP_STEPS.filter((step) =>
+          step.modes.includes(activeCoatingPrepMode),
+        );
+      }
+      function coatingPrepCompleted() {
+        const entry = coatingPrepEntry(coatingPrepStore());
+        const ids = Array.isArray(
+          entry && entry.progress && entry.progress[activeCoatingPrepMode],
+        )
+          ? entry.progress[activeCoatingPrepMode]
+          : [];
+        const validIds = new Set(coatingPrepSteps().map((step) => step.id));
+        return new Set(ids.filter((id) => validIds.has(id)));
+      }
+      function renderCoatingManual() {
+        const buttons = document.getElementById("manualModeButtons");
+        const list = document.getElementById("manualStepList");
+        if (!buttons || !list) return;
+        activeCoatingPrepMode = coatingPrepSavedMode();
+        const mode = coatingPrepMode();
+        const steps = coatingPrepSteps();
+        const completed = coatingPrepCompleted();
+        buttons.innerHTML = COATING_PREP_MODES.map(
+          (item) =>
+            `<button class="manual-mode${item.id === mode.id ? " active" : ""}" type="button" aria-pressed="${item.id === mode.id}" onclick="setCoatingPrepMode('${item.id}')"><b>${escapeHTML(item.label)}</b>${escapeHTML(item.description)}</button>`,
+        ).join("");
+        const required = steps.filter((step) => !step.optional);
+        const requiredDone = required.filter((step) =>
+          completed.has(step.id),
+        ).length;
+        const optionalDone = steps.filter(
+          (step) => step.optional && completed.has(step.id),
+        ).length;
+        const percent = required.length
+          ? Math.round((requiredDone / required.length) * 100)
+          : 0;
+        const title = document.getElementById("manualProgressTitle");
+        const text = document.getElementById("manualProgressText");
+        const bar = document.getElementById("manualProgressBar");
+        if (title)
+          title.textContent = `${coatingPrepCarName()}・${
+            percent === 100 ? "必須準備は完了" : mode.label
+          }`;
+        if (text)
+          text.textContent = `${requiredDone} / ${required.length} 必須${optionalDone ? `・任意 ${optionalDone}件` : ""}`;
+        if (bar) bar.style.width = `${percent}%`;
+        list.innerHTML = steps
+          .map((step, index) => {
+            const matches = matchingChemicalNames(
+              step.matchTypes,
+              step.matchWords,
+            );
+            const done = completed.has(step.id);
+            return `<article class="manual-step${done ? " done" : ""}">
+              <input class="manual-step-check" type="checkbox" aria-label="${escapeHTML(step.title)}を確認済みにする" ${done ? "checked" : ""} onchange="toggleCoatingPrepStep('${step.id}', this.checked)">
+              <img class="manual-step-image" src="${safeBundledImage(step.image)}" alt="">
+              <div>
+                <div class="manual-step-number">STEP ${index + 1}</div>
+                <h3>${escapeHTML(step.title)}${step.optional ? '<span class="manual-optional">汚れがある時だけ</span>' : ""}</h3>
+                <div class="muted tiny">目的：${escapeHTML(step.purpose)}</div>
+                <div class="guide-chemical" style="margin:8px 0 0;grid-template-columns:1fr">
+                  <div><div class="muted tiny">使用するもの</div><b>${escapeHTML(step.chemical)}</b></div>
+                </div>
+                <div class="manual-step-detail">${escapeHTML(step.detail)}</div>
+                <div class="guide-warning" style="margin-top:8px">注意：${escapeHTML(step.warning)}</div>
+                ${matches.length ? `<div class="manual-candidate">登録済み候補：${matches.map(escapeHTML).join(" / ")}</div>` : ""}
+              </div>
+            </article>`;
+          })
+          .join("");
+      }
+      function setCoatingPrepMode(modeId) {
+        if (!COATING_PREP_MODES.some((mode) => mode.id === modeId)) return;
+        const store = coatingPrepStore();
+        const entry = coatingPrepEntry(store, true);
+        entry.mode = modeId;
+        if (save(COATING_PREP_PROGRESS_KEY, store)) {
+          activeCoatingPrepMode = modeId;
+          try {
+            localStorage.removeItem(COATING_PREP_MODE_KEY);
+          } catch {}
+          renderCoatingManual();
+        }
+      }
+      function openCoatingManual(modeId = "") {
+        if (COATING_PREP_MODES.some((mode) => mode.id === modeId))
+          setCoatingPrepMode(modeId);
+        else activeCoatingPrepMode = coatingPrepSavedMode();
+        go("coating-manual");
+        renderCoatingManual();
+      }
+      function toggleCoatingPrepStep(stepId, checked) {
+        if (!coatingPrepSteps().some((step) => step.id === stepId)) return;
+        const store = coatingPrepStore();
+        const entry = coatingPrepEntry(store, true);
+        const completed = coatingPrepCompleted();
+        if (checked) completed.add(stepId);
+        else completed.delete(stepId);
+        entry.progress[activeCoatingPrepMode] = [...completed];
+        if (save(COATING_PREP_PROGRESS_KEY, store)) renderCoatingManual();
+      }
+      function resetCoatingPrep() {
+        if (!confirm("この手順書のチェックをリセットしますか？")) return;
+        const store = coatingPrepStore();
+        const entry = coatingPrepEntry(store, true);
+        entry.progress[activeCoatingPrepMode] = [];
+        if (save(COATING_PREP_PROGRESS_KEY, store)) renderCoatingManual();
+      }
+      function removeCoatingPrepCarData(carId) {
+        const store = coatingPrepStore();
+        const remaining = store.vehicles.filter(
+          (entry) => entry.carId !== carId,
+        );
+        if (remaining.length === store.vehicles.length) return;
+        store.vehicles = remaining;
+        save(COATING_PREP_PROGRESS_KEY, store);
+      }
+      function applyCoatingPrepToHistory() {
+        const activeCar = getActiveCar();
+        if (!activeCar) {
+          alert("先に対象車両を登録してください。");
+          go("cars");
+          return;
+        }
+        const completed = coatingPrepCompleted();
+        const completedSteps = coatingPrepSteps().filter((step) =>
+          completed.has(step.id),
+        );
+        if (!completedSteps.length) {
+          alert("完了した工程を1つ以上チェックしてください。");
+          return;
+        }
+        const processes = new Set(
+          completedSteps.map((step) => step.process).filter(Boolean),
+        );
+        const selectedProcesses = [
+          ...document.querySelectorAll('input[name="histProcess"]:checked'),
+        ];
+        const existingMemo = $("histMemo")?.value.trim() || "";
+        const hasExistingDraft = Boolean(
+          selectedProcesses.length ||
+            existingMemo ||
+            $("histMileage")?.value ||
+            $("histMinutes")?.value ||
+            $("histType")?.value !== "洗車" ||
+            $("histBefore")?.files?.length ||
+            $("histAfter")?.files?.length ||
+            getChemicalUsages().length,
+        );
+        const historyCarId = $("histCar")?.value || "";
+        if (hasExistingDraft && historyCarId && historyCarId !== activeCar.id) {
+          alert(
+            `施工記録には「${carNameById(historyCarId)}」の入力が残っているため反映しませんでした。先にその記録を保存するか、入力を整理してください。`,
+          );
+          go("history");
+          return;
+        }
+        if ($("histCar")) $("histCar").value = activeCar.id;
+        document
+          .querySelectorAll('input[name="histProcess"]')
+          .forEach((checkbox) => {
+            if (processes.has(checkbox.value)) checkbox.checked = true;
+          });
+        if (!hasExistingDraft && $("histType"))
+          $("histType").value = "下地処理";
+        const summary = `コーティング前準備（${coatingPrepMode().label}）：${completedSteps.map((step) => step.title).join(" / ")}`;
+        if ($("histMemo") && !existingMemo.includes(summary))
+          $("histMemo").value = existingMemo
+            ? `${existingMemo}\n${summary}`
+            : summary;
+        go("history");
+        alert(
+          "完了した工程を施工記録へ追記しました。既存の入力は保持しています。",
+        );
+      }
       function currentRelease() {
         return (
           UPDATE_HISTORY.find((release) => release.version === DM_VERSION) ||
@@ -2465,6 +3701,7 @@
           "maintenanceRecords",
           maintenance.filter((record) => record.carId !== id),
         );
+        removeCoatingPrepCarData(id);
         const nextId =
           previousActiveId === id ? remaining[0]?.id || "" : previousActiveId;
         save("activeCarId", nextId);
@@ -3183,6 +4420,17 @@
               .map((x) => historyMarkup(x, null, true))
               .join("")
           : "まだ記録がありません。";
+        $("homeChemicals").innerHTML = c.length
+          ? c
+              .slice(0, 3)
+              .map((chemical) => {
+                const image = chemicalDisplayImage(chemical);
+                const capacity = numberOr(chemical.capacity, 0);
+                const stock = numberOr(chemical.stock, 0);
+                return `<div class="list-item row"><img class="mini-img" src="${image}" alt=""><div style="flex:1"><div class="row between"><b>${escapeHTML(chemical.name || "名称なし")}</b><span class="tag">${escapeHTML(chemical.type || "その他")}</span></div><div class="muted tiny">${capacity ? `残量 ${stock}/${capacity}mL` : `残量 ${stock || 0}mL`}</div></div></div>`;
+              })
+              .join("")
+          : "まだ登録されていません。";
         const pt = load("processTemplates", []);
         $("customTemplates").innerHTML = pt.length
           ? pt
@@ -3232,7 +4480,7 @@
               .map((x, i) => {
                 let cap = +x.capacity || 0,
                   stock = +x.stock || 0,
-                  image = safeImage(x.image),
+                  image = chemicalDisplayImage(x),
                   pct =
                     cap > 0
                       ? Math.max(
@@ -3240,7 +4488,7 @@
                           Math.min(100, Math.round((stock / cap) * 100)),
                         )
                       : 0;
-                return `<div class="list-item row">${image ? `<img class="mini-img" src="${image}" alt="ケミカル写真">` : ""}<div style="flex:1"><div class="row between"><b>${escapeHTML(x.name || "名称なし")}</b><span class="tag">${escapeHTML(x.type || "その他")}</span></div><div class="muted tiny">推奨 ${x.ratio ? numberOr(x.ratio, 0) + "倍" : "—"} / ${cap ? `残量 ${stock}/${cap}mL (${pct}%)` : `残量 ${stock || 0}mL`}</div><div class="progress"><i style="width:${pct}%"></i></div><div class="stock-actions"><button class="secondary tiny" onclick="openChemicalEditor(${i})">編集</button><button class="ghost danger tiny" onclick="delChem(${i})">削除</button></div></div></div>`;
+                return `<div class="list-item row"><img class="mini-img" src="${image}" alt="${escapeHTML(x.type || "ケミカル")}のイメージ"><div style="flex:1"><div class="row between"><b>${escapeHTML(x.name || "名称なし")}</b><span class="tag">${escapeHTML(x.type || "その他")}</span></div><div class="muted tiny">推奨 ${x.ratio ? numberOr(x.ratio, 0) + "倍" : "—"} / ${cap ? `残量 ${stock}/${cap}mL (${pct}%)` : `残量 ${stock || 0}mL`}</div><div class="progress"><i style="width:${pct}%"></i></div><div class="stock-actions"><button class="secondary tiny" onclick="openChemicalEditor(${i})">編集</button><button class="ghost danger tiny" onclick="delChem(${i})">削除</button></div></div></div>`;
               })
               .join("")
           : '<span class="muted">まだありません。</span>';
@@ -3265,6 +4513,8 @@
               .join("")
           : '<span class="muted">まだありません。</span>';
         calc();
+        renderGuide();
+        renderCoatingManual();
         renderBetaStatus();
       }
       const DM_DATA_KEYS = [
@@ -3276,6 +4526,7 @@
         "processTemplates",
         "customTemplates",
         "maintenanceRecords",
+        COATING_PREP_PROGRESS_KEY,
       ];
       const DM_LEGACY_KEYS = ["car"];
       function buildImportData(source) {
@@ -3286,6 +4537,16 @@
           history: source.history,
           maintenanceRecords: source.maintenanceRecords,
         });
+        const validPrepCarIds = new Set([
+          ...multiCarData.cars.map((car) => car.id),
+          COATING_PREP_UNASSIGNED_CAR,
+        ]);
+        const prepStore = normalizeCoatingPrepStore(
+          source[COATING_PREP_PROGRESS_KEY],
+        );
+        prepStore.vehicles = prepStore.vehicles.filter((entry) =>
+          validPrepCarIds.has(entry.carId),
+        );
         return {
           ...multiCarData,
           chemicals: Array.isArray(source.chemicals) ? source.chemicals : [],
@@ -3296,6 +4557,7 @@
           customTemplates: Array.isArray(source.customTemplates)
             ? source.customTemplates
             : [],
+          [COATING_PREP_PROGRESS_KEY]: prepStore,
         };
       }
       function getLocalStorageBytes() {
@@ -3436,7 +4698,12 @@
           data: {},
         };
         DM_DATA_KEYS.forEach((k) => {
-          const fallback = k === "activeCarId" ? "" : [];
+          const fallback =
+            k === "activeCarId"
+              ? ""
+              : k === COATING_PREP_PROGRESS_KEY
+                ? { schema: COATING_PREP_STORE_SCHEMA, vehicles: [] }
+                : [];
           data.data[k] = Object.prototype.hasOwnProperty.call(multiCarData, k)
             ? multiCarData[k]
             : load(k, fallback);
@@ -3523,6 +4790,8 @@
         localStorage.removeItem("dmTesterId");
         localStorage.removeItem(MULTI_CAR_SCHEMA_KEY);
         localStorage.removeItem(UPDATE_SEEN_KEY);
+        localStorage.removeItem(COATING_PREP_PROGRESS_KEY);
+        localStorage.removeItem(COATING_PREP_MODE_KEY);
         location.reload();
       }
       function finishSetup() {
