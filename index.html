@@ -2416,10 +2416,10 @@
               alt="ケミカル選びのイメージ"
             />
             <div>
-              <span class="pill">約1分</span>
+              <span class="pill">追加2〜5問</span>
               <h3 style="margin: 7px 0 4px">必要な商品だけ選ぶ</h3>
               <div class="muted tiny">
-                目的ごとに役割を分け、各工程から1商品ずつ提案します。別候補への変更もできます。
+                最初に目的を選ぶと、診断に必要な質問だけを表示。各工程から1商品ずつ提案します。
               </div>
             </div>
           </div>
@@ -2430,36 +2430,38 @@
             <div class="finder-question">
               <label for="finderGoal">1. 何をしたい？</label>
               <small>一番近い目的を選択</small>
-              <select id="finderGoal" onchange="clearProductFinderResult()">
+              <select id="finderGoal" onchange="updateProductFinderQuestions()">
+                <option value="" selected>目的を選んでください</option>
                 <option value="starter">最初に基本セットを揃えたい</option>
                 <option value="maintenance">普段の洗車・コーティング維持</option>
                 <option value="reset">汚れと古い残留物をリセット</option>
                 <option value="scale">水ジミ・スケールを落としたい</option>
                 <option value="iron">鉄粉・ブレーキダストを落としたい</option>
                 <option value="protect">艶・撥水・保護を足したい</option>
+                <option value="wax">ワックスで艶・濡れ感を出したい</option>
                 <option value="glass">ガラスをきれいにして撥水させたい</option>
                 <option value="wheel">ホイール・タイヤを仕上げたい</option>
                 <option value="coating">コーティング前の下地を作りたい</option>
               </select>
             </div>
-            <div class="finder-question">
-              <label for="finderEnvironment">2. 施工環境は？</label>
+            <div class="finder-question hidden" data-finder-question="environment">
+              <label for="finderEnvironment" data-finder-label="施工環境は？">施工環境は？</label>
               <small>十分なすすぎができるかで使える商品が変わります</small>
               <select id="finderEnvironment" onchange="clearProductFinderResult()">
                 <option value="rinse">水道・高圧洗浄機で十分すすげる</option>
                 <option value="limited">使える水が少ない／リンスレス中心</option>
               </select>
             </div>
-            <div class="finder-question">
-              <label for="finderLevel">3. ケミカルの使用経験は？</label>
+            <div class="finder-question hidden" data-finder-question="level">
+              <label for="finderLevel" data-finder-label="ケミカルの使用経験は？">ケミカルの使用経験は？</label>
               <small>濃縮品や強い薬剤の優先度を調整</small>
               <select id="finderLevel" onchange="clearProductFinderResult()">
                 <option value="beginner">初めて・失敗しにくさ重視</option>
                 <option value="experienced">希釈や酸性・アルカリ性に慣れている</option>
               </select>
             </div>
-            <div class="finder-question">
-              <label for="finderProtection">4. 今のボディ保護は？</label>
+            <div class="finder-question hidden" data-finder-question="protection">
+              <label for="finderProtection" data-finder-label="今のボディ保護は？">今のボディ保護は？</label>
               <small>既存コーティングを維持するか、保護を新しく作るか判断</small>
               <select id="finderProtection" onchange="clearProductFinderResult()">
                 <option value="protected">コーティング・ワックス施工済み</option>
@@ -2467,8 +2469,8 @@
                 <option value="unprotected">未施工・下地から作り直す</option>
               </select>
             </div>
-            <div class="finder-question">
-              <label for="finderPriority">5. 商品選びで優先したいことは？</label>
+            <div class="finder-question hidden" data-finder-question="priority">
+              <label for="finderPriority" data-finder-label="商品選びで優先したいことは？">商品選びで優先したいことは？</label>
               <small>購入時の安さ・扱いやすさ・使用量・性能のどれを優先するか</small>
               <select id="finderPriority" onchange="clearProductFinderResult()">
                 <option value="budget">まず安く揃える（1本3,000円前後）</option>
@@ -2477,8 +2479,8 @@
                 <option value="performance">性能を優先</option>
               </select>
             </div>
-            <div class="finder-question">
-              <label for="finderFinish">6. 車をどんな方向に仕上げたい？</label>
+            <div class="finder-question hidden" data-finder-question="finish">
+              <label for="finderFinish" data-finder-label="車をどんな方向に仕上げたい？">車をどんな方向に仕上げたい？</label>
               <small>保護剤・QD・ワックスの候補順位に反映</small>
               <select id="finderFinish" onchange="clearProductFinderResult()">
                 <option value="balance">艶・滑り・撥水のバランス</option>
@@ -2489,9 +2491,19 @@
                 <option value="durability">耐久性を重視</option>
               </select>
             </div>
+            <div class="finder-question hidden" data-finder-question="paintColor">
+              <label for="finderPaintColor" data-finder-label="車の色は？">車の色は？</label>
+              <small>濃色車専用ワックスを誤って提案しないために使用</small>
+              <select id="finderPaintColor" onchange="clearProductFinderResult()">
+                <option value="light">白・シルバーなど明るい色</option>
+                <option value="dark">黒・濃紺など濃い色</option>
+                <option value="other">その他・分からない</option>
+              </select>
+            </div>
           </div>
           <button
-            class="primary"
+            id="finderRunButton"
+            class="primary hidden"
             type="button"
             style="width: 100%; margin-top: 14px"
             onclick="runProductFinder()"
@@ -2508,9 +2520,9 @@
             <summary>
               <span class="finder-candidate-summary">
                 診断候補を工程別に見る
-                <small>内装用品・コンパウンドを除いた候補</small>
+                <small>内装用品・研磨剤を除き、ワックス15商品を含む候補</small>
               </span>
-              <span class="pill" id="finderCandidateCount">84商品</span>
+              <span class="pill" id="finderCandidateCount">97商品</span>
             </summary>
             <div id="finderCandidateOverview"></div>
           </details>
@@ -2853,7 +2865,7 @@
         <div class="card">
           <div class="section-title">
             <h2>設定</h2>
-            <span class="version-badge">v3.6 β4</span>
+            <span class="version-badge">v3.6 β5</span>
           </div>
           <p class="muted">
             β版のデータはこの端末内に保存されます。機種変更や不具合に備えて、JSONファイルへ定期的に保存してください。
@@ -3106,7 +3118,7 @@
     </div>
     <div id="setupOverlay" class="setup-overlay hidden">
       <div class="setup-box">
-        <span class="version-badge">Detailing Manager v3.6 β4</span>
+        <span class="version-badge">Detailing Manager v3.6 β5</span>
         <h2>無料βテストへようこそ</h2>
         <p class="muted">
           愛車の洗車・コーティング・ケミカル在庫を、このiPhoneでまとめて管理できます。
@@ -3150,7 +3162,7 @@
       </div>
     </div>
     <script>
-      const DM_VERSION = "3.6-beta.4";
+      const DM_VERSION = "3.6-beta.5";
       const MAX_CARS = 5;
       const MULTI_CAR_SCHEMA_KEY = "dmMultiCarSchema";
       const MULTI_CAR_SCHEMA_VERSION = "3";
@@ -3158,6 +3170,25 @@
       const PHOTO_TARGET_BYTES = 180 * 1024;
       const UPDATE_SEEN_KEY = "dmLastSeenVersion";
       const UPDATE_HISTORY = [
+        {
+          version: "3.6-beta.5",
+          label: "v3.6 β5",
+          date: "2026年8月13日",
+          title: "ワックス診断を本格追加",
+          summary: "固形・ペースト・スプレーワックス15商品に対応",
+          changes: [
+            "最初は「何をしたい？」だけを表示し、選んだ目的に必要な質問だけが続く可変式へ変更",
+            "目的選択後の質問を2〜5問へ整理し、回答が候補順位や安全判定へ反映されない項目は非表示",
+            "表示しない条件は目的に合う既定値へ切り替え、隠れた回答が順位を不自然に変えないよう修正",
+            "診断目的へ「ワックスで艶・濡れ感を出したい」を追加",
+            "LUMINUS、DETAIL ARTIST、GYEON、Koch-Chemie、VONIXXのワックス15商品を診断対象へ追加",
+            "診断候補を84商品から97商品へ拡張し、工程別一覧へ「ワックス仕上げ」を独立表示",
+            "固形・ペースト・スプレーを、艶・滑り・撥水・耐久・扱いやすさ・価格で順位付け",
+            "車体色の質問を追加し、BLACK EDITIONを白・淡色車へ提案しないよう修正",
+            "VONIXX BLENDスプレーワックス2商品の名称を公式表記へ修正",
+            "研磨成分を含むクリーナーワックスは診断候補から除外したまま維持",
+          ],
+        },
         {
           version: "3.6-beta.4",
           label: "v3.6 β4",
@@ -5449,8 +5480,8 @@
           ["BLEND CLEANER WAX BLACK EDITION", "コーティング", "濃色車用クリーナーワックス"],
           ["BLEND CERAMIC & CARNAÚBA PASTE WAX", "コーティング", "セラミック・カルナバ固形ワックス", ["BONIX BLEND"]],
           ["BLEND CERAMIC & CARNAÚBA PASTE WAX – BLACK EDITION", "コーティング", "濃色車用固形ワックス"],
-          ["BLEND SPRAY WAX", "QD", "セラミック・カルナバスプレーワックス"],
-          ["BLEND SPRAY WAX BLACK EDITION", "QD", "濃色車用スプレーワックス"],
+          ["BLEND CERAMIC & CARNAÚBA SPRAY WAX", "QD", "セラミック・カルナバスプレーワックス", ["BLEND SPRAY WAX"]],
+          ["BLEND CERAMIC & CARNAÚBA SPRAY WAX BLACK EDITION", "QD", "濃色車用スプレーワックス", ["BLEND SPRAY WAX BLACK EDITION"]],
           ["BLEND ALL IN ONE", "その他", "研磨・艶出し・保護剤"],
           ["NATIVE BRAZILIAN CARNAÚBA CLEANER WAX", "コーティング", "カルナバクリーナーワックス"],
           ["NATIVE PASTE WAX", "コーティング", "カルナバ固形ワックス", ["BONIX NATIVE"]],
@@ -5540,8 +5571,21 @@
         "LUMINUS::Luminus BLACK SLICK EDITION": { gloss: 4, slickness: 5, water: 4, selfCleaning: 5, durability: 3 },
         "LUMINUS::Luminus AQUA": { gloss: 3, slickness: 3, water: 5, selfCleaning: 4, durability: 3 },
         "LUMINUS::GLOSSY": { gloss: 5, slickness: 4, water: 3, selfCleaning: 2, durability: 2 },
-        "VONIXX::BLEND SPRAY WAX": { gloss: 5, slickness: 4, water: 4, selfCleaning: 3, durability: 3 },
+        "VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX": { gloss: 5, slickness: 4, water: 4, selfCleaning: 3, durability: 3 },
         "VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX": { gloss: 5, slickness: 4, water: 3, selfCleaning: 2, durability: 2 },
+        "LUMINUS::Luminous Ceramic Wax": { gloss: 5, slickness: 4, water: 5, selfCleaning: 4, durability: 4 },
+        "LUMINUS::ECLIPSE": { gloss: 5, slickness: 5, water: 4, selfCleaning: 3, durability: 4 },
+        "DETAIL ARTIST::DOPE": { gloss: 5, slickness: 4, water: 3, selfCleaning: 2, durability: 2 },
+        "GYEON::Q² Wax": { gloss: 5, slickness: 4, water: 5, selfCleaning: 5, durability: 5 },
+        "Koch-Chemie::Hand Wax W0.01": { gloss: 5, slickness: 4, water: 5, selfCleaning: 4, durability: 5 },
+        "VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX": { gloss: 5, slickness: 4, water: 5, selfCleaning: 4, durability: 5 },
+        "VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX – BLACK EDITION": { gloss: 5, slickness: 4, water: 5, selfCleaning: 4, durability: 5 },
+        "VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX BLACK EDITION": { gloss: 5, slickness: 4, water: 4, selfCleaning: 3, durability: 3 },
+        "VONIXX::NATIVE PASTE WAX": { gloss: 5, slickness: 5, water: 4, selfCleaning: 3, durability: 4 },
+        "VONIXX::NATIVE PASTE WAX BLACK EDITION": { gloss: 5, slickness: 5, water: 4, selfCleaning: 3, durability: 4 },
+        "VONIXX::CARNAÚBA HYBRID WAX": { gloss: 5, slickness: 4, water: 4, selfCleaning: 4, durability: 4 },
+        "VONIXX::CARNAÚBA TOK FINAL": { gloss: 5, slickness: 4, water: 3, selfCleaning: 2, durability: 2 },
+        "VONIXX::CARNAÚBA EXPRESS ULTRA": { gloss: 4, slickness: 4, water: 3, selfCleaning: 2, durability: 2 },
         "Labocosmetica::CUPÌDO": { gloss: 5, slickness: 4, water: 4, selfCleaning: 5, durability: 5 },
         "Koch-Chemie::Spray Sealant": { gloss: 4, slickness: 4, water: 4, selfCleaning: 4, durability: 4 },
         "ながら洗車::ビーディング": { gloss: 4, slickness: 3, water: 5, selfCleaning: 4, durability: 3 },
@@ -5808,7 +5852,7 @@
               candidates: [
                 finderCandidate("Labocosmetica::BENEFÌCIA", "濡れた面へ施工して洗車の最後に保護を追加できる湿式タイプです。", "一度に広範囲へ掛けず、指定どおりすすぎます。", ["beginner", "rinse", "unprotected", "unknown", "easy", "finish"]),
                 finderCandidate("GYEON::Q²M WetCoat", "スプレーしてすすぐ工程で撥水を作りやすい候補です。", "乾燥させないようパネルごとに施工します。", ["beginner", "rinse", "protected", "unprotected", "easy", "finish"]),
-                finderCandidate("VONIXX::BLEND SPRAY WAX", "流水を使わず乾式施工できるスプレーワックスで、艶と保護を追加できます。", "砂や汚れがない洗浄済みの面へ薄く使います。", ["beginner", "limited", "protected", "unprotected", "easy", "finish"]),
+                finderCandidate("VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX", "流水を使わず乾式施工できるスプレーワックスで、艶と保護を追加できます。", "砂や汚れがない洗浄済みの面へ薄く使います。", ["beginner", "limited", "protected", "unprotected", "easy", "finish"]),
                 finderCandidate("Labocosmetica::CUPÌDO", "乾式シーラントとして艶とセルフクリーニング性を重視する場合の候補です。", "完全に洗浄・乾燥した面へ薄く施工し、説明書の定着時間を守ります。", ["experienced", "unprotected", "finish", "advanced"]),
                 finderCandidate("LUMINUS::Luminus AQUA", "湿式で施工でき、初めてでも工程を増やしにくい保護剤です。", "塗布量を守り、すすぎ残しを防ぎます。", ["beginner", "rinse", "unknown", "easy", "finish"]),
                 finderCandidate("ながら洗車::ビーディング", "濡れた面へスプレーして流す湿式タイプで、国内製品から手軽に撥水を作れます。", "乾燥前にパネルごとに十分すすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget", "finish"]),
@@ -5831,6 +5875,33 @@
                 finderCandidate("ながら洗車::ビギナーズラック", "洗車後の拭き上げ時に艶と手触りを整えやすい、初心者向けの国内QDです。", "洗浄済みの面へ少量ずつ使い、厚塗りを避けます。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
                 finderCandidate("DETAIL ARTIST::AIR", "乾式QDとして艶と滑りを整え、価格を抑えた仕上げ候補になります。", "砂や汚れが残る面へ使わず、清潔なクロスで仕上げます。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
                 finderCandidate("LUMINUS::GLOSSY", "LUMINUSのクイックディテイラーで、艶を足す仕上げ候補です。", "別のトップコートと一度に重ねず、単品の仕上がりを確認します。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
+              ],
+            },
+          ],
+        },
+        wax: {
+          title: "ワックス仕上げ",
+          summary: "固形・ペースト・スプレーから、艶の方向、扱いやすさ、車体色に合う1商品を選びます。",
+          steps: [
+            {
+              key: "wax-finish",
+              role: "ワックス仕上げ",
+              candidates: [
+                finderCandidate("LUMINUS::Luminous Ceramic Wax", "SiO₂とカルナバを組み合わせた固形ワックスで、価格と扱いやすさのバランスを取りやすい候補です。", "洗浄・乾燥後に薄く塗り、5〜10分を目安に置いてから清潔なクロスで拭き取ります。", ["beginner", "limited", "protected", "unprotected", "easy", "budget", "finish"]),
+                finderCandidate("DETAIL ARTIST::DOPE", "カルナバ系スプレーワックスで、固形ワックスより短時間で濡れ感と艶を足したい時に向きます。", "砂や汚れのない冷えた面へ少量ずつ使い、乾燥する前に均一に仕上げます。", ["beginner", "limited", "protected", "unprotected", "easy", "budget", "finish"]),
+                finderCandidate("GYEON::Q² Wax", "高い撥水と艶、耐久性を重視できるフッ素配合ワックスで、単体保護にもコーティングのトップにも使えます。", "洗浄・除染・脱脂した乾いた面へ薄く塗り、メーカー指定どおり30分以上置いてから拭き取ります。", ["beginner", "experienced", "limited", "protected", "unprotected", "easy", "finish"]),
+                finderCandidate("Koch-Chemie::Hand Wax W0.01", "プレミアムカルナバによる深い艶、滑らかさ、撥水を狙う本格的なハンドワックスです。", "十分に洗浄・脱脂した面へごく薄く塗り、10〜15分置いてからマイクロファイバーで仕上げます。", ["experienced", "limited", "protected", "unprotected", "value", "finish"]),
+                finderCandidate("VONIXX::NATIVE PASTE WAX", "高純度ブラジリアンカルナバらしい温かい艶と濡れ感を重視するペーストワックスです。", "冷えた清潔な塗装へ薄く使い、3〜5分後に拭き取ります。未塗装樹脂には付けません。", ["beginner", "experienced", "limited", "protected", "unprotected", "value", "finish"]),
+                finderCandidate("LUMINUS::ECLIPSE", "仕上がりの艶と滑りを重視するハイブリッド固形ワックスで、ショーカー寄りの仕上げ候補です。", "冷えた洗浄済みの塗装へ薄く施工し、塗布量と放置時間は商品ラベルを優先します。", ["experienced", "limited", "protected", "unprotected", "finish"]),
+                finderCandidate("VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX", "SiO₂の耐久・撥水とカルナバの温かい艶を両立したハイブリッドペーストワックスです。", "汚れと付着物を除去した面へ薄く使い、5〜10分後に拭き取ります。未塗装樹脂には付けません。", ["beginner", "experienced", "limited", "protected", "unprotected", "value", "finish"]),
+                finderCandidate("VONIXX::CARNAÚBA HYBRID WAX", "車体色を選びにくく、カルナバの艶とポリマーの耐久性を両立する固形ワックスです。", "清潔で乾いた塗装へ少量を均一に塗り、5〜10分後に拭き取ります。樹脂・ゴムには使いません。", ["beginner", "limited", "protected", "unprotected", "easy", "value", "finish"]),
+                finderCandidate("VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX", "カルナバらしい濡れ感を手軽に足せるスプレーワックスで、固形NATIVEのメンテナンスにも向きます。", "洗浄済みの面へ少量ずつ使い、厚塗りや拭き残しを避けます。", ["beginner", "limited", "protected", "unprotected", "easy", "finish"]),
+                finderCandidate("VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX", "SiO₂とカルナバを組み合わせたスプレーワックスで、固形BLENDの艶と撥水を手軽に補えます。", "砂や汚れのない面へ薄く使い、清潔なクロスで均一に仕上げます。", ["beginner", "limited", "protected", "unprotected", "easy", "finish"]),
+                finderCandidate("VONIXX::CARNAÚBA TOK FINAL", "洗車後やイベント前にカルナバの艶と手触りを素早く足す、定期メンテナンス向けワックスです。", "長期保護の土台ではなく仕上げ用として、清潔な面へ少量ずつ使います。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
+                finderCandidate("VONIXX::CARNAÚBA EXPRESS ULTRA", "希釈して使える高濃縮カルナバワックスで、施工台数とコストパフォーマンスを重視する場合に向きます。", "用途別の指定希釈を守り、小範囲ずつ施工して塗装面で乾燥させません。", ["experienced", "limited", "protected", "unprotected", "value", "finish"]),
+                finderCandidate("VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX – BLACK EDITION", "黒・濃色車の色の深みを強調しながら、SiO₂とカルナバの保護を追加する専用ペーストワックスです。", "濃色車専用です。洗浄済みの面へ薄く使い、5〜10分後に拭き取ります。未塗装樹脂には付けません。", ["beginner", "experienced", "limited", "protected", "unprotected", "value", "finish", "darkPaint"]),
+                finderCandidate("VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX BLACK EDITION", "黒・濃色車の深い艶を短時間で補う、SiO₂・カルナバ系スプレーワックスです。", "濃色車専用です。冷えた清潔な面へ少量ずつ使い、拭き残しを確認します。", ["beginner", "limited", "protected", "unprotected", "easy", "finish", "darkPaint"]),
+                finderCandidate("VONIXX::NATIVE PASTE WAX BLACK EDITION", "黒・濃色車でカルナバ特有の濡れたような深い艶を優先するペーストワックスです。", "濃色車専用です。塗装面へ薄く均一に使い、未塗装樹脂へ付着させません。", ["experienced", "limited", "protected", "unprotected", "finish", "darkPaint"]),
               ],
             },
           ],
@@ -6029,15 +6100,14 @@
           ],
         },
         {
-          title: "保護・艶・撥水仕上げ",
-          description: "ベース保護、QD、ワックスから仕上がり方向で選ぶ",
+          title: "コーティング・QD仕上げ",
+          description: "簡易保護、シーラント、QDから仕上がり方向で選ぶ",
           ids: [
             "Labocosmetica::BENEFÌCIA",
             "GYEON::Q²M WetCoat",
             "Labocosmetica::PERFÉCTA SiO2",
             "LUMINUS::Luminus AQUA",
             "LUMINUS::Luminus BLACK SLICK EDITION",
-            "VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX",
             "Labocosmetica::PERFÉCTA 2.0",
             "ながら洗車::ビーディング",
             "DETAIL ARTIST::ICE",
@@ -6047,11 +6117,31 @@
             "GYEON::Q²M QuickDetailer",
             "ながら洗車::ビギナーズラック",
             "DETAIL ARTIST::AIR",
-            "VONIXX::BLEND SPRAY WAX",
             "Labocosmetica::CUPÌDO",
             "ながら洗車::プラズマコーティングα",
             "Koch-Chemie::Spray Sealant",
             "LUMINUS::GLOSSY",
+          ],
+        },
+        {
+          title: "ワックス仕上げ",
+          description: "固形・ペースト・スプレーを艶、耐久、施工性で選ぶ",
+          ids: [
+            "LUMINUS::Luminous Ceramic Wax",
+            "LUMINUS::ECLIPSE",
+            "DETAIL ARTIST::DOPE",
+            "GYEON::Q² Wax",
+            "Koch-Chemie::Hand Wax W0.01",
+            "VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX",
+            "VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX – BLACK EDITION",
+            "VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX",
+            "VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX BLACK EDITION",
+            "VONIXX::NATIVE PASTE WAX",
+            "VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX",
+            "VONIXX::NATIVE PASTE WAX BLACK EDITION",
+            "VONIXX::CARNAÚBA HYBRID WAX",
+            "VONIXX::CARNAÚBA TOK FINAL",
+            "VONIXX::CARNAÚBA EXPRESS ULTRA",
           ],
         },
         {
@@ -6108,6 +6198,12 @@
         "Labocosmetica::SIDERO": { min: 2880, max: 4960, size: "500mL" },
         "Labocosmetica::VÈRITAS": { min: 4840, max: 5840, size: "1000mL" },
         "GYEON::Q²M WetCoat": { min: 3600, max: 5100, size: "1000mL" },
+        "VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX": { min: 6000, max: 6000, size: "100mL" },
+        "VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX – BLACK EDITION": { min: 6000, max: 6000, size: "100mL" },
+        "VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX": { min: 4400, max: 4400, size: "代表容量" },
+        "VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX BLACK EDITION": { min: 4400, max: 4400, size: "代表容量" },
+        "VONIXX::CARNAÚBA HYBRID WAX": { min: 5000, max: 5000, size: "代表容量" },
+        "VONIXX::CARNAÚBA EXPRESS ULTRA": { min: 7500, max: 7500, size: "1.5L" },
       };
       const LOW_PRICE_PRODUCTS = new Set([
         "LUMINUS::PREP PRO",
@@ -6133,8 +6229,15 @@
         "Labocosmetica::PERFÉCTA SiO2",
         "Labocosmetica::VÈRITAS",
         "GYEON::Q² QuickView",
+        "LUMINUS::ECLIPSE",
+        "GYEON::Q² Wax",
+        "VONIXX::NATIVE PASTE WAX",
+        "VONIXX::NATIVE PASTE WAX BLACK EDITION",
         "Koch-Chemie::Micro Cut M3.02",
         "ながら洗車::プラズマコーティングα",
+      ]);
+      const PREMIUM_PRICE_PRODUCTS = new Set([
+        "Koch-Chemie::Hand Wax W0.01",
       ]);
       function referencePriceTier(min, max) {
         if (max <= 3000) return 1;
@@ -6155,9 +6258,11 @@
         }
         const tier = LOW_PRICE_PRODUCTS.has(id)
           ? 1
-          : HIGH_PRICE_PRODUCTS.has(id)
-            ? 3
-            : 2;
+          : PREMIUM_PRICE_PRODUCTS.has(id)
+            ? 4
+            : HIGH_PRICE_PRODUCTS.has(id)
+              ? 3
+              : 2;
         return {
           ...REFERENCE_PRICE_BANDS[tier],
           tier,
@@ -6207,7 +6312,7 @@
               <div>${products
                 .map(
                   (product) => `<button class="finder-candidate-row" type="button" data-manufacturer="${escapeHTML(product.manufacturer)}" data-product-name="${escapeHTML(product.name)}" onclick="openChemicalCatalogForProduct(this.dataset.manufacturer,this.dataset.productName)">
-                    <span><span class="catalog-maker">${escapeHTML(product.manufacturer)}</span><b>${escapeHTML(product.name)}</b></span>
+                    <span><span class="catalog-maker">${escapeHTML(product.manufacturer)}</span><b>${escapeHTML(product.name)}</b><span class="catalog-purpose">${escapeHTML(product.purpose)}</span></span>
                     ${finderPriceHTML(product.id)}
                   </button>`,
                 )
@@ -6304,15 +6409,87 @@
         });
         if (changed) save("chemicals", chemicals);
       }
+      const PRODUCT_FINDER_QUESTION_FLOW = {
+        starter: ["environment", "level", "protection", "priority", "finish"],
+        maintenance: ["environment", "level", "priority", "finish"],
+        reset: ["environment", "level", "protection", "priority"],
+        scale: ["environment", "level", "protection", "priority"],
+        iron: ["environment", "level", "priority"],
+        protect: ["environment", "level", "protection", "priority", "finish"],
+        wax: ["level", "priority", "finish", "paintColor"],
+        glass: ["level", "priority"],
+        wheel: ["environment", "level", "priority"],
+        coating: ["environment", "level", "priority"],
+      };
+      const PRODUCT_FINDER_SELECT_IDS = {
+        environment: "finderEnvironment",
+        level: "finderLevel",
+        protection: "finderProtection",
+        priority: "finderPriority",
+        finish: "finderFinish",
+        paintColor: "finderPaintColor",
+      };
+      const PRODUCT_FINDER_DEFAULT_ANSWERS = {
+        environment: "rinse",
+        level: "beginner",
+        protection: "unknown",
+        priority: "budget",
+        finish: "balance",
+        paintColor: "other",
+      };
+      const PRODUCT_FINDER_GOAL_DEFAULTS = {
+        maintenance: { protection: "protected" },
+        wax: { environment: "limited" },
+        glass: { environment: "limited", protection: "unprotected" },
+        coating: { protection: "unprotected" },
+      };
+      let activeFinderQuestionGoal = null;
+      function updateProductFinderQuestions() {
+        const goal = $("finderGoal")?.value || "";
+        const visibleQuestions = new Set(
+          PRODUCT_FINDER_QUESTION_FLOW[goal] || [],
+        );
+        if (goal !== activeFinderQuestionGoal) {
+          const defaults = {
+            ...PRODUCT_FINDER_DEFAULT_ANSWERS,
+            ...(PRODUCT_FINDER_GOAL_DEFAULTS[goal] || {}),
+          };
+          Object.entries(PRODUCT_FINDER_SELECT_IDS).forEach(([key, id]) => {
+            const select = $(id);
+            if (select) select.value = defaults[key];
+          });
+          activeFinderQuestionGoal = goal;
+        }
+        let questionNumber = 2;
+        document.querySelectorAll("[data-finder-question]").forEach((card) => {
+          const key = card.dataset.finderQuestion;
+          const isVisible = visibleQuestions.has(key);
+          card.classList.toggle("hidden", !isVisible);
+          const label = card.querySelector("[data-finder-label]");
+          if (isVisible && label)
+            label.textContent = `${questionNumber++}. ${label.dataset.finderLabel}`;
+        });
+        $("finderRunButton")?.classList.toggle("hidden", !goal);
+        clearProductFinderResult();
+      }
       function productFinderAnswers() {
         return {
-          goal: $("finderGoal")?.value || "starter",
+          goal: $("finderGoal")?.value || "",
           environment: $("finderEnvironment")?.value || "rinse",
           level: $("finderLevel")?.value || "beginner",
-          protection: $("finderProtection")?.value || "protected",
+          protection: $("finderProtection")?.value || "unknown",
           priority: $("finderPriority")?.value || "budget",
           finish: $("finderFinish")?.value || "balance",
+          paintColor: $("finderPaintColor")?.value || "other",
         };
+      }
+      function finderCandidateAllowed(candidate, answers) {
+        if (
+          candidate.traits.includes("darkPaint") &&
+          answers.paintColor !== "dark"
+        )
+          return false;
+        return true;
       }
       function finderCandidateScore(candidate, index, answers) {
         let score = 100 - index * 2;
@@ -6333,6 +6510,11 @@
         });
         if (answers.level === "beginner" && candidate.traits.includes("advanced"))
           score -= 28;
+        if (
+          answers.paintColor === "dark" &&
+          candidate.traits.includes("darkPaint")
+        )
+          score += 38;
         if (
           answers.protection === "protected" &&
           candidate.traits.includes("unprotected") &&
@@ -6367,13 +6549,16 @@
         Object.keys(activeFinderSelections).forEach(
           (key) => delete activeFinderSelections[key],
         );
-        if ($("finderResults"))
-          $("finderResults").innerHTML =
-            '<div class="card muted tiny">条件を選び、「おすすめを診断する」を押してください。</div>';
+        if ($("finderResults")) {
+          const hasGoal = Boolean($("finderGoal")?.value);
+          $("finderResults").innerHTML = hasGoal
+            ? '<div class="card muted tiny">表示された条件を選び、「おすすめを診断する」を押してください。</div>'
+            : '<div class="card muted tiny">最初に「何をしたい？」を選ぶと、必要な質問だけ表示されます。</div>';
+        }
       }
       function openProductFinder() {
         go("product-finder");
-        runProductFinder();
+        updateProductFinderQuestions();
       }
       function runProductFinder() {
         const answers = productFinderAnswers();
@@ -6405,6 +6590,7 @@
               return null;
             }
             const ranked = step.candidates
+              .filter((candidate) => finderCandidateAllowed(candidate, answers))
               .filter((candidate) =>
                 CHEMICAL_CATALOG.some((item) => item.id === candidate.id),
               )

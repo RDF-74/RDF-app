@@ -1,4 +1,4 @@
-const CACHE = "detailing-v3.6-beta.4";
+const CACHE = "detailing-v3.6-beta.5";
 const ASSETS = [
   "./",
   "./index.html",

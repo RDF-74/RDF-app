@@ -1,4 +1,26 @@
-Detailing Manager v3.6 β4 リリースノート
+Detailing Manager v3.6 β5 リリースノート
+
+v3.6 β5の変更
+・最初は「何をしたい？」だけを表示し、目的を選んだ後に必要な質問だけを出す可変式へ変更
+・目的選択後の質問を2〜5問へ整理し、回答が候補順位や安全判定へ反映されない項目は非表示
+・回答しても順位へ影響しない質問は表示しないよう整理
+・非表示の条件は目的に合う既定値へ切り替え、以前の選択が隠れて順位へ影響しないよう修正
+・ぴったりケミカル診断へ「ワックスで艶・濡れ感を出したい」を追加
+・固形・ペースト・スプレーワックス15商品を診断対象へ追加
+・LUMINUS、DETAIL ARTIST、GYEON、Koch-Chemie、VONIXXの5メーカーから比較可能
+・診断候補を84商品から97商品へ拡張
+・工程別一覧へ「ワックス仕上げ」を独立追加
+・艶、滑り、撥水、防汚、耐久、施工性、参考価格から候補順位を調整
+・車体色の質問を追加し、BLACK EDITIONを白・淡色車へ提案しないよう修正
+・VONIXX BLENDスプレーワックス2商品の名称を公式表記へ修正
+・研磨成分を含むクリーナーワックスは診断候補へ入れず、商品カタログだけに残す
+
+追加したワックス
+・LUMINUS：Luminous Ceramic Wax、ECLIPSE
+・DETAIL ARTIST：DOPE
+・GYEON：Q² Wax
+・Koch-Chemie：Hand Wax W0.01
+・VONIXX：BLEND PASTE 2種、BLEND SPRAY 2種、NATIVE PASTE 2種、NATIVE SPRAY、CARNAÚBA HYBRID WAX、CARNAÚBA TOK FINAL、CARNAÚBA EXPRESS ULTRA
 
 v3.6 β4の変更
 ・ぴったりケミカル診断の対象を103商品から84商品へ整理
