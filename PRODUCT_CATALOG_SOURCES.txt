@@ -1,4 +1,4 @@
-Detailing Manager v3.6 β2
+Detailing Manager v3.6 β4
 メーカー商品カタログ 表記確認メモ
 
 確認日：2026年8月13日
@@ -60,6 +60,27 @@ https://gyeon.co/product/ceramicdetailer/
 https://www.vonixx.com.br/produto/native-spray-wax/
 艶・滑り・撥水・防汚などの仕上がり傾向は、メーカーの製品説明をもとに購入候補を並べ替えるための定性的な目安として整理しています。
 表示上の傾向は性能値や耐久期間の保証ではありません。
+
+参考価格の主な確認元（2026年8月13日）
+ながら洗車 IRON DELETE / スノーシャンプー / 脱脂シャンプー / ビーディング / プラズマコーティングα
+https://nagaracarwash.com/products/shampoo-irondelete-set
+https://nagaracarwash.com/products/shampoo-snow-350
+https://nagaracarwash.com/products/shampoo-degreasing-350
+https://nagaracarwash.com/products/%E3%81%AA%E3%81%8C%E3%82%89%E6%B4%97%E8%BB%8A-%E3%83%93%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0-%E6%97%A5%E6%9C%AC%E4%B8%80%E3%81%AE%E6%92%A5%E6%B0%B4%E6%80%A7%E8%83%BD%E3%82%92%E7%9B%AE%E6%8C%87%E3%81%97%E3%81%9F%E7%B0%A1%E6%98%93%E3%82%B3%E3%83%BC%E3%83%86%E3%82%A3%E3%83%B3%E3%82%B0%E5%89%A4-1
+
+LUMINUS PREP PRO 500mL
+国内流通価格1,980〜2,980円を確認。
+https://www.yodobashi.com/product/100000001009453691/
+https://www.amazon.co.jp/dp/B07HYB2DG7
+
+Labocosmetica SÈMPER / PERFÉCTA 2.0 / PERFÉCTA SiO2 / SIDERO / VÈRITAS
+公式販売価格と国内流通価格を比較し、セール価格と通常価格を含む幅で表示。
+https://sensyamin.net/shampoo/neutral/%E3%82%BB%E3%83%B3%E3%83%91%E3%83%BC-semper-500ml-labocosmetica/
+https://sensyamin.net/coating/other-coating/perfecta-2-0-%E3%83%91%E3%83%BC%E3%83%95%E3%82%A7%E3%82%AF%E3%82%BF%E3%83%BC2-0-500ml-labocosmetica/
+https://www.yodobashi.com/product/100000001009161859/
+
+価格が個別確認できない診断商品は、国内で流通する代表容量のおおよその価格帯を表示します。
+価格はセール、送料、容量、販売店、為替で変動し、最安値を保証するものではありません。
 
 注意
 商品ラインナップ、名称、販売地域はメーカー側で変更されることがあります。

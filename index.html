@@ -1133,6 +1133,115 @@
         margin: 3px 0 8px;
         color: #8294a3;
       }
+      .finder-candidate-details > summary {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        color: #e5eef5;
+        font-weight: 900;
+        cursor: pointer;
+        list-style: none;
+      }
+      .finder-candidate-details > summary::-webkit-details-marker {
+        display: none;
+      }
+      .finder-candidate-details > summary::after {
+        content: "＋";
+        color: #69b9ed;
+        font-size: 20px;
+      }
+      .finder-candidate-details[open] > summary::after {
+        content: "−";
+      }
+      .finder-candidate-summary {
+        display: grid;
+        gap: 3px;
+      }
+      .finder-candidate-summary small {
+        color: #8294a3;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .finder-process-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 14px;
+      }
+      .finder-process-group {
+        overflow: hidden;
+        border: 1px solid #2b3e4c;
+        border-radius: 16px;
+        background: #0e171f;
+      }
+      .finder-process-head {
+        display: grid;
+        grid-template-columns: 30px minmax(0, 1fr) auto;
+        gap: 9px;
+        align-items: center;
+        padding: 11px;
+        border-bottom: 1px solid #273844;
+        background: #13212c;
+      }
+      .finder-process-number {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border: 1px solid #3c81b5;
+        border-radius: 999px;
+        color: #a9dcff;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .finder-process-title {
+        color: #e9f2f8;
+        font-size: 13px;
+        font-weight: 900;
+      }
+      .finder-process-description {
+        margin-top: 2px;
+        color: #8294a3;
+        font-size: 10px;
+      }
+      .finder-process-count {
+        color: #7ebfe9;
+        font-size: 10px;
+        font-weight: 850;
+      }
+      .finder-candidate-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        width: 100%;
+        padding: 10px 11px;
+        border: 0;
+        border-bottom: 1px solid #202f39;
+        border-radius: 0;
+        background: transparent;
+        color: inherit;
+        text-align: left;
+      }
+      .finder-candidate-row:last-child {
+        border-bottom: 0;
+      }
+      .finder-candidate-row:active {
+        background: #172630;
+      }
+      .finder-candidate-row .catalog-maker {
+        display: block;
+      }
+      .finder-candidate-row b {
+        display: block;
+        margin-top: 2px;
+        color: #e4edf3;
+        font-size: 12px;
+      }
+      .finder-candidate-row .finder-price {
+        margin-top: 0;
+        white-space: nowrap;
+      }
       .finder-result-head {
         margin-top: 13px;
         padding: 13px;
@@ -1229,6 +1338,34 @@
         color: #a8d9fa;
         font-size: 11px;
         font-weight: 800;
+      }
+      .finder-price {
+        display: inline-flex;
+        gap: 5px;
+        align-items: center;
+        margin-top: 7px;
+        padding: 5px 8px;
+        border: 1px solid #40505c;
+        border-radius: 999px;
+        background: #101920;
+        color: #d7e2e9;
+        font-size: 10px;
+        font-weight: 850;
+      }
+      .finder-price.low {
+        border-color: #34745b;
+        background: #10251d;
+        color: #9de2bf;
+      }
+      .finder-cost-summary {
+        margin-top: 9px;
+        padding: 9px 10px;
+        border: 1px solid #38546a;
+        border-radius: 12px;
+        background: rgba(15, 32, 45, 0.74);
+        color: #c7d8e4;
+        font-size: 11px;
+        line-height: 1.5;
       }
       .finder-alternative {
         margin-top: 10px;
@@ -2302,7 +2439,6 @@
                 <option value="protect">艶・撥水・保護を足したい</option>
                 <option value="glass">ガラスをきれいにして撥水させたい</option>
                 <option value="wheel">ホイール・タイヤを仕上げたい</option>
-                <option value="interior">内装をきれいにして保護したい</option>
                 <option value="coating">コーティング前の下地を作りたい</option>
               </select>
             </div>
@@ -2333,8 +2469,9 @@
             </div>
             <div class="finder-question">
               <label for="finderPriority">5. 商品選びで優先したいことは？</label>
-              <small>扱いやすさ・使用量・性能のどれを優先するか</small>
+              <small>購入時の安さ・扱いやすさ・使用量・性能のどれを優先するか</small>
               <select id="finderPriority" onchange="clearProductFinderResult()">
+                <option value="budget">まず安く揃える（1本3,000円前後）</option>
                 <option value="easy">扱いやすさ</option>
                 <option value="value">濃縮タイプ・使用量の少なさ</option>
                 <option value="performance">性能を優先</option>
@@ -2361,6 +2498,22 @@
           >
             おすすめを診断する
           </button>
+        </div>
+
+        <div class="card">
+          <details
+            class="finder-candidate-details"
+            ontoggle="if(this.open)renderFinderCandidateOverview()"
+          >
+            <summary>
+              <span class="finder-candidate-summary">
+                診断候補を工程別に見る
+                <small>内装用品・コンパウンドを除いた候補</small>
+              </span>
+              <span class="pill" id="finderCandidateCount">84商品</span>
+            </summary>
+            <div id="finderCandidateOverview"></div>
+          </details>
         </div>
 
         <div id="finderResults"></div>
@@ -2700,7 +2853,7 @@
         <div class="card">
           <div class="section-title">
             <h2>設定</h2>
-            <span class="version-badge">v3.6 β2</span>
+            <span class="version-badge">v3.6 β4</span>
           </div>
           <p class="muted">
             β版のデータはこの端末内に保存されます。機種変更や不具合に備えて、JSONファイルへ定期的に保存してください。
@@ -2953,7 +3106,7 @@
     </div>
     <div id="setupOverlay" class="setup-overlay hidden">
       <div class="setup-box">
-        <span class="version-badge">Detailing Manager v3.6 β2</span>
+        <span class="version-badge">Detailing Manager v3.6 β4</span>
         <h2>無料βテストへようこそ</h2>
         <p class="muted">
           愛車の洗車・コーティング・ケミカル在庫を、このiPhoneでまとめて管理できます。
@@ -2997,7 +3150,7 @@
       </div>
     </div>
     <script>
-      const DM_VERSION = "3.6-beta.2";
+      const DM_VERSION = "3.6-beta.4";
       const MAX_CARS = 5;
       const MULTI_CAR_SCHEMA_KEY = "dmMultiCarSchema";
       const MULTI_CAR_SCHEMA_VERSION = "3";
@@ -3005,6 +3158,36 @@
       const PHOTO_TARGET_BYTES = 180 * 1024;
       const UPDATE_SEEN_KEY = "dmLastSeenVersion";
       const UPDATE_HISTORY = [
+        {
+          version: "3.6-beta.4",
+          label: "v3.6 β4",
+          date: "2026年8月13日",
+          title: "診断候補を洗車工程ごとに整理",
+          summary: "内装用品とコンパウンドを診断対象から除外",
+          changes: [
+            "診断対象を103商品から84商品へ整理",
+            "内装の洗浄・保護を診断目的と候補一覧から一旦除外",
+            "ボディ用・ガラス用のコンパウンドとポリッシュを診断候補から除外",
+            "診断画面へ、全候補を洗車工程順に確認できる一覧を追加",
+            "予洗い、通常洗車、除染、脱脂、保護、ガラス、足回りの7工程で表示",
+            "コンパウンドと内装用品はメーカー商品カタログには残し、必要なら手動登録可能",
+          ],
+        },
+        {
+          version: "3.6-beta.3",
+          label: "v3.6 β3",
+          date: "2026年8月13日",
+          title: "価格とメーカーの偏りを診断へ反映",
+          summary: "安く揃える選択肢と参考価格を追加",
+          changes: [
+            "「まず安く揃える」を追加し、初心者の初期費用が高くなりすぎないよう候補順位を調整",
+            "診断カード・別候補・商品カタログへ参考価格帯を表示",
+            "未登録のおすすめ一式について参考合計金額を表示",
+            "同一メーカーへの偏りを抑え、登録済みの手持ち商品を優先",
+            "診断候補を68商品から103商品へ拡張し、8メーカーすべてを第一候補へ反映",
+            "LUMINUS PREP PRO、ながら洗車 IRON DELETEなどを下地・鉄粉除去の候補へ追加",
+          ],
+        },
         {
           version: "3.6-beta.2",
           label: "v3.6 β2",
@@ -5356,10 +5539,16 @@
         "LUMINUS::BLACK DIAMOND": { gloss: 5, slickness: 4, water: 4, selfCleaning: 3, durability: 3 },
         "LUMINUS::Luminus BLACK SLICK EDITION": { gloss: 4, slickness: 5, water: 4, selfCleaning: 5, durability: 3 },
         "LUMINUS::Luminus AQUA": { gloss: 3, slickness: 3, water: 5, selfCleaning: 4, durability: 3 },
+        "LUMINUS::GLOSSY": { gloss: 5, slickness: 4, water: 3, selfCleaning: 2, durability: 2 },
         "VONIXX::BLEND SPRAY WAX": { gloss: 5, slickness: 4, water: 4, selfCleaning: 3, durability: 3 },
         "VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX": { gloss: 5, slickness: 4, water: 3, selfCleaning: 2, durability: 2 },
         "Labocosmetica::CUPÌDO": { gloss: 5, slickness: 4, water: 4, selfCleaning: 5, durability: 5 },
         "Koch-Chemie::Spray Sealant": { gloss: 4, slickness: 4, water: 4, selfCleaning: 4, durability: 4 },
+        "ながら洗車::ビーディング": { gloss: 4, slickness: 3, water: 5, selfCleaning: 4, durability: 3 },
+        "ながら洗車::プラズマコーティングα": { gloss: 4, slickness: 4, water: 4, selfCleaning: 5, durability: 4 },
+        "ながら洗車::ビギナーズラック": { gloss: 4, slickness: 4, water: 3, selfCleaning: 3, durability: 2 },
+        "DETAIL ARTIST::ICE": { gloss: 4, slickness: 3, water: 4, selfCleaning: 4, durability: 3 },
+        "DETAIL ARTIST::AIR": { gloss: 4, slickness: 4, water: 3, selfCleaning: 3, durability: 2 },
       };
       function finderFinishLabel(value) {
         return PRODUCT_FINISH_LABELS[value] || PRODUCT_FINISH_LABELS.balance;
@@ -5398,6 +5587,10 @@
                 finderCandidate("Labocosmetica::PRELUDIO ALKALINE", "リンスレス・水なし洗車前の有機汚れを柔らかくする専用プレソークです。", "水が少ない環境向けですが、商品指定の希釈と拭き取り方法を守ります。", ["beginner", "experienced", "limited", "protected", "unknown", "value"]),
                 finderCandidate("Labocosmetica::PRÌMUS 2.0", "濃縮アルカリ性フォームで、通常の洗車前に道路汚れを落としやすくします。", "希釈を正確に行い、乾燥させず完全にすすぎます。", ["experienced", "rinse", "protected", "unprotected", "value"]),
                 finderCandidate("Koch-Chemie::Green Star", "車外の汚れ具合に合わせて濃度を調整できる万能アルカリクリーナーです。", "原液：水と○倍希釈を混同せず、弱い濃度から試します。", ["experienced", "rinse", "unprotected", "unknown", "value"]),
+                finderCandidate("ながら洗車::レッドアルカリバブル", "国内で入手しやすいアルカリ性シャンプーで、予洗いへ取り入れやすい候補です。", "乾燥させず、商品指定の希釈と施工方法を守って十分すすぎます。", ["beginner", "rinse", "protected", "unknown", "easy", "budget"]),
+                finderCandidate("LUMINUS::L-PREWASH 2.0", "アルカリ性プレウォッシュとして用途が分かりやすく、LUMINUSで揃えたい場合にも選べます。", "冷えた面へ使い、乾燥前に完全にすすぎます。", ["beginner", "experienced", "rinse", "protected", "unknown", "easy", "budget"]),
+                finderCandidate("OVERcoat::OVERcoat pH+ アルカリ性シャンプー", "アルカリ性シャンプーとして予洗いとリセット洗浄へ使える候補です。", "既存保護への影響を確認し、薄い濃度・短時間から試します。", ["beginner", "rinse", "protected", "unknown", "easy"]),
+                finderCandidate("DETAIL ARTIST::DIVE", "アルカリ性カーシャンプーで、国産ブランドから選びたい場合の予洗い候補です。", "熱い面を避け、洗浄液を乾かさず十分すすぎます。", ["beginner", "rinse", "protected", "unknown", "easy", "budget"]),
               ],
             },
             {
@@ -5408,6 +5601,9 @@
                 finderCandidate("GYEON::Q²M Bathe", "中性の基本シャンプーで、コーティング施工車の日常洗車にも合わせやすい候補です。", "砂や泥を予洗いで落としてからミットを使います。", ["beginner", "rinse", "protected", "unknown", "easy"]),
                 finderCandidate("ながら洗車::スノーシャンプー", "中性シャンプーとして通常洗車へ取り入れやすく、最初の1本に向く候補です。", "乾かさず、パネルごとに洗ってすすぎます。", ["beginner", "rinse", "protected", "unknown", "easy"]),
                 finderCandidate("Labocosmetica::IDROSAVE", "十分な流水を使えない環境で選べる、ポリマー配合のリンスレス洗車剤です。", "泥や砂が多い車は無理に拭かず、先に十分な予洗いができる環境を選びます。", ["beginner", "experienced", "limited", "protected", "unknown", "value"]),
+                finderCandidate("LUMINUS::MINT", "中性の基本シャンプーで、初めてでも用途を迷いにくい候補です。", "予洗いで砂を落とし、乾燥させずにすすぎます。", ["beginner", "rinse", "protected", "unknown", "easy", "budget"]),
+                finderCandidate("DETAIL ARTIST::LUFT", "中性カーシャンプーとして日常洗車へ使いやすく、国内で揃えやすい候補です。", "洗浄液を乾かさず、きれいなミットで上から下へ洗います。", ["beginner", "rinse", "protected", "unknown", "easy", "budget"]),
+                finderCandidate("OVERcoat::OVERcoat Neutral pH 中性シャンプー", "既存保護を維持する通常洗車へ使える中性シャンプーです。", "砂や泥を先に流してからコンタクト洗車します。", ["beginner", "rinse", "protected", "unknown", "easy"]),
               ],
             },
             {
@@ -5421,6 +5617,8 @@
                 finderCandidate("LUMINUS::Luminus BLACK SLICK EDITION", "滑りと汚れにくさを優先したい時に選ぶ、乾式のスプレーシーラント候補です。", "洗浄・乾燥した面へ薄く使い、別のトップコートを同時に重ねすぎません。", ["beginner", "limited", "protected", "unprotected", "finish"]),
                 finderCandidate("VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX", "カルナバらしい濡れ感と艶を足したい時のスプレーワックス候補です。", "砂や汚れのない面へ薄く施工し、余剰分を均一に拭き取ります。", ["beginner", "limited", "protected", "unprotected", "finish"]),
                 finderCandidate("Labocosmetica::PERFÉCTA 2.0", "艶・色の深み・シルキーな触り心地を優先する仕上げ用QDです。", "保護の土台ではなく仕上げ向けです。PERFÉCTA SiO2と同時に重ねません。", ["beginner", "limited", "protected", "finish"]),
+                finderCandidate("ながら洗車::ビーディング", "濡れた面へ施工してすすぐタイプで、国内製品から手軽に撥水を足せます。", "塗り広げたまま乾燥させず、商品指定どおり十分すすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget", "finish"]),
+                finderCandidate("DETAIL ARTIST::ICE", "洗車後の濡れた面へ使う湿式コーティングで、工程を増やしにくい候補です。", "パネルごとに施工し、乾燥する前に十分すすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget", "finish"]),
               ],
             },
           ],
@@ -5437,6 +5635,9 @@
                 finderCandidate("Koch-Chemie::Gentle Snow Foam", "中性スノーフォームとして予洗いと手洗いの両方に使える候補です。", "Green Starを加える場合は公式レシピ以外へ流用しません。", ["beginner", "rinse", "protected", "easy"]),
                 finderCandidate("Labocosmetica::PRELUDIO ALKALINE", "少ない水で洗う前に有機汚れを浮かせるプレソークです。", "希釈と拭き取り手順を守り、重い砂汚れには流水洗車を選びます。", ["experienced", "limited", "protected", "value"]),
                 finderCandidate("Labocosmetica::PRÌMUS 2.0", "濃縮タイプで、日常汚れから少し強い道路汚れまで濃度を調整できます。", "保護施工車では弱い濃度から使い、乾燥させません。", ["experienced", "rinse", "protected", "value"]),
+                finderCandidate("LUMINUS::N-PREWASH", "中性プレウォッシュで、既存コーティングを維持したい普段洗いへ合わせやすい候補です。", "乾燥前に十分すすぎ、落ちない汚れだけ別工程で処理します。", ["beginner", "rinse", "protected", "easy", "budget"]),
+                finderCandidate("ながら洗車::スノーバブル", "中性フォームシャンプーとして、泡の予洗いへ導入しやすい国内製品です。", "フォームを乾燥させず、接触洗車前に十分すすぎます。", ["beginner", "rinse", "protected", "easy", "budget"]),
+                finderCandidate("GYEON::Q²M Foam", "プレウォッシュ専用フォームで、通常洗車前の汚れを浮かせる候補です。", "商品指定の希釈を守り、乾く前に高圧水で流します。", ["beginner", "experienced", "rinse", "protected", "value"]),
               ],
             },
             {
@@ -5446,6 +5647,9 @@
                 finderCandidate("Labocosmetica::SÈMPER", "中性・高濃縮で、普段のメンテナンス洗車を一本化しやすいシャンプーです。", "先に砂を落とし、きれいなミットで上から下へ洗います。", ["beginner", "experienced", "rinse", "protected", "value"]),
                 finderCandidate("GYEON::Q²M Bathe", "コーティング施工車の日常洗車へ合わせやすい中性シャンプーです。", "炎天下や熱い面では使いません。", ["beginner", "rinse", "protected", "easy"]),
                 finderCandidate("Labocosmetica::IDROSAVE", "流水を多く使えない時のリンスレス洗車へ対応します。", "クロス面を頻繁に替え、重い汚れには使いません。", ["beginner", "experienced", "limited", "protected", "value"]),
+                finderCandidate("ながら洗車::スノーシャンプー", "日常のコンタクト洗車へ使いやすく、国内で購入しやすい中性シャンプーです。", "予洗いで砂を落とし、洗浄液を乾かしません。", ["beginner", "rinse", "protected", "easy", "budget"]),
+                finderCandidate("LUMINUS::MINT", "LUMINUSの中性シャンプーで、保護施工車の普段洗いに使える候補です。", "商品指定の希釈を守り、パネルごとにすすぎます。", ["beginner", "rinse", "protected", "easy", "budget"]),
+                finderCandidate("DETAIL ARTIST::LUFT", "中性カーシャンプーとして既存保護を維持する日常洗車へ使えます。", "きれいなミットを使い、砂を引きずらないようにします。", ["beginner", "rinse", "protected", "easy", "budget"]),
               ],
             },
             {
@@ -5461,6 +5665,8 @@
                 finderCandidate("GYEON::Q²M CeramicDetailer", "艶・滑りと撥水のバランスを取りやすいSiO₂配合ディテイラーです。", "洗浄済みの面へ少量ずつ使い、ムラがないか確認します。", ["beginner", "limited", "protected", "finish"]),
                 finderCandidate("GYEON::Q²M QuickDetailer", "保護よりも艶と滑りを最優先したい時の仕上げ用QDです。", "単体の保護剤として数えず、必要なら別の保護層を用意します。", ["beginner", "limited", "protected", "finish"]),
                 finderCandidate("VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX", "カルナバらしい濡れ感と艶を足すメンテナンス用スプレーワックスです。", "既存トップコートへ重ねる前に、小面積で仕上がりを確認します。", ["beginner", "limited", "protected", "finish"]),
+                finderCandidate("ながら洗車::ビギナーズラック", "洗車後の拭き上げ時に使いやすいQDで、初心者が国内製品から始める候補です。", "砂や重い汚れが残る面には使わず、少量ずつ仕上げます。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
+                finderCandidate("DETAIL ARTIST::AIR", "乾いた清潔な面で使うドライ型QDとして、艶と手触りを整える候補です。", "洗浄剤ではないため、汚れが残る面へ直接使いません。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
               ],
             },
           ],
@@ -5476,6 +5682,10 @@
                 finderCandidate("Labocosmetica::PRÌMUS 2.0", "アルカリ性フォームで道路汚れや油分を予洗い段階から落とします。", "冷えた面で希釈し、乾燥前に完全にすすぎます。", ["experienced", "rinse", "protected", "unprotected", "value"]),
                 finderCandidate("Koch-Chemie::Green Star", "汚れに合わせて原液：水5〜30の範囲を使い分けられる万能クリーナーです。", "部位ごとの公式希釈を守り、酸性剤と混ぜません。", ["experienced", "rinse", "unprotected", "unknown", "value"]),
                 finderCandidate("Labocosmetica::LIBERA", "固着した交通被膜へ使う高性能TFRで、深いリセット向けです。", "フォームではなくミストとして使う指定を守り、初心者は弱い濃度から試します。", ["experienced", "rinse", "protected", "unprotected", "finish", "advanced"]),
+                finderCandidate("DETAIL ARTIST::DIVE", "アルカリ性カーシャンプーで、有機汚れを落とすリセット工程へ使える国内製品です。", "既存保護が弱くなる可能性を考え、冷えた面で乾燥前にすすぎます。", ["beginner", "experienced", "rinse", "protected", "unprotected", "easy", "budget"]),
+                finderCandidate("ながら洗車::レッドアルカリバブル", "アルカリ洗浄をシャンプー工程へ取り入れやすく、初めてのリセット洗車候補になります。", "強い汚れへ濃くしすぎず、商品指定どおりに完全にすすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget"]),
+                finderCandidate("LUMINUS::L-PREWASH 2.0", "LUMINUSのアルカリ性プレウォッシュで、有機汚れを予洗いから落とします。", "熱い面を避け、乾燥前に十分な水ですすぎます。", ["beginner", "experienced", "rinse", "protected", "unprotected", "easy", "budget"]),
+                finderCandidate("OVERcoat::OVERcoat pH+ アルカリ性シャンプー", "アルカリ性シャンプーとしてリセット工程へ組み込みやすい候補です。", "既存保護への影響を確認し、酸性剤と混ぜません。", ["beginner", "rinse", "protected", "unprotected", "easy"]),
               ],
             },
             {
@@ -5485,6 +5695,9 @@
                 finderCandidate("Labocosmetica::PURÌFICA (Upgrade Formula)", "酸性除染シャンプーで、面全体の軽いミネラル残留とコーティングの詰まりを整えます。", "アルカリ工程を完全にすすいでから別工程で使い、乾燥させません。", ["beginner", "experienced", "rinse", "protected", "value"]),
                 finderCandidate("DETAIL ARTIST::ACID CLEANER", "固着したスケールを狙って落としたい時の酸性クリーナー候補です。", "素材適合を確認し、局所・短時間から試します。", ["experienced", "rinse", "unprotected", "finish", "advanced"]),
                 finderCandidate("GYEON::Q²M WaterSpot", "ウォータースポットへ目的を絞った酸性クリーナーです。", "ガラスや樹脂を含む対応素材を確認してから使用します。", ["experienced", "rinse", "protected", "easy"]),
+                finderCandidate("ながら洗車::グリーンアシッドバブル", "酸性シャンプーとして面全体の軽いミネラル汚れを洗車工程で狙えます。", "アルカリ工程を完全にすすいだ後、別工程で使います。", ["beginner", "experienced", "rinse", "protected", "easy", "budget"]),
+                finderCandidate("DETAIL ARTIST::KEEP", "酸性カーシャンプーとして、軽いスケールや保護層の詰まりを整える候補です。", "対応素材を確認し、乾燥させずに十分すすぎます。", ["beginner", "experienced", "rinse", "protected", "easy", "budget"]),
+                finderCandidate("OVERcoat::OVERcoat pH- 酸性シャンプー", "酸性シャンプーで面全体のミネラル汚れを整える候補です。", "アルカリ性薬剤と混ぜず、工程間で完全にすすぎます。", ["beginner", "experienced", "rinse", "protected", "easy"]),
               ],
             },
             {
@@ -5494,6 +5707,10 @@
                 finderCandidate("Labocosmetica::SIDERO", "鉄粉とミネラル残留を一工程で狙えるジェルタイプです。", "皮膚・目を保護し、反応後は残留しないよう十分すすぎます。", ["experienced", "rinse", "protected", "unprotected", "value"]),
                 finderCandidate("OVERcoat::OVERcoat IRON REMOVER 鉄粉除去剤", "塗装面の鉄粉除去を単独工程で行いたい時の候補です。", "乾燥させず、酸性・アルカリ性ケミカルと混ぜません。", ["beginner", "rinse", "protected", "easy"]),
                 finderCandidate("GYEON::Q²M Iron REDEFINED", "ボディの鉄粉除去へ用途が明確な専用品です。", "冷えた面で使い、反応後は完全にすすぎます。", ["beginner", "rinse", "protected", "easy"]),
+                finderCandidate("ながら洗車::IRON DELETE", "臭いを抑えた鉄粉除去剤で、国内製品から始めたい場合の候補です。", "冷えた面へ使い、反応後は擦りすぎず大量の水ですすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget"]),
+                finderCandidate("LUMINUS::VAMPIRE PLUS DIRECT", "希釈不要で使える鉄粉除去剤として、LUMINUSで揃えたい場合に選べます。", "熱い面や直射日光を避け、乾燥前に完全にすすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget"]),
+                finderCandidate("DETAIL ARTIST::MELT", "鉄粉除去専用品として、国内ブランドから選べる候補です。", "酸性・アルカリ性剤と混ぜず、工程を分けて十分すすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget"]),
+                finderCandidate("VONIXX::IZER", "ボディの鉄粉除去へ使える専用品で、別ブランドの候補として選べます。", "反応中に乾燥させず、目と皮膚を保護して十分すすぎます。", ["experienced", "rinse", "protected", "unprotected", "value"]),
               ],
             },
             {
@@ -5503,6 +5720,9 @@
                 finderCandidate("Labocosmetica::VÈRITAS", "油分・フィラーを除去し、コーティング前の素地確認に使える前処理剤です。", "塗装面が冷えた状態で、清潔なクロスを使います。", ["experienced", "rinse", "unprotected", "finish"]),
                 finderCandidate("OVERcoat::OVERcoat Surface PREP 脱脂スプレー", "下地処理後の油分を落とすパネル脱脂剤です。", "強く擦らず、クロス面を替えながら拭き取ります。", ["beginner", "unprotected", "easy"]),
                 finderCandidate("GYEON::Q²M Prep", "研磨油や残留分を除去してコーティング前の状態を整えます。", "施工するコーティングの前処理指定を優先します。", ["beginner", "unprotected", "easy"]),
+                finderCandidate("LUMINUS::PREP PRO", "油分と残留水分を除くパネル脱脂剤で、価格を抑えて下地を仕上げたい候補です。", "洗浄済みの冷えた面へ少量ずつ使い、清潔なクロスで拭き取ります。", ["beginner", "unprotected", "easy", "budget"]),
+                finderCandidate("DETAIL ARTIST::NUDE", "IPA系の脱脂剤として、コーティング前の最終確認へ使える国内製品です。", "換気し、塗装面が冷えた状態で小面積ずつ作業します。", ["beginner", "unprotected", "easy", "budget"]),
+                finderCandidate("Koch-Chemie::Panel Preparation Spray", "研磨後の油分除去とパネル確認へ使える専用プレップです。", "施工するコーティングメーカーの前処理指定を優先します。", ["experienced", "unprotected", "finish"]),
               ],
             },
           ],
@@ -5517,7 +5737,9 @@
               candidates: [
                 finderCandidate("Labocosmetica::PURÌFICA (Upgrade Formula)", "酸性シャンプーとして広い面の軽いスケールとコーティングの詰まりを整えます。", "熱い面を避け、乾燥前に十分すすぎます。", ["beginner", "experienced", "rinse", "protected", "value"]),
                 finderCandidate("Koch-Chemie::Reactivation Shampoo", "コーティング表面のミネラル汚れを洗浄し、撥水の再活性を狙うシャンプーです。", "通常シャンプーと同じ感覚で放置せず、説明どおりにすすぎます。", ["beginner", "rinse", "protected", "easy"]),
-                finderCandidate("ながら洗車::グリーンアシッドバブル", "酸性シャンプーとしてミネラル汚れを洗車工程で落とす候補です。", "素材適合を確認し、他のケミカルと混ぜません。", ["experienced", "rinse", "protected", "easy"]),
+                finderCandidate("ながら洗車::グリーンアシッドバブル", "酸性シャンプーとしてミネラル汚れを洗車工程で落とす候補です。", "素材適合を確認し、他のケミカルと混ぜません。", ["beginner", "experienced", "rinse", "protected", "easy", "budget"]),
+                finderCandidate("DETAIL ARTIST::KEEP", "酸性カーシャンプーで、面全体の軽いスケールとコーティングの詰まりを整える候補です。", "乾燥させず、別の薬剤と混ぜないで十分すすぎます。", ["beginner", "experienced", "rinse", "protected", "easy", "budget"]),
+                finderCandidate("OVERcoat::OVERcoat pH- 酸性シャンプー", "酸性シャンプーとして、面全体のミネラル汚れを洗車工程で処理できます。", "素材適合を確認し、熱い面を避けて完全にすすぎます。", ["beginner", "experienced", "rinse", "protected", "easy"]),
               ],
             },
             {
@@ -5539,6 +5761,8 @@
                 finderCandidate("LUMINUS::Luminus BLACK SLICK EDITION", "スケール除去後に、滑りと防汚・水切れを補いたい時の候補です。", "除染剤を完全にすすぎ、乾燥させてから薄く施工します。", ["beginner", "protected", "finish"]),
                 finderCandidate("Labocosmetica::PERFÉCTA 2.0", "除染後の艶・色の深み・シルキーな仕上がりを優先するQDです。", "PERFÉCTA SiO2と同時に重ねず、どちらか一方を選びます。", ["beginner", "limited", "protected", "finish"]),
                 finderCandidate("GYEON::Q²M QuickDetailer", "保護層が十分で、艶と滑りだけを強く足したい時の仕上げ候補です。", "保護性能の補充が必要な時は、別の保護剤を選びます。", ["beginner", "limited", "protected", "finish"]),
+                finderCandidate("ながら洗車::ビギナーズラック", "酸性洗浄後の清潔な面へ、艶と手触りを手軽に補う国内QDです。", "スケールが残る面を隠す目的では使わず、少量ずつ仕上げます。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
+                finderCandidate("DETAIL ARTIST::AIR", "除染後の乾いた面で艶と滑りを整えるドライ型QDです。", "酸性剤を完全にすすいで乾燥させてから使います。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
               ],
             },
           ],
@@ -5554,6 +5778,10 @@
                 finderCandidate("Labocosmetica::SIDERO", "鉄粉とミネラル汚れを同時に狙え、ボディ・ガラス・ホイールへ使える候補です。", "手袋・目の保護を行い、乾燥前に大量の水ですすぎます。", ["experienced", "rinse", "protected", "value"]),
                 finderCandidate("OVERcoat::OVERcoat IRON REMOVER 鉄粉除去剤", "鉄粉除去へ用途が明確で、ボディの定期除染に選びやすい候補です。", "反応を長く置きすぎず、乾かしません。", ["beginner", "rinse", "protected", "easy"]),
                 finderCandidate("GYEON::Q²M Iron REDEFINED", "ボディの鉄粉を化学反応で除去する専用品です。", "熱いホイールや直射日光下を避けます。", ["beginner", "rinse", "protected", "easy"]),
+                finderCandidate("ながら洗車::IRON DELETE", "臭いを抑えた鉄粉除去剤で、初心者が国内製品から選びやすい候補です。", "冷えた面で反応させ、乾燥前に大量の水ですすぎます。", ["beginner", "rinse", "protected", "easy", "budget"]),
+                finderCandidate("LUMINUS::VAMPIRE PLUS DIRECT", "希釈不要の鉄粉除去剤として、LUMINUS製品から選びたい場合に使えます。", "熱い面を避け、反応液を残さず十分すすぎます。", ["beginner", "rinse", "protected", "easy", "budget"]),
+                finderCandidate("DETAIL ARTIST::MELT", "ボディ用の鉄粉除去剤として、国内ブランドから選べる候補です。", "他のケミカルと混ぜず、別工程として完全にすすぎます。", ["beginner", "rinse", "protected", "easy", "budget"]),
+                finderCandidate("VONIXX::IZER", "鉄粉除去へ用途が明確な専用品で、濃度や施工に慣れた人の別候補です。", "目と皮膚を保護し、反応後は完全にすすぎます。", ["experienced", "rinse", "protected", "value"]),
               ],
             },
             {
@@ -5563,6 +5791,9 @@
                 finderCandidate("Labocosmetica::SÈMPER", "鉄粉除去剤をすすいだ後、面全体を中性洗浄して残留を防ぎます。", "鉄粉除去剤とバケツ内で混ぜません。", ["beginner", "experienced", "rinse", "protected", "value"]),
                 finderCandidate("GYEON::Q²M Bathe", "除染後の通常洗車へ使える中性シャンプーです。", "鉄粉除去工程を完全にすすいでから使います。", ["beginner", "rinse", "protected", "easy"]),
                 finderCandidate("ながら洗車::スノーシャンプー", "中性洗浄で除染工程を仕上げる候補です。", "別工程として新しい洗浄液を作ります。", ["beginner", "rinse", "protected", "easy"]),
+                finderCandidate("LUMINUS::MINT", "中性シャンプーで鉄粉除去剤の残留を洗い流し、通常洗車へ戻せます。", "鉄粉除去剤を一度十分すすいでから、新しい洗浄液で使います。", ["beginner", "rinse", "protected", "easy", "budget"]),
+                finderCandidate("DETAIL ARTIST::LUFT", "中性カーシャンプーとして除染後の仕上げ洗浄へ使える候補です。", "鉄粉除去剤と混ぜず、別工程で使用します。", ["beginner", "rinse", "protected", "easy", "budget"]),
+                finderCandidate("OVERcoat::OVERcoat Neutral pH 中性シャンプー", "中性洗浄で鉄粉除去後の残留を減らす候補です。", "反応液を先に完全にすすいでから使用します。", ["beginner", "rinse", "protected", "easy"]),
               ],
             },
           ],
@@ -5580,6 +5811,9 @@
                 finderCandidate("VONIXX::BLEND SPRAY WAX", "流水を使わず乾式施工できるスプレーワックスで、艶と保護を追加できます。", "砂や汚れがない洗浄済みの面へ薄く使います。", ["beginner", "limited", "protected", "unprotected", "easy", "finish"]),
                 finderCandidate("Labocosmetica::CUPÌDO", "乾式シーラントとして艶とセルフクリーニング性を重視する場合の候補です。", "完全に洗浄・乾燥した面へ薄く施工し、説明書の定着時間を守ります。", ["experienced", "unprotected", "finish", "advanced"]),
                 finderCandidate("LUMINUS::Luminus AQUA", "湿式で施工でき、初めてでも工程を増やしにくい保護剤です。", "塗布量を守り、すすぎ残しを防ぎます。", ["beginner", "rinse", "unknown", "easy", "finish"]),
+                finderCandidate("ながら洗車::ビーディング", "濡れた面へスプレーして流す湿式タイプで、国内製品から手軽に撥水を作れます。", "乾燥前にパネルごとに十分すすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget", "finish"]),
+                finderCandidate("DETAIL ARTIST::ICE", "湿式施工で洗車後の保護を追加でき、初めてでも工程を増やしにくい候補です。", "商品指定量を守り、ムラになる前にすすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget", "finish"]),
+                finderCandidate("ながら洗車::プラズマコーティングα", "防汚性を重視した国内の簡易コーティング候補です。", "洗浄・下地処理後の面へ説明どおり施工し、定着時間を守ります。", ["beginner", "protected", "unprotected", "finish"]),
               ],
             },
             {
@@ -5594,13 +5828,16 @@
                 finderCandidate("GYEON::Q²M QuickDetailer", "保護よりも艶と滑りを優先する純粋な仕上げ用QDです。", "これだけをベース保護とは考えず、必要に応じて保護剤を別に選びます。", ["beginner", "limited", "protected", "finish"]),
                 finderCandidate("VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX", "カルナバらしい濡れ感と艶を優先するスプレーワックスです。", "洗浄・乾燥した面へ薄く施工し、余剰分を拭き取ります。", ["beginner", "limited", "protected", "finish"]),
                 finderCandidate("Koch-Chemie::Spray Sealant", "スプレー式シーラントで、洗浄後の保護を乾式で追加できます。", "施工面とクロスを清潔にし、薄く均一に塗布します。", ["experienced", "protected", "unprotected", "finish"]),
+                finderCandidate("ながら洗車::ビギナーズラック", "洗車後の拭き上げ時に艶と手触りを整えやすい、初心者向けの国内QDです。", "洗浄済みの面へ少量ずつ使い、厚塗りを避けます。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
+                finderCandidate("DETAIL ARTIST::AIR", "乾式QDとして艶と滑りを整え、価格を抑えた仕上げ候補になります。", "砂や汚れが残る面へ使わず、清潔なクロスで仕上げます。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
+                finderCandidate("LUMINUS::GLOSSY", "LUMINUSのクイックディテイラーで、艶を足す仕上げ候補です。", "別のトップコートと一度に重ねず、単品の仕上がりを確認します。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
               ],
             },
           ],
         },
         glass: {
-          title: "ガラス洗浄・研磨・撥水",
-          summary: "日常洗浄、油膜・固着汚れの研磨、撥水保護を別工程で選びます。",
+          title: "ガラス洗浄・撥水",
+          summary: "日常洗浄と撥水保護を分け、研磨剤を使わない商品から選びます。",
           steps: [
             {
               key: "glass-clean",
@@ -5609,16 +5846,8 @@
                 finderCandidate("Labocosmetica::NITIDO", "高透明仕上げを狙うガラス専用クリーナーです。", "清潔なガラス用クロスを2枚使い、拭き筋を残さないよう仕上げます。", ["beginner", "limited", "easy", "finish"]),
                 finderCandidate("GYEON::Q²M Glass", "外窓・内窓の基本洗浄へ使えるガラスクリーナーです。", "直射日光で乾きやすい時は小範囲ずつ作業します。", ["beginner", "limited", "easy"]),
                 finderCandidate("Koch-Chemie::SpeedGlassCleaner", "希釈不要で使えるガラスクリーナーとして扱いやすい候補です。", "コーティング面では強く擦らず、対応を確認します。", ["beginner", "limited", "easy"]),
-              ],
-            },
-            {
-              key: "glass-polish",
-              role: "油膜・固着汚れ",
-              requiresRinse: true,
-              candidates: [
-                finderCandidate("Labocosmetica::VITREO", "ガラスの固着汚れを研磨で除去し、撥水前の下地を作る専用品です。", "傷・飛び石・内側のフィルムには使用せず、研磨後は完全に洗い流します。", ["experienced", "rinse", "unprotected", "finish"]),
-                finderCandidate("OVERcoat::OVERcoat GLASS RESET ガラス専用コンパウンド", "油膜や古いガラス保護をリセットする研磨剤です。", "施工前にガラスの状態と対応面を確認します。", ["beginner", "rinse", "unprotected", "easy"]),
-                finderCandidate("DETAIL ARTIST::G・POLISH", "ガラス研磨へ用途が明確な候補です。", "研磨粉を残さず洗浄し、ワイパーゴムも確認します。", ["experienced", "rinse", "unprotected", "value"]),
+                finderCandidate("LUMINUS::SHINE", "ガラスクリーナーとして、価格を抑えて日常の窓拭きへ使える候補です。", "直射日光を避け、ガラス用クロスで拭き筋を残さないよう仕上げます。", ["beginner", "limited", "easy", "budget"]),
+                finderCandidate("DETAIL ARTIST::CLEAR", "ガラスの日常洗浄へ使える国内製品候補です。", "液量が多いとギラつきや拭き筋が出やすいため、少量をクロスへ取り二度拭きします。", ["beginner", "limited", "easy", "budget"]),
               ],
             },
             {
@@ -5628,6 +5857,9 @@
                 finderCandidate("Labocosmetica::AQUAVÈLOX", "ガラス用ナノシーラントとして洗浄・研磨後の撥水保護を作れます。", "完全に脱脂・乾燥したガラスへ、指定手順で施工します。", ["experienced", "unprotected", "finish"]),
                 finderCandidate("GYEON::Q² QuickView", "簡易施工のガラス撥水コーティングとして、扱いやすさを重視する候補です。", "施工直後の水濡れ制限を確認します。", ["beginner", "unprotected", "easy"]),
                 finderCandidate("OVERcoat::OVERcoat Final Touch GLASS ガラス専用コーティング剤", "ガラス専用の簡易コーティングとして撥水を追加できます。", "油膜や汚れを除去してから使います。", ["beginner", "unprotected", "easy", "finish"]),
+                finderCandidate("ながら洗車::スプラッシュ＆リムーバー", "油膜除去とガラス撥水を一つにまとめたい初心者向けの国内製品です。", "ガラスの状態を確認し、商品指定の下地処理と乾燥時間を守ります。", ["beginner", "unprotected", "easy", "budget", "finish"]),
+                finderCandidate("LUMINUS::GLIDE", "LUMINUSのガラス撥水シーラントで、同ブランドから揃えたい場合に選べます。", "完全に洗浄・脱脂したガラスへ施工し、定着時間を守ります。", ["beginner", "unprotected", "easy", "budget", "finish"]),
+                finderCandidate("DETAIL ARTIST::DROP COAT", "ガラス用コーティングとして、国内ブランドから選べる候補です。", "油膜と水分を除去し、説明書の施工量と硬化時間を優先します。", ["beginner", "unprotected", "easy", "budget", "finish"]),
               ],
             },
           ],
@@ -5643,6 +5875,9 @@
                 finderCandidate("Labocosmetica::SIDERO", "鉄粉とミネラル残留を同時に狙え、ホイール内部の深い洗浄にも使えます。", "ホイールが完全に冷えてから使い、ブレーキへ残留させません。", ["experienced", "rinse", "value", "finish"]),
                 finderCandidate("GYEON::Q²M Iron WheelCleaner REDEFINED", "ホイール専用の鉄粉クリーナーで、用途を迷いにくい候補です。", "乾燥させず、大量の水ですすぎます。", ["beginner", "rinse", "easy"]),
                 finderCandidate("LUMINUS::VAMPIRE PLUS DIRECT", "希釈不要の鉄粉・ホイールクリーナーとして手早く使える候補です。", "熱いホイールへ使用しません。", ["beginner", "rinse", "easy"]),
+                finderCandidate("ながら洗車::IRON DELETE", "臭いを抑えた鉄粉除去剤で、ホイールの鉄粉処理にも使える国内製品候補です。", "ホイールを完全に冷まし、反応液を乾燥させず十分すすぎます。", ["beginner", "rinse", "easy", "budget"]),
+                finderCandidate("DETAIL ARTIST::MELT", "鉄粉除去専用品として、ホイールのブレーキダスト処理にも選べる候補です。", "素材適合を確認し、熱いホイールへ使いません。", ["beginner", "rinse", "easy", "budget"]),
+                finderCandidate("Koch-Chemie::Reactive Rust Remover", "鉄粉反応型クリーナーとして、ボディとホイールの除染へ使える候補です。", "反応後はブラシや隙間まで大量の水ですすぎます。", ["experienced", "rinse", "value"]),
               ],
             },
             {
@@ -5661,46 +5896,16 @@
                 finderCandidate("Labocosmetica::NERO", "乾きが速くベタつきにくいタイヤドレッシングジェルで、均一な黒さを作ります。", "洗浄・乾燥したタイヤ側面だけへ薄く塗り、トレッドには付けません。", ["beginner", "easy", "finish"]),
                 finderCandidate("LUMINUS::ONIX", "タイヤの艶と黒さを整えるドレッシング候補です。", "走行前に余剰分を拭き取ります。", ["beginner", "easy", "finish"]),
                 finderCandidate("OVERcoat::OVERcoat Final Touch TIRE タイヤ艶出し剤", "タイヤ専用品として仕上げ工程へ追加しやすい候補です。", "ブレーキや接地面へ付着させません。", ["beginner", "easy", "finish"]),
-              ],
-            },
-          ],
-        },
-        interior: {
-          title: "内装の洗浄・保護",
-          summary: "日常の軽い汚れと深い洗浄を分け、最後に内装保護を追加します。",
-          steps: [
-            {
-              key: "interior-daily",
-              role: "日常の軽い汚れ",
-              candidates: [
-                finderCandidate("Labocosmetica::VARIUS", "希釈不要のAPCで、布・樹脂・レザーなど内外装の軽〜中程度汚れへ使えます。", "素材ごとに目立たない場所で試し、直接大量に吹き掛けません。", ["beginner", "limited", "easy"]),
-                finderCandidate("Labocosmetica::IGEA", "ホコリ・指紋・軽い汚れを素早く整える日常用インテリアクリーナーです。", "画面や特殊コーティング面は対応を確認します。", ["beginner", "limited", "easy", "finish"]),
-                finderCandidate("GYEON::Q²M InteriorDetailer", "内装の日常清掃と仕上げを短時間で行う候補です。", "砂や重い汚れは先に吸引・専用洗浄します。", ["beginner", "limited", "easy"]),
-              ],
-            },
-            {
-              key: "interior-deep",
-              role: "深い洗浄",
-              candidates: [
-                finderCandidate("Labocosmetica::OMNIA 2.0", "樹脂や内装全般を深く洗浄するインテリア専用クリーナーです。", "希釈と素材適合を確認し、洗浄液を残しません。", ["experienced", "limited", "value"]),
-                finderCandidate("Koch-Chemie::Pol Star", "布・革・アルカンターラなどを中性で洗う候補です。", "湿らせた布やバキュームで洗剤残留を除去します。", ["beginner", "limited", "easy"]),
-                finderCandidate("LUMINUS::BLANC", "内装クリーナーとして樹脂・一般内装の洗浄へ使う候補です。", "素材へ直接大量に吹かず、クロスやブラシへ取って試します。", ["beginner", "limited", "easy"]),
-              ],
-            },
-            {
-              key: "interior-protect",
-              role: "内装保護",
-              candidates: [
-                finderCandidate("GYEON::Q²M Preserve", "内装樹脂の色と仕上がりを整えるドレッシングです。", "ハンドル・ペダル・シフトなど滑ると危険な場所には使いません。", ["beginner", "limited", "easy", "finish"]),
-                finderCandidate("LUMINUS::SYNC", "内装の洗浄と保護をまとめたい時の候補です。", "素材ごとに対応を確認し、余剰分を拭き取ります。", ["beginner", "limited", "easy"]),
-                finderCandidate("OVERcoat::OVERcoat Final Touch INTERIOR インテリアコーティング剤", "洗浄後の内装面へ保護を追加する専用品です。", "運転操作部や画面への使用可否を確認します。", ["beginner", "limited", "finish"]),
+                finderCandidate("DETAIL ARTIST::DEEP", "水性タイヤワックスとして、価格を抑えて自然な黒さを作る国内製品です。", "乾燥したタイヤ側面へ薄く塗り、走行前に余剰分を拭き取ります。", ["beginner", "easy", "budget", "finish"]),
+                finderCandidate("ながら洗車::ブラックレジン", "タイヤと未塗装樹脂へ使える水性ワックスで、用途をまとめたい候補です。", "タイヤの接地面やブレーキへ付着させず、余剰分を拭き取ります。", ["beginner", "easy", "budget", "finish"]),
+                finderCandidate("GYEON::Q²M Tire Express", "タイヤの黒さを整える扱いやすいドレッシング候補です。", "洗浄・乾燥した側面だけへ薄く施工します。", ["beginner", "easy", "finish"]),
               ],
             },
           ],
         },
         coating: {
           title: "コーティング前の下地セット",
-          summary: "洗浄・除染・仕上げ研磨・脱脂を分け、油分のない状態へ整えます。",
+          summary: "洗浄・化学除染・脱脂を分け、研磨剤を使わず油分のない状態へ整えます。",
           steps: [
             {
               key: "coating-clean",
@@ -5709,6 +5914,10 @@
                 finderCandidate("Labocosmetica::PRÌMUS 2.0", "アルカリ性予洗いで有機汚れと道路汚れを先に落とします。", "冷えた面で使用し、次工程前に完全にすすぎます。", ["experienced", "rinse", "unprotected", "value"]),
                 finderCandidate("Koch-Chemie::Green Star", "汚れに応じて希釈を調整し、下地洗浄に使える万能クリーナーです。", "濃度を強くしすぎず、酸性工程と混ぜません。", ["experienced", "rinse", "unprotected", "value"]),
                 finderCandidate("Labocosmetica::INITIO", "希釈不要で、初めての下地洗浄でも濃度を間違えにくい候補です。", "乾燥させず、高圧水で十分すすぎます。", ["beginner", "rinse", "unprotected", "easy"]),
+                finderCandidate("DETAIL ARTIST::DIVE", "アルカリ性カーシャンプーで、コーティング前の有機汚れを落とす国内製品候補です。", "既存保護が落ちる前提で、乾燥させず完全にすすぎます。", ["beginner", "experienced", "rinse", "unprotected", "easy", "budget"]),
+                finderCandidate("ながら洗車::レッドアルカリバブル", "アルカリ性シャンプーとして、初めての下地洗浄へ取り入れやすい候補です。", "商品指定の希釈を守り、熱い面を避けて十分すすぎます。", ["beginner", "rinse", "unprotected", "easy", "budget"]),
+                finderCandidate("LUMINUS::L-PREWASH 2.0", "LUMINUSのアルカリ性プレウォッシュで、有機汚れを予洗いから落とします。", "薬剤を乾燥させず、次工程前に完全にすすぎます。", ["beginner", "experienced", "rinse", "unprotected", "easy", "budget"]),
+                finderCandidate("OVERcoat::OVERcoat pH+ アルカリ性シャンプー", "アルカリ洗浄をコーティング前の下地工程へ組み込める候補です。", "酸性剤と混ぜず、工程間で完全にすすぎます。", ["beginner", "rinse", "unprotected", "easy"]),
               ],
             },
             {
@@ -5718,15 +5927,9 @@
                 finderCandidate("Labocosmetica::SIDERO", "鉄粉とミネラル残留をまとめて処理し、研磨前の面を整えます。", "薬剤を混ぜず、反応ごとに完全にすすぎます。", ["experienced", "rinse", "unprotected", "value"]),
                 finderCandidate("GYEON::Q²M Iron REDEFINED", "塗装面の鉄粉を研磨前に化学除去する専用品です。", "乾燥前に十分すすぎ、残った付着物は別工程で判断します。", ["beginner", "rinse", "unprotected", "easy"]),
                 finderCandidate("OVERcoat::OVERcoat IRON REMOVER 鉄粉除去剤", "鉄粉除去工程を分かりやすく追加できる候補です。", "必要な時だけ使い、反応を長く置きすぎません。", ["beginner", "rinse", "unprotected", "easy"]),
-              ],
-            },
-            {
-              key: "coating-polish",
-              role: "仕上げ研磨",
-              candidates: [
-                finderCandidate("Labocosmetica::FIERO", "仕上げポリッシュ兼コーティング用プライマーとして、艶と結合準備を整えます。", "組み合わせるコーティングとの適合を確認し、研磨経験がない場合は小面積で試します。", ["experienced", "unprotected", "finish", "advanced"]),
-                finderCandidate("Koch-Chemie::Micro Cut M3.02", "微細傷と曇りを整える仕上げ用コンパウンドです。", "適切なバフと回転・圧力を選び、磨きすぎを防ぎます。", ["experienced", "unprotected", "finish", "advanced"]),
-                finderCandidate("VONIXX::V30", "仕上げ研磨で艶を整えるポリッシュ候補です。", "塗装膜厚と傷の深さを確認し、エッジを攻めすぎません。", ["experienced", "unprotected", "value", "advanced"]),
+                finderCandidate("ながら洗車::IRON DELETE", "臭いを抑えた国内の鉄粉除去剤で、初めての下地処理にも選びやすい候補です。", "冷えた面で反応させ、乾燥前に大量の水ですすぎます。", ["beginner", "rinse", "unprotected", "easy", "budget"]),
+                finderCandidate("LUMINUS::VAMPIRE PLUS DIRECT", "希釈不要の鉄粉除去剤として、LUMINUSで下地製品を揃えたい場合に選べます。", "直射日光と熱い面を避け、反応液を完全にすすぎます。", ["beginner", "rinse", "unprotected", "easy", "budget"]),
+                finderCandidate("DETAIL ARTIST::MELT", "ボディ用鉄粉除去剤として、国内ブランドから選べる候補です。", "ほかの薬剤と混ぜず、別工程で完全にすすぎます。", ["beginner", "rinse", "unprotected", "easy", "budget"]),
               ],
             },
             {
@@ -5736,6 +5939,9 @@
                 finderCandidate("Labocosmetica::VÈRITAS", "研磨油・フィラーを除去して、コーティング前の実際の塗装状態を確認できます。", "清潔なクロスで小面積ずつ拭き、残留を確認します。", ["experienced", "unprotected", "finish"]),
                 finderCandidate("GYEON::Q²M Prep", "研磨後の油分を除去するパネル脱脂剤として扱いやすい候補です。", "施工するコーティングの前処理指定を優先します。", ["beginner", "unprotected", "easy"]),
                 finderCandidate("OVERcoat::OVERcoat Surface PREP 脱脂スプレー", "コーティング前の脱脂を単独工程で行う専用品です。", "クロスを頻繁に替え、油分を引き伸ばさないようにします。", ["beginner", "unprotected", "easy"]),
+                finderCandidate("LUMINUS::PREP PRO", "LUMINUSのパネル脱脂剤で、油分と残留水分を除きながら初期費用を抑えやすい候補です。", "洗浄済みの冷えた面へ少量ずつ使い、清潔なクロスで拭き取ります。", ["beginner", "unprotected", "easy", "budget"]),
+                finderCandidate("DETAIL ARTIST::NUDE", "IPA系の脱脂剤として、コーティング前の油分除去に使える国内製品です。", "換気し、小面積ずつ拭き残しを確認します。", ["beginner", "unprotected", "easy", "budget"]),
+                finderCandidate("Koch-Chemie::Panel Preparation Spray", "研磨油と残留物を除去する専用パネルプレップです。", "施工するコーティングの指定と適合を最優先します。", ["experienced", "unprotected", "finish"]),
               ],
             },
           ],
@@ -5748,6 +5954,268 @@
         "wheel",
         "coating",
       ]);
+      const PRODUCT_FINDER_PRODUCT_IDS = new Set(
+        Object.values(PRODUCT_FINDER_PLANS).flatMap((plan) =>
+          plan.steps.flatMap((step) =>
+            step.candidates.map((candidate) => candidate.id),
+          ),
+        ),
+      );
+      const PRODUCT_FINDER_PROCESS_GROUPS = [
+        {
+          title: "予洗い・有機汚れ",
+          description: "泡やアルカリ洗浄で、触る前に道路汚れを落とす",
+          ids: [
+            "Labocosmetica::INITIO",
+            "Labocosmetica::PRELUDIO ALKALINE",
+            "Labocosmetica::PRÌMUS 2.0",
+            "Koch-Chemie::Green Star",
+            "ながら洗車::レッドアルカリバブル",
+            "LUMINUS::L-PREWASH 2.0",
+            "OVERcoat::OVERcoat pH+ アルカリ性シャンプー",
+            "DETAIL ARTIST::DIVE",
+            "Labocosmetica::NÈVE",
+            "Koch-Chemie::Gentle Snow Foam",
+            "LUMINUS::N-PREWASH",
+            "ながら洗車::スノーバブル",
+            "GYEON::Q²M Foam",
+            "Labocosmetica::LIBERA",
+          ],
+        },
+        {
+          title: "手洗い・通常洗車",
+          description: "ミット洗車やリンスレス洗車で表面の汚れを落とす",
+          ids: [
+            "Labocosmetica::SÈMPER",
+            "GYEON::Q²M Bathe",
+            "ながら洗車::スノーシャンプー",
+            "Labocosmetica::IDROSAVE",
+            "LUMINUS::MINT",
+            "DETAIL ARTIST::LUFT",
+            "OVERcoat::OVERcoat Neutral pH 中性シャンプー",
+          ],
+        },
+        {
+          title: "除染・リセット",
+          description: "水ジミ・ミネラル・鉄粉を状態に合わせて除去する",
+          ids: [
+            "Labocosmetica::PURÌFICA (Upgrade Formula)",
+            "DETAIL ARTIST::ACID CLEANER",
+            "GYEON::Q²M WaterSpot",
+            "ながら洗車::グリーンアシッドバブル",
+            "DETAIL ARTIST::KEEP",
+            "OVERcoat::OVERcoat pH- 酸性シャンプー",
+            "Koch-Chemie::Reactivation Shampoo",
+            "Labocosmetica::ÈNERGO",
+            "Labocosmetica::SIDERO",
+            "OVERcoat::OVERcoat IRON REMOVER 鉄粉除去剤",
+            "GYEON::Q²M Iron REDEFINED",
+            "ながら洗車::IRON DELETE",
+            "LUMINUS::VAMPIRE PLUS DIRECT",
+            "DETAIL ARTIST::MELT",
+            "VONIXX::IZER",
+          ],
+        },
+        {
+          title: "脱脂・コーティング前処理",
+          description: "残留油分を除去し、保護剤を施工できる面へ整える",
+          ids: [
+            "Labocosmetica::VÈRITAS",
+            "OVERcoat::OVERcoat Surface PREP 脱脂スプレー",
+            "GYEON::Q²M Prep",
+            "LUMINUS::PREP PRO",
+            "DETAIL ARTIST::NUDE",
+            "Koch-Chemie::Panel Preparation Spray",
+          ],
+        },
+        {
+          title: "保護・艶・撥水仕上げ",
+          description: "ベース保護、QD、ワックスから仕上がり方向で選ぶ",
+          ids: [
+            "Labocosmetica::BENEFÌCIA",
+            "GYEON::Q²M WetCoat",
+            "Labocosmetica::PERFÉCTA SiO2",
+            "LUMINUS::Luminus AQUA",
+            "LUMINUS::Luminus BLACK SLICK EDITION",
+            "VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX",
+            "Labocosmetica::PERFÉCTA 2.0",
+            "ながら洗車::ビーディング",
+            "DETAIL ARTIST::ICE",
+            "GYEON::Q²M Cure REDEFINED",
+            "LUMINUS::BLACK DIAMOND",
+            "GYEON::Q²M CeramicDetailer",
+            "GYEON::Q²M QuickDetailer",
+            "ながら洗車::ビギナーズラック",
+            "DETAIL ARTIST::AIR",
+            "VONIXX::BLEND SPRAY WAX",
+            "Labocosmetica::CUPÌDO",
+            "ながら洗車::プラズマコーティングα",
+            "Koch-Chemie::Spray Sealant",
+            "LUMINUS::GLOSSY",
+          ],
+        },
+        {
+          title: "ガラス洗浄・撥水",
+          description: "研磨剤を除き、日常洗浄と撥水保護から選ぶ",
+          ids: [
+            "Labocosmetica::NITIDO",
+            "GYEON::Q²M Glass",
+            "Koch-Chemie::SpeedGlassCleaner",
+            "LUMINUS::SHINE",
+            "DETAIL ARTIST::CLEAR",
+            "Labocosmetica::AQUAVÈLOX",
+            "GYEON::Q² QuickView",
+            "OVERcoat::OVERcoat Final Touch GLASS ガラス専用コーティング剤",
+            "ながら洗車::スプラッシュ＆リムーバー",
+            "LUMINUS::GLIDE",
+            "DETAIL ARTIST::DROP COAT",
+          ],
+        },
+        {
+          title: "ホイール・タイヤ",
+          description: "専用鉄粉洗浄、タイヤ洗浄、ドレッシングで仕上げる",
+          ids: [
+            "GYEON::Q²M Iron WheelCleaner REDEFINED",
+            "Koch-Chemie::Reactive Rust Remover",
+            "GYEON::Q²M TireCleaner",
+            "LUMINUS::BLAZE DIRECT",
+            "DETAIL ARTIST::LUSH",
+            "Labocosmetica::NERO",
+            "LUMINUS::ONIX",
+            "OVERcoat::OVERcoat Final Touch TIRE タイヤ艶出し剤",
+            "DETAIL ARTIST::DEEP",
+            "ながら洗車::ブラックレジン",
+            "GYEON::Q²M Tire Express",
+          ],
+        },
+      ];
+      const REFERENCE_PRICE_BANDS = {
+        1: { min: 1800, max: 3000, label: "約1,800〜3,000円" },
+        2: { min: 3000, max: 5000, label: "約3,000〜5,000円" },
+        3: { min: 5000, max: 8000, label: "約5,000〜8,000円" },
+        4: { min: 8000, max: 12000, label: "約8,000円以上" },
+      };
+      const EXACT_REFERENCE_PRICES = {
+        "LUMINUS::PREP PRO": { min: 1980, max: 2980, size: "500mL" },
+        "ながら洗車::IRON DELETE": { min: 3120, max: 3900, size: "500mL" },
+        "ながら洗車::スノーシャンプー": { min: 3120, max: 3120, size: "ミットセット" },
+        "ながら洗車::脱脂シャンプー": { min: 3900, max: 3900, size: "350mL" },
+        "ながら洗車::ビーディング": { min: 3900, max: 3900, size: "代表容量" },
+        "ながら洗車::プラズマコーティングα": { min: 7800, max: 7800, size: "350mL" },
+        "Labocosmetica::SÈMPER": { min: 3820, max: 5980, size: "500mL" },
+        "Labocosmetica::PERFÉCTA 2.0": { min: 3960, max: 4950, size: "500mL" },
+        "Labocosmetica::PERFÉCTA SiO2": { min: 4730, max: 5730, size: "500mL" },
+        "Labocosmetica::SIDERO": { min: 2880, max: 4960, size: "500mL" },
+        "Labocosmetica::VÈRITAS": { min: 4840, max: 5840, size: "1000mL" },
+        "GYEON::Q²M WetCoat": { min: 3600, max: 5100, size: "1000mL" },
+      };
+      const LOW_PRICE_PRODUCTS = new Set([
+        "LUMINUS::PREP PRO",
+        "LUMINUS::MINT",
+        "LUMINUS::N-PREWASH",
+        "LUMINUS::L-PREWASH 2.0",
+        "LUMINUS::GLOSSY",
+        "DETAIL ARTIST::DIVE",
+        "DETAIL ARTIST::LUFT",
+        "DETAIL ARTIST::KEEP",
+        "DETAIL ARTIST::MELT",
+        "DETAIL ARTIST::NUDE",
+        "DETAIL ARTIST::AIR",
+        "GYEON::Q²M Glass",
+        "GYEON::Q²M Prep",
+        "GYEON::Q²M QuickDetailer",
+      ]);
+      const HIGH_PRICE_PRODUCTS = new Set([
+        "Labocosmetica::AQUAVÈLOX",
+        "Labocosmetica::CUPÌDO",
+        "Labocosmetica::FIERO",
+        "Labocosmetica::SÈMPER",
+        "Labocosmetica::PERFÉCTA SiO2",
+        "Labocosmetica::VÈRITAS",
+        "GYEON::Q² QuickView",
+        "Koch-Chemie::Micro Cut M3.02",
+        "ながら洗車::プラズマコーティングα",
+      ]);
+      function referencePriceTier(min, max) {
+        if (max <= 3000) return 1;
+        if (max <= 5000) return 2;
+        if (max <= 8000) return 3;
+        return 4;
+      }
+      function productReferencePrice(id) {
+        if (!PRODUCT_FINDER_PRODUCT_IDS.has(id)) return null;
+        const exact = EXACT_REFERENCE_PRICES[id];
+        if (exact) {
+          const tier = referencePriceTier(exact.min, exact.max);
+          const price =
+            exact.min === exact.max
+              ? `約${exact.min.toLocaleString("ja-JP")}円`
+              : `約${exact.min.toLocaleString("ja-JP")}〜${exact.max.toLocaleString("ja-JP")}円`;
+          return { ...exact, tier, label: `${price}（${exact.size}）`, checked: true };
+        }
+        const tier = LOW_PRICE_PRODUCTS.has(id)
+          ? 1
+          : HIGH_PRICE_PRODUCTS.has(id)
+            ? 3
+            : 2;
+        return {
+          ...REFERENCE_PRICE_BANDS[tier],
+          tier,
+          label: `${REFERENCE_PRICE_BANDS[tier].label}（代表容量）`,
+          checked: false,
+        };
+      }
+      function finderPriceHTML(id) {
+        const price = productReferencePrice(id);
+        if (!price) return "";
+        return `<span class="finder-price${price.tier === 1 ? " low" : ""}">参考価格 ${escapeHTML(price.label)}</span>`;
+      }
+      function renderFinderCandidateOverview() {
+        const count = $("finderCandidateCount");
+        if (count) count.textContent = `${PRODUCT_FINDER_PRODUCT_IDS.size}商品`;
+        const box = $("finderCandidateOverview");
+        if (!box) return;
+        const groupedIds = new Set(
+          PRODUCT_FINDER_PROCESS_GROUPS.flatMap((group) => group.ids),
+        );
+        const ungroupedIds = [...PRODUCT_FINDER_PRODUCT_IDS].filter(
+          (id) => !groupedIds.has(id),
+        );
+        const groups = ungroupedIds.length
+          ? [
+              ...PRODUCT_FINDER_PROCESS_GROUPS,
+              {
+                title: "その他",
+                description: "新しく追加された未分類の診断候補",
+                ids: ungroupedIds,
+              },
+            ]
+          : PRODUCT_FINDER_PROCESS_GROUPS;
+        box.innerHTML = `<div class="finder-process-list">${groups
+          .map((group, index) => {
+            const products = group.ids
+              .filter((id) => PRODUCT_FINDER_PRODUCT_IDS.has(id))
+              .map((id) => CHEMICAL_CATALOG.find((item) => item.id === id))
+              .filter(Boolean);
+            if (!products.length) return "";
+            return `<section class="finder-process-group">
+              <div class="finder-process-head">
+                <span class="finder-process-number">${index + 1}</span>
+                <span><span class="finder-process-title">${escapeHTML(group.title)}</span><span class="finder-process-description">${escapeHTML(group.description)}</span></span>
+                <span class="finder-process-count">${products.length}商品</span>
+              </div>
+              <div>${products
+                .map(
+                  (product) => `<button class="finder-candidate-row" type="button" data-manufacturer="${escapeHTML(product.manufacturer)}" data-product-name="${escapeHTML(product.name)}" onclick="openChemicalCatalogForProduct(this.dataset.manufacturer,this.dataset.productName)">
+                    <span><span class="catalog-maker">${escapeHTML(product.manufacturer)}</span><b>${escapeHTML(product.name)}</b></span>
+                    ${finderPriceHTML(product.id)}
+                  </button>`,
+                )
+                .join("")}</div>
+            </section>`;
+          })
+          .join("")}</div>`;
+      }
       let activeFinderResult = null;
       const activeFinderSelections = {};
       let activeCatalogManufacturer = "すべて";
@@ -5842,7 +6310,7 @@
           environment: $("finderEnvironment")?.value || "rinse",
           level: $("finderLevel")?.value || "beginner",
           protection: $("finderProtection")?.value || "protected",
-          priority: $("finderPriority")?.value || "easy",
+          priority: $("finderPriority")?.value || "budget",
           finish: $("finderFinish")?.value || "balance",
         };
       }
@@ -5854,7 +6322,7 @@
           { values: ["beginner", "experienced"], selected: answers.level, match: 12, miss: -6 },
           { values: ["rinse", "limited"], selected: answers.environment, match: 30, miss: -45 },
           { values: ["protected", "unknown", "unprotected"], selected: answers.protection, match: 12, miss: -6 },
-          { values: ["easy", "value", "finish"], selected: priority, match: 12, miss: -6 },
+          { values: ["budget", "easy", "value", "finish"], selected: priority, match: 16, miss: -6 },
         ];
         groups.forEach((group) => {
           const tagged = group.values.filter((trait) =>
@@ -5874,6 +6342,24 @@
         const finishProfile = PRODUCT_FINISH_PROFILES[candidate.id];
         if (finishProfile && answers.finish !== "balance")
           score += (finishProfile[answers.finish] || 0) * 16;
+        const referencePrice = productReferencePrice(candidate.id);
+        if (referencePrice && answers.priority === "budget") {
+          score += { 1: 34, 2: 12, 3: -18, 4: -38 }[referencePrice.tier] || 0;
+        } else if (
+          referencePrice &&
+          answers.level === "beginner" &&
+          referencePrice.tier >= 3
+        ) {
+          score -= referencePrice.tier === 4 ? 20 : 8;
+        }
+        if (candidate.id.startsWith("Labocosmetica::")) {
+          if (answers.priority === "budget") score -= 16;
+          if (
+            answers.level === "beginner" &&
+            answers.priority !== "performance"
+          )
+            score -= 10;
+        }
         return score;
       }
       function clearProductFinderResult() {
@@ -5910,6 +6396,8 @@
           return;
         }
         const skippedRoles = [];
+        const chemicals = load("chemicals", []);
+        const selectedMakerCounts = {};
         const recommendations = plan.steps
           .map((step) => {
             if (answers.environment === "limited" && step.requiresRinse) {
@@ -5920,13 +6408,36 @@
               .filter((candidate) =>
                 CHEMICAL_CATALOG.some((item) => item.id === candidate.id),
               )
-              .map((candidate, index) => ({
-                ...candidate,
-                score: finderCandidateScore(candidate, index, answers),
-              }))
+              .map((candidate, index) => {
+                const product = CHEMICAL_CATALOG.find(
+                  (item) => item.id === candidate.id,
+                );
+                let score = finderCandidateScore(candidate, index, answers);
+                const registered =
+                  product && registeredCatalogIndex(product, chemicals) >= 0;
+                if (registered) score += 46;
+                const repeatCount = product
+                  ? selectedMakerCounts[product.manufacturer] || 0
+                  : 0;
+                const repeatPenalty =
+                  answers.priority === "performance"
+                    ? 8
+                    : answers.priority === "budget" ||
+                        answers.level === "beginner"
+                      ? 30
+                      : 18;
+                score -= repeatCount * repeatPenalty;
+                return { ...candidate, score, registered };
+              })
               .sort((a, b) => b.score - a.score);
             if (!ranked.length) return null;
             activeFinderSelections[step.key] = ranked[0].id;
+            const selectedProduct = CHEMICAL_CATALOG.find(
+              (item) => item.id === ranked[0].id,
+            );
+            if (selectedProduct)
+              selectedMakerCounts[selectedProduct.manufacturer] =
+                (selectedMakerCounts[selectedProduct.manufacturer] || 0) + 1;
             return { key: step.key, role: step.role, ranked };
           })
           .filter(Boolean);
@@ -5979,13 +6490,15 @@
               product.id,
               activeFinderResult.answers.finish,
             );
+            const priceHTML = finderPriceHTML(product.id);
             const options = recommendation.ranked
               .map((item) => {
                 const catalogItem = CHEMICAL_CATALOG.find(
                   (productItem) => productItem.id === item.id,
                 );
                 if (!catalogItem) return "";
-                return `<option value="${escapeHTML(item.id)}" ${item.id === candidate.id ? "selected" : ""}>${escapeHTML(catalogItem.manufacturer)}｜${escapeHTML(catalogItem.name)}</option>`;
+                const optionPrice = productReferencePrice(item.id)?.label || "価格確認中";
+                return `<option value="${escapeHTML(item.id)}" ${item.id === candidate.id ? "selected" : ""}>${escapeHTML(catalogItem.manufacturer)}｜${escapeHTML(catalogItem.name)}｜${escapeHTML(optionPrice)}</option>`;
               })
               .join("");
             return `<article class="finder-result-card">
@@ -5996,6 +6509,7 @@
                   <div class="catalog-maker">${escapeHTML(product.manufacturer)}</div>
                   <div class="finder-product-name">${escapeHTML(product.name)}</div>
                   <div class="muted tiny">${escapeHTML(product.purpose)}</div>
+                  ${priceHTML}
                   ${finishBadges}
                 </div>
               </div>
@@ -6015,6 +6529,23 @@
         const unregisteredCount = selected.filter(
           ({ product }) => registeredCatalogIndex(product, chemicals) < 0,
         ).length;
+        const unregisteredSelected = selected.filter(
+          ({ product }) => registeredCatalogIndex(product, chemicals) < 0,
+        );
+        const pricedUnregistered = unregisteredSelected
+          .map(({ product }) => productReferencePrice(product.id))
+          .filter(Boolean);
+        const estimatedMin = pricedUnregistered.reduce(
+          (total, price) => total + price.min,
+          0,
+        );
+        const estimatedMax = pricedUnregistered.reduce(
+          (total, price) => total + price.max,
+          0,
+        );
+        const costSummary = unregisteredSelected.length
+          ? `<div class="finder-cost-summary"><b>未登録分の参考合計：</b>約${estimatedMin.toLocaleString("ja-JP")}〜${estimatedMax.toLocaleString("ja-JP")}円<br>2026年8月確認の代表容量・国内販売価格をもとにした目安です。セール、送料、容量違いで変動します。</div>`
+          : '<div class="finder-cost-summary"><b>買い足し目安：0円</b><br>選ばれた商品はすべてケミカル一覧へ登録済みです。</div>';
         const skippedNote = activeFinderResult.skippedRoles?.length
           ? `<div class="guide-warning">水が少ない環境のため、十分な洗浄・すすぎが必要な「${activeFinderResult.skippedRoles.map(escapeHTML).join("・")}」は候補から外しました。</div>`
           : "";
@@ -6032,6 +6563,7 @@
           <h2 style="margin:8px 0 4px">${escapeHTML(activeFinderResult.plan.title)}</h2>
           <div class="muted tiny">${escapeHTML(activeFinderResult.plan.summary)}</div>
           <div class="finder-direction-note">${escapeHTML(directionNote)}</div>
+          ${costSummary}
         </div>
         ${skippedNote}
         <div class="finder-result-list">${cards}</div>
@@ -6141,7 +6673,7 @@
                 const checked = selectedCatalogIds.has(item.id);
                 return `<label class="catalog-product${registered ? " is-registered" : ""}">
                   <input type="checkbox" value="${escapeHTML(item.id)}" ${checked ? "checked" : ""} ${registered ? "disabled" : ""} onchange="toggleCatalogProduct(this.value,this.checked)">
-                  <span><span class="catalog-maker">${escapeHTML(item.manufacturer)}</span><b>${escapeHTML(item.name)}</b><span class="catalog-purpose">${escapeHTML(item.purpose)} ・ ${escapeHTML(item.type)}</span></span>
+                  <span><span class="catalog-maker">${escapeHTML(item.manufacturer)}</span><b>${escapeHTML(item.name)}</b><span class="catalog-purpose">${escapeHTML(item.purpose)} ・ ${escapeHTML(item.type)}</span>${finderPriceHTML(item.id)}</span>
                   ${registered ? '<span class="catalog-registered">登録済み</span>' : ""}
                 </label>`;
               })

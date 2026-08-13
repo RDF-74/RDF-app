@@ -1,4 +1,4 @@
-Detailing Manager v3.6 β2
+Detailing Manager v3.6 β4
 GitHub Pages更新手順
 
 1. このZIPを展開する
@@ -12,7 +12,7 @@ GitHub Pages更新手順
 4. Commit changesで更新を確定する
 5. GitHub Pagesの反映後、Safariを一度閉じてページを開き直す
 
-v3.6 β2は画像18枚、メーカー別300商品カタログ、仕上がり方向対応のぴったりケミカル診断、Green Star使い方・希釈ガイドをindex.htmlに内蔵しています。
+v3.6 β4は画像18枚、メーカー別300商品カタログ、工程別84商品へ整理したぴったりケミカル診断、Green Star使い方・希釈ガイドをindex.htmlに内蔵しています。
 assetsフォルダをGitHubへ追加する必要はありません。
 
 画像が古い表示のままの場合
