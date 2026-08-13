@@ -1,5 +1,5 @@
 {
-  "name": "Detailing Manager v3.4 β",
+  "name": "Detailing Manager v3.5 β",
   "short_name": "Detailing β",
   "start_url": "./",
   "display": "standalone",
@@ -17,7 +17,7 @@
       "type": "image/png"
     }
   ],
-  "description": "最大5台の洗車・コーティング・整備・ケミカル在庫・希釈・汚れ別ガイドに対応した無料β版",
+  "description": "最大5台の洗車・整備記録と7メーカー255商品のケミカル選択・在庫・希釈・汚れ別ガイドに対応した無料β版",
   "id": "./",
   "scope": "./",
   "display_override": ["standalone"]

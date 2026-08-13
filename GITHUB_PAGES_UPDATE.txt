@@ -1,4 +1,4 @@
-Detailing Manager v3.4 β4
+Detailing Manager v3.5 β1
 GitHub Pages更新手順
 
 1. このZIPを展開する
@@ -12,7 +12,7 @@ GitHub Pages更新手順
 4. Commit changesで更新を確定する
 5. GitHub Pagesの反映後、Safariを一度閉じてページを開き直す
 
-v3.4 β4は画像18枚をindex.htmlに内蔵しています。
+v3.5 β1は画像18枚とメーカー別255商品カタログをindex.htmlに内蔵しています。
 assetsフォルダをGitHubへ追加する必要はありません。
 
 画像が古い表示のままの場合

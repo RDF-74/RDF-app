@@ -1,0 +1,46 @@
+Detailing Manager v3.5 β1
+メーカー商品カタログ 表記確認メモ
+
+確認日：2026年8月13日
+収録数：7メーカー / 255商品
+
+収録方針
+・各メーカーの公式サイトに掲載されている商品名・ブランド表記を優先
+・容量違い、香り違い、セット商品、タオル、ブラシ、機械類は原則として重複掲載しない
+・ケミカル一覧で使いやすいよう、単品ケミカルを中心に収録
+・分類と用途はDetailing Manager内で探しやすくするための整理であり、メーカーの安全表示を置き換えるものではない
+・希釈倍率は用途や器具で変わる商品が多いため、カタログ追加時には一律入力しない
+
+メーカー別確認元
+
+OVERcoat（13商品）
+https://overcoat.jp/
+
+ながら洗車（24商品）
+https://nagaracarwash.com/
+
+LUMINUS（27商品）
+https://luminuskorea.com/
+https://en.luminuskorea.com/
+BLACK DIAMONDとLuminus BLACK SLICK EDITIONは、利用者が現在所有している旧製品を選べるよう公式サイトの旧掲載表記を残しています。
+
+DETAIL ARTIST（32商品）
+https://detail-artist.com/
+https://detail-artist.shop-pro.jp/?mode=grp&gid=3122432
+
+GYEON（60商品）
+https://gyeon.co/
+Q² / Q²M、EVO、REDEFINEDなどの記号・シリーズ名を公式表記に合わせています。
+
+Koch-Chemie（45商品）
+https://www.koch-chemie.com/en/products
+ハイフンを含むメーカー名と、製品コード（H9.02、F6.01など）を公式表記に合わせています。
+
+VONIXX（54商品）
+https://www.vonixx.com.br/
+ユーザー指定の「ボニックス」は正式ブランド表記「VONIXX」として収録しています。
+NATIVE、BLENDを含む洗浄・下地処理・保護・研磨製品を収録しています。
+
+注意
+商品ラインナップ、名称、販売地域はメーカー側で変更されることがあります。
+使用時は必ず手元のラベル、SDS、メーカーの最新説明に従ってください。

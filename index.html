@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icon-192.png" />
-    <title>Detailing Manager v3.4 β</title>
+    <title>Detailing Manager v3.5 β</title>
     <style>
       :root {
         --bg: #070b10;
@@ -680,6 +680,159 @@
         display: grid;
         gap: 9px;
         margin-top: 18px;
+      }
+      .catalog-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 130;
+        display: flex;
+        justify-content: center;
+        padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+        background: rgba(3, 7, 11, 0.94);
+        backdrop-filter: blur(12px);
+      }
+      .catalog-box {
+        width: 100%;
+        max-width: 720px;
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
+        overflow: hidden;
+        background: linear-gradient(180deg, #14212d, #0c131a);
+      }
+      .catalog-head {
+        padding: 16px 16px 10px;
+        border-bottom: 1px solid #293846;
+      }
+      .catalog-head h2 {
+        margin: 0;
+      }
+      .catalog-tools {
+        display: grid;
+        gap: 10px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #24313d;
+        background: #101923;
+      }
+      .catalog-brands {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+      }
+      .catalog-brands::-webkit-scrollbar {
+        display: none;
+      }
+      .catalog-brand {
+        flex: 0 0 auto;
+        min-height: 38px;
+        padding: 9px 12px;
+        border: 1px solid #2b3c4b;
+        border-radius: 999px;
+        background: #121d26;
+        color: #b8c4cf;
+        font-size: 12px;
+      }
+      .catalog-brand.active {
+        border-color: #3aa7ff;
+        background: #123552;
+        color: #a9ddff;
+      }
+      .catalog-toolbar-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+      }
+      .catalog-toolbar-row button {
+        padding: 10px 12px;
+        font-size: 12px;
+      }
+      .catalog-source {
+        color: #8ed0ff;
+        font-size: 11px;
+        text-decoration: none;
+      }
+      .catalog-list {
+        overflow-y: auto;
+        padding: 8px 16px 24px;
+      }
+      .catalog-product {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: start;
+        margin: 0;
+        padding: 14px 2px;
+        border-bottom: 1px solid #24313d;
+        color: var(--text);
+      }
+      .catalog-product input {
+        width: 24px;
+        height: 24px;
+        margin: 2px 0 0;
+        accent-color: #3aa7ff;
+      }
+      .catalog-product b {
+        display: block;
+        overflow-wrap: anywhere;
+      }
+      .catalog-maker,
+      .chemical-maker {
+        display: block;
+        margin-bottom: 3px;
+        color: #8ed0ff;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.03em;
+      }
+      .catalog-purpose {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .catalog-registered {
+        color: #74d9a4;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .catalog-product.is-registered {
+        opacity: 0.62;
+      }
+      .catalog-empty {
+        padding: 40px 10px;
+        color: var(--muted);
+        text-align: center;
+      }
+      .catalog-actions {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+        border-top: 1px solid #31516a;
+        background: rgba(12, 21, 29, 0.98);
+      }
+      .catalog-selected {
+        min-width: 74px;
+        color: #9ed7ff;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .catalog-actions button {
+        width: 100%;
+      }
+      @media (min-width: 721px) {
+        .catalog-overlay {
+          align-items: center;
+          padding: 24px;
+        }
+        .catalog-box {
+          height: min(850px, calc(100dvh - 48px));
+          border: 1px solid #31516a;
+          border-radius: 28px;
+        }
       }
       .feedback-grid {
         display: grid;
@@ -1670,14 +1823,15 @@
             <button
               class="secondary"
               type="button"
-              onclick="addChemicalPresets()"
+              onclick="openChemicalCatalog()"
             >
-              定番プリセット追加
+              メーカー商品から追加
             </button>
           </div>
           <div class="muted tiny">
-            未登録の商品だけ追加します。残量はあとから入力できます。
+            7メーカーの商品から、必要なものだけチェックして追加できます。
           </div>
+          <label>メーカー名（任意）</label><input id="chemManufacturer" />
           <label>商品名</label><input id="chemName" /><label>分類</label
           ><select id="chemType">
             <option>アルカリ</option>
@@ -1719,6 +1873,8 @@
             </button>
           </div>
           <input id="editChemIndex" type="hidden" />
+          <label>メーカー名（任意）</label
+          ><input id="editChemManufacturer" />
           <label>商品名</label><input id="editChemName" /> <label>分類</label
           ><select id="editChemType">
             <option>アルカリ</option>
@@ -1927,7 +2083,7 @@
         <div class="card">
           <div class="section-title">
             <h2>設定</h2>
-            <span class="version-badge">v3.4 β4</span>
+            <span class="version-badge">v3.5 β1</span>
           </div>
           <p class="muted">
             β版のデータはこの端末内に保存されます。機種変更や不具合に備えて、JSONファイルへ定期的に保存してください。
@@ -2083,6 +2239,72 @@
       </button>
     </nav>
     <div
+      id="chemicalCatalogOverlay"
+      class="catalog-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="chemicalCatalogTitle"
+    >
+      <div class="catalog-box">
+        <div class="catalog-head">
+          <div class="row between">
+            <div>
+              <h2 id="chemicalCatalogTitle">メーカー商品を追加</h2>
+              <div id="catalogSummary" class="muted tiny"></div>
+            </div>
+            <button
+              class="update-close"
+              type="button"
+              aria-label="閉じる"
+              onclick="closeChemicalCatalog()"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+        <div class="catalog-tools">
+          <div id="catalogBrandFilters" class="catalog-brands"></div>
+          <div class="catalog-toolbar-row">
+            <input
+              id="catalogSearch"
+              type="search"
+              placeholder="商品名・用途を検索"
+              oninput="setCatalogSearch(this.value)"
+            />
+            <button
+              id="catalogSelectVisibleButton"
+              class="secondary"
+              type="button"
+              onclick="toggleVisibleCatalogProducts()"
+            >
+              表示中を選択
+            </button>
+          </div>
+          <a
+            id="catalogSourceLink"
+            class="catalog-source"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+            >表記確認元：メーカー公式サイト</a
+          >
+        </div>
+        <div id="chemicalCatalogList" class="catalog-list"></div>
+        <div class="catalog-actions">
+          <div id="catalogSelectedCount" class="catalog-selected">0件選択</div>
+          <button
+            id="catalogAddButton"
+            class="primary"
+            type="button"
+            onclick="addSelectedCatalogProducts()"
+            disabled
+          >
+            選択した商品を追加
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
       id="updateOverlay"
       class="update-overlay hidden"
       role="dialog"
@@ -2114,7 +2336,7 @@
     </div>
     <div id="setupOverlay" class="setup-overlay hidden">
       <div class="setup-box">
-        <span class="version-badge">Detailing Manager v3.4 β4</span>
+        <span class="version-badge">Detailing Manager v3.5 β1</span>
         <h2>無料βテストへようこそ</h2>
         <p class="muted">
           愛車の洗車・コーティング・ケミカル在庫を、このiPhoneでまとめて管理できます。
@@ -2158,7 +2380,7 @@
       </div>
     </div>
     <script>
-      const DM_VERSION = "3.4-beta.4";
+      const DM_VERSION = "3.5-beta.1";
       const MAX_CARS = 5;
       const MULTI_CAR_SCHEMA_KEY = "dmMultiCarSchema";
       const MULTI_CAR_SCHEMA_VERSION = "3";
@@ -2166,6 +2388,20 @@
       const PHOTO_TARGET_BYTES = 180 * 1024;
       const UPDATE_SEEN_KEY = "dmLastSeenVersion";
       const UPDATE_HISTORY = [
+        {
+          version: "3.5-beta.1",
+          label: "v3.5 β1",
+          date: "2026年8月13日",
+          title: "メーカー別の商品カタログを追加",
+          summary: "7メーカー・255商品の複数選択に対応",
+          changes: [
+            "メーカーを絞り込み、商品を複数チェックしてケミカル一覧へ一括追加",
+            "OVERcoat・ながら洗車・LUMINUS・DETAIL ARTIST・GYEON・Koch-Chemie・VONIXXに対応",
+            "商品名とメーカー名を公式サイトの表記に合わせて整理",
+            "登録済み商品を自動判定し、二重登録を防止",
+            "旧プリセットの名称を正式表記へ自動移行し、既存の残量・写真・履歴は保持",
+          ],
+        },
         {
           version: "3.4-beta.4",
           label: "v3.4 β4",
@@ -2750,14 +2986,14 @@
       }
       function matchingChemicalNames(matchTypes = [], matchWords = []) {
         const matches = load("chemicals", []).filter((chemical) => {
-          const name = String(chemical.name || "").toLowerCase();
+          const name = chemicalDisplayName(chemical).toLowerCase();
           return (
             matchTypes.includes(chemical.type) ||
             matchWords.some((word) => name.includes(word.toLowerCase()))
           );
         });
         return [
-          ...new Set(matches.map((chemical) => chemical.name).filter(Boolean)),
+          ...new Set(matches.map(chemicalDisplayName).filter(Boolean)),
         ].slice(0, 4);
       }
       function guideMatchingChemicals(item) {
@@ -3840,7 +4076,7 @@
           arr
             .map(
               (c, i) =>
-                `<option value="${i}" ${String(i) === String(selected) ? "selected" : ""}>${escapeHTML(c.name || "名称なし")}${c.stock !== undefined ? `（残 ${numberOr(c.stock, 0)}mL）` : ""}</option>`,
+                `<option value="${i}" ${String(i) === String(selected) ? "selected" : ""}>${escapeHTML(chemicalDisplayName(c))}${c.stock !== undefined ? `（残 ${numberOr(c.stock, 0)}mL）` : ""}</option>`,
             )
             .join("")
         );
@@ -3877,7 +4113,7 @@
               amount = Number(row.querySelector(".usage-amount").value || 0);
             const c = sel.value !== "" ? chemicals[idx] : null;
             return c && amount > 0
-              ? { chemIndex: idx, name: c.name || "ケミカル", amount }
+              ? { chemIndex: idx, name: chemicalDisplayName(c), amount }
               : null;
           })
           .filter(Boolean);
@@ -3898,30 +4134,40 @@
         const rules = [
           [
             "プレウォッシュ",
-            (c) => c.type === "アルカリ" || /green star|GS/i.test(c.name || ""),
+            (c) =>
+              c.type === "アルカリ" ||
+              /green star|GS/i.test(chemicalDisplayName(c)),
           ],
           [
             "コンタクト洗車",
             (c) =>
-              c.type === "中性" || /スノー|snow|シャンプー/i.test(c.name || ""),
+              c.type === "中性" ||
+              /スノー|snow|シャンプー/i.test(chemicalDisplayName(c)),
           ],
           [
             "鉄粉除去",
-            (c) => c.type === "鉄粉除去" || /iron|鉄粉/i.test(c.name || ""),
+            (c) =>
+              c.type === "鉄粉除去" ||
+              /iron|鉄粉/i.test(chemicalDisplayName(c)),
           ],
           [
             "スケール除去",
             (c) =>
-              c.type === "酸性" || /酸性|scale|スケール/i.test(c.name || ""),
+              c.type === "酸性" ||
+              /酸性|scale|スケール/i.test(chemicalDisplayName(c)),
           ],
           [
             "脱脂",
-            (c) => c.type === "脱脂" || /prep|プレップ/i.test(c.name || ""),
+            (c) =>
+              c.type === "脱脂" ||
+              /prep|プレップ/i.test(chemicalDisplayName(c)),
           ],
           ["コーティング", (c) => c.type === "コーティング"],
           [
             "QD/仕上げ",
-            (c) => c.type === "QD" || /slick|QD|仕上げ/i.test(c.name || ""),
+            (c) =>
+              c.type === "QD" ||
+              /slick|QD|仕上げ/i.test(chemicalDisplayName(c)),
           ],
         ];
         const picks = [];
@@ -4060,119 +4306,531 @@
           render();
         }
       }
-      const CHEMICAL_PRESETS = [
+      const CATALOG_MANUFACTURERS = [
+        { name: "OVERcoat", source: "https://overcoat.jp/" },
+        { name: "ながら洗車", source: "https://nagaracarwash.com/" },
+        { name: "LUMINUS", source: "https://luminuskorea.com/" },
         {
-          name: "Koch-Chemie Green Star",
-          type: "アルカリ",
-          ratio: 10,
-          capacity: 0,
-          stock: 0,
+          name: "DETAIL ARTIST",
+          source: "https://detail-artist.shop-pro.jp/?mode=grp&gid=3122432",
         },
+        { name: "GYEON", source: "https://gyeon.co/" },
         {
-          name: "ながら洗車 スノーシャンプー",
-          type: "中性",
-          ratio: 0,
-          capacity: 0,
-          stock: 0,
+          name: "Koch-Chemie",
+          source: "https://www.koch-chemie.com/en/products",
         },
-        {
-          name: "ながら洗車 BASE",
-          type: "その他",
-          ratio: 0,
-          capacity: 0,
-          stock: 0,
-        },
-        {
-          name: "ながら洗車 鉄粉除去剤",
-          type: "鉄粉除去",
-          ratio: 0,
-          capacity: 0,
-          stock: 0,
-        },
-        {
-          name: "Detail Artist 酸性クリーナー",
-          type: "酸性",
-          ratio: 0,
-          capacity: 0,
-          stock: 0,
-        },
-        {
-          name: "Detail Artist CLEAR",
-          type: "その他",
-          ratio: 0,
-          capacity: 0,
-          stock: 0,
-        },
-        {
-          name: "OVERcoat Iron Remover",
-          type: "鉄粉除去",
-          ratio: 0,
-          capacity: 0,
-          stock: 0,
-        },
-        {
-          name: "OVERcoat PREP",
-          type: "脱脂",
-          ratio: 0,
-          capacity: 0,
-          stock: 0,
-        },
-        {
-          name: "OVERcoat UV",
-          type: "コーティング",
-          ratio: 0,
-          capacity: 0,
-          stock: 0,
-        },
-        { name: "LUMINUS PREP", type: "脱脂", ratio: 0, capacity: 0, stock: 0 },
-        {
-          name: "LUMINUS BLACK DIAMOND",
-          type: "コーティング",
-          ratio: 0,
-          capacity: 0,
-          stock: 0,
-        },
-        {
-          name: "LUMINUS BLACK SLICK",
-          type: "QD",
-          ratio: 0,
-          capacity: 0,
-          stock: 0,
-        },
-        {
-          name: "BONIX NATIVE",
-          type: "コーティング",
-          ratio: 0,
-          capacity: 0,
-          stock: 0,
-        },
-        {
-          name: "BONIX BLEND",
-          type: "コーティング",
-          ratio: 0,
-          capacity: 0,
-          stock: 0,
-        },
+        { name: "VONIXX", source: "https://www.vonixx.com.br/" },
       ];
-      function addChemicalPresets(silent = false) {
-        let a = load("chemicals", []),
-          names = new Set(a.map((x) => (x.name || "").trim().toLowerCase())),
-          added = 0;
-        CHEMICAL_PRESETS.forEach((x) => {
-          if (!names.has(x.name.toLowerCase())) {
-            a.push({ ...x, image: "", preset: true });
-            names.add(x.name.toLowerCase());
-            added++;
+      function catalogRows(manufacturer, rows) {
+        const source =
+          CATALOG_MANUFACTURERS.find((item) => item.name === manufacturer)
+            ?.source || "";
+        return rows.map(([name, type, purpose, aliases = []]) => ({
+          id: `${manufacturer}::${name}`,
+          manufacturer,
+          name,
+          type,
+          purpose,
+          aliases,
+          source,
+        }));
+      }
+      const CHEMICAL_CATALOG = [
+        ...catalogRows("OVERcoat", [
+          ["OVERcoat Ceramic BOOST コーティングスプレー", "コーティング", "スプレーコーティング"],
+          ["OVERcoat NANOpolish ボディ専用コンパウンド", "その他", "ボディ用コンパウンド"],
+          ["OVERcoat ULTRAviolet フォームセラミックコーティング", "コーティング", "フォームセラミックコーティング", ["OVERcoat UV"]],
+          ["OVERcoat IRON REMOVER 鉄粉除去剤", "鉄粉除去", "鉄粉除去剤", ["OVERcoat Iron Remover"]],
+          ["OVERcoat Final Touch TRIM 樹脂パーツ専用コーティング剤", "コーティング", "未塗装樹脂コーティング"],
+          ["OVERcoat Final Touch GLASS ガラス専用コーティング剤", "コーティング", "ガラスコーティング"],
+          ["OVERcoat GLASS RESET ガラス専用コンパウンド", "その他", "ガラス用コンパウンド"],
+          ["OVERcoat Surface PREP 脱脂スプレー", "脱脂", "パネル脱脂剤", ["OVERcoat PREP"]],
+          ["OVERcoat Neutral pH 中性シャンプー", "中性", "中性カーシャンプー"],
+          ["OVERcoat Final Touch TIRE タイヤ艶出し剤", "コーティング", "タイヤドレッシング"],
+          ["OVERcoat Final Touch INTERIOR インテリアコーティング剤", "コーティング", "内装コーティング"],
+          ["OVERcoat pH- 酸性シャンプー", "酸性", "酸性カーシャンプー"],
+          ["OVERcoat pH+ アルカリ性シャンプー", "アルカリ", "アルカリ性カーシャンプー"],
+        ]),
+        ...catalogRows("ながら洗車", [
+          ["スノーシャンプー", "中性", "中性カーシャンプー"],
+          ["脱脂シャンプー", "脱脂", "脱脂カーシャンプー"],
+          ["シリコンシャンプー", "コーティング", "洗浄・湿式コーティング"],
+          ["スノーバブル", "中性", "フォームシャンプー"],
+          ["レッドアルカリバブル", "アルカリ", "アルカリ性シャンプー"],
+          ["グリーンアシッドバブル", "酸性", "酸性シャンプー"],
+          ["ブルーニュートラルバブル", "中性", "中性シャンプー"],
+          ["ビーディング", "コーティング", "湿式コーティング"],
+          ["スノーコーティングバブル", "コーティング", "希釈式コーティング"],
+          ["ビギナーズラック", "QD", "クイックディテイラー"],
+          ["夜", "QD", "艶特化型簡易コーティング"],
+          ["プラズマコーティングα", "コーティング", "簡易コーティング"],
+          ["阿修羅", "コーティング", "簡易コーティング"],
+          ["シャドウ/影", "QD", "コーティングメンテナンス剤"],
+          ["シルクメント", "コーティング", "滑り・洗車傷低減コーティング"],
+          ["SAVIOR（セイバー）", "コーティング", "コーティング"],
+          ["ファストガラス", "コーティング", "硬化型ガラスコーティング"],
+          ["BASE", "その他", "下地処理クリーナー"],
+          ["DeepBase", "その他", "水シミ・小傷用下地処理"],
+          ["ブラックカット", "その他", "コンパウンド"],
+          ["ガラスポリッシュ", "その他", "ガラス用研磨剤"],
+          ["スプラッシュ＆リムーバー", "コーティング", "油膜除去・ガラス撥水"],
+          ["IRON DELETE", "鉄粉除去", "鉄粉除去剤", ["ながら洗車 鉄粉除去剤"]],
+          ["ブラックレジン", "コーティング", "タイヤ・樹脂用水性ワックス"],
+        ]),
+        ...catalogRows("LUMINUS", [
+          ["PREP PRO", "脱脂", "パネル脱脂剤", ["LUMINUS PREP"]],
+          ["SHINE", "その他", "ガラスクリーナー"],
+          ["Luminous Ceramic Wax", "コーティング", "SiO₂・カルナバ固形ワックス"],
+          ["N-PREWASH", "中性", "中性プレウォッシュ"],
+          ["VAMPIRE PLUS DIRECT", "鉄粉除去", "鉄粉・ホイールクリーナー"],
+          ["LM CERAMIC", "コーティング", "セラミックコーティング"],
+          ["BLAZE DIRECT", "アルカリ", "ホイール・タイヤクリーナー"],
+          ["BLANC", "その他", "インテリアクリーナー"],
+          ["Luminus AQUA", "コーティング", "湿式コーティング"],
+          ["ONIX", "コーティング", "タイヤドレッシング"],
+          ["GLOSSY", "QD", "クイックディテイラー"],
+          ["MINT", "中性", "中性カーシャンプー"],
+          ["L-PREWASH 2.0", "アルカリ", "アルカリ性プレウォッシュ"],
+          ["S-PREWASH 2.0", "酸性", "酸性プレウォッシュ"],
+          ["ECLIPSE", "コーティング", "ハイブリッド固形ワックス"],
+          ["ERASER", "アルカリ", "アルカリ性APC"],
+          ["SYNC", "その他", "内装洗浄・コーティング"],
+          ["GLIDE", "コーティング", "ガラス撥水シーラント"],
+          ["AQUA DIRECT", "コーティング", "湿式コーティング"],
+          ["LM GRAPHENE PRO", "コーティング", "グラフェンコーティング"],
+          ["LM GRAPHENE SPRAY", "コーティング", "グラフェンスプレーコーティング"],
+          ["BLACK DIAMOND", "QD", "SiO₂クイックディテイラー", ["LUMINUS BLACK DIAMOND"]],
+          ["Luminus BLACK SLICK EDITION", "QD", "スプレーシーラント", ["LUMINUS BLACK SLICK"]],
+          ["BLACK ARMOR", "コーティング", "外装樹脂コーティング"],
+          ["BELLA", "その他", "中性APC"],
+          ["DEMON", "酸性", "酸性ホイールシャンプー"],
+          ["MONSTER", "アルカリ", "エンジンルームクリーナー"],
+        ]),
+        ...catalogRows("DETAIL ARTIST", [
+          ["PEEL", "脱脂", "脱脂シャンプー"],
+          ["OLIVE", "酸性", "酸性ホイールシャンプー"],
+          ["BIO", "アルカリ", "バグリムーバー"],
+          ["CREAM", "その他", "インテリアクリーナー"],
+          ["WHITE LETTER CLEANER", "アルカリ", "ホワイトレタークリーナー"],
+          ["LUFT", "中性", "中性カーシャンプー"],
+          ["KEEP", "酸性", "酸性カーシャンプー"],
+          ["VENUS", "コーティング", "塗装面用コーティング"],
+          ["DIVE", "アルカリ", "アルカリ性カーシャンプー"],
+          ["ICE", "コーティング", "湿式コーティング"],
+          ["ZONE", "コーティング", "セラミックカーシャンプー"],
+          ["HYDRO", "コーティング", "グラフェン・チタントップコート"],
+          ["ARTIST GLAZE", "コーティング", "シーラント型トップコート"],
+          ["RIDE", "QD", "ウェット型QD"],
+          ["AIR", "QD", "ドライ型QD"],
+          ["DOPE", "コーティング", "カルナバスプレーワックス"],
+          ["BLACK TRIM COAT", "コーティング", "未塗装樹脂コーティング"],
+          ["G・POLISH", "その他", "ガラス用研磨剤"],
+          ["RESIN REPAIR", "その他", "塗装面用研磨クリーナー"],
+          ["ACID CLEANER", "酸性", "スケール・ミネラル除去剤", ["Detail Artist 酸性クリーナー"]],
+          ["RESET CLEANER", "その他", "下地処理クリーナー"],
+          ["CERAMIC RIM COAT", "コーティング", "ホイールコーティング"],
+          ["DROP COAT", "コーティング", "ガラスコーティング"],
+          ["ARTIST GLASS COATING", "コーティング", "硬化型ガラスコーティング"],
+          ["LAVA", "鉄粉除去", "鉄粉除去シャンプー"],
+          ["MELT", "鉄粉除去", "鉄粉除去剤"],
+          ["NUDE", "脱脂", "IPA脱脂剤"],
+          ["CLEAR", "その他", "ガラスクリーナー", ["Detail Artist CLEAR"]],
+          ["LIGHT", "アルカリ", "オールパーパスクリーナー"],
+          ["DEEP", "コーティング", "タイヤ用水性ワックス"],
+          ["LUSH", "中性", "タイヤ・ホイールクリーナー"],
+          ["HEADLIGHT COAT&CLEANER", "コーティング", "ヘッドライト洗浄・コーティング"],
+        ]),
+        ...catalogRows("GYEON", [
+          ["Q²M Bathe", "中性", "中性カーシャンプー"],
+          ["Q²M Bathe+", "コーティング", "SiO₂配合カーシャンプー"],
+          ["Q²M Foam", "アルカリ", "プレウォッシュフォーム"],
+          ["Q²M Bug&Grime", "アルカリ", "虫・道路汚れクリーナー"],
+          ["Q²M Iron REDEFINED", "鉄粉除去", "鉄粉除去剤"],
+          ["Q²M Iron WheelCleaner REDEFINED", "鉄粉除去", "ホイール鉄粉クリーナー"],
+          ["Q²M Tar REDEFINED", "その他", "タール・接着剤除去剤"],
+          ["Q²M TireCleaner", "アルカリ", "タイヤクリーナー"],
+          ["Q²M APC", "アルカリ", "オールパーパスクリーナー"],
+          ["Q²M TrimCleaner", "その他", "樹脂クリーナー"],
+          ["Q²M FabricCleaner", "その他", "布・内装クリーナー"],
+          ["Q²M LeatherCleaner Natural", "その他", "レザークリーナー"],
+          ["Q²M LeatherCleaner Strong", "その他", "強力レザークリーナー"],
+          ["Q²M Glass", "その他", "ガラスクリーナー"],
+          ["Q²M Glass+", "その他", "撥水ガラスクリーナー"],
+          ["Q²M InteriorDetailer", "QD", "インテリアディテイラー"],
+          ["Q²M Preserve", "コーティング", "樹脂・内装ドレッシング"],
+          ["Q²M Tire Express", "コーティング", "タイヤドレッシング"],
+          ["Q²M Prep", "脱脂", "パネル脱脂剤"],
+          ["Q²M ClayLube REDEFINED", "その他", "クレイ潤滑剤"],
+          ["Q²M WaterSpot", "酸性", "ウォータースポット除去剤"],
+          ["Q²M RestartWash", "中性", "コーティングリセットシャンプー"],
+          ["Q²M EcoWash", "中性", "リンスレス・水なし洗車"],
+          ["Q²M PPF Wash", "中性", "PPF用シャンプー"],
+          ["Q²M PPF Maintain REDEFINED", "QD", "PPFメンテナンス剤"],
+          ["Q²M PPF Renew", "その他", "PPF用研磨・洗浄剤"],
+          ["Q²M QuickDetailer", "QD", "クイックディテイラー"],
+          ["Q²M CeramicDetailer", "QD", "セラミックディテイラー"],
+          ["Q²M Cure REDEFINED", "QD", "コーティングメンテナンス剤"],
+          ["Q²M Cure Matte REDEFINED", "QD", "マット面メンテナンス剤"],
+          ["Q²M WetCoat", "コーティング", "湿式コーティング"],
+          ["Q²M WetCoat Essence", "コーティング", "濃縮湿式コーティング"],
+          ["Q² FabriCoat", "コーティング", "ファブリックコーティング"],
+          ["Q² AntiFog", "コーティング", "ガラス曇り止め"],
+          ["Q² LeatherCoat REDEFINED", "コーティング", "レザーコーティング"],
+          ["Q² Tire", "コーティング", "タイヤコーティング"],
+          ["Q² QuickView", "コーティング", "簡易ガラス撥水コーティング"],
+          ["Q² Wax", "コーティング", "フッ素配合ワックス"],
+          ["Q² View EVO", "コーティング", "ガラスコーティング"],
+          ["Q² Trim EVO", "コーティング", "未塗装樹脂コーティング"],
+          ["Q² Rim EVO", "コーティング", "ホイールコーティング"],
+          ["Q² LeatherShield EVO", "コーティング", "レザーコーティング"],
+          ["Q² Syncro EVO", "コーティング", "セラミックコーティング"],
+          ["Q² Pure EVO", "コーティング", "セラミックコーティング"],
+          ["Q² One EVO", "コーティング", "セラミックコーティング"],
+          ["Q² Mohs EVO", "コーティング", "セラミックコーティング"],
+          ["Q² Matte EVO", "コーティング", "マット塗装用コーティング"],
+          ["Q² CanCoat EVO", "コーティング", "スプレーセラミックコーティング"],
+          ["Q² PPF EVO", "コーティング", "PPF・ラッピング用コーティング"],
+          ["Q²M Compound+ REDEFINED", "その他", "高研削コンパウンド"],
+          ["Q²M Compound", "その他", "コンパウンド"],
+          ["Q²M Polish", "その他", "仕上げ用ポリッシュ"],
+          ["Q² Primer", "その他", "コーティング用プライマーポリッシュ"],
+          ["Q²M GlassPolish", "その他", "ガラス用ポリッシュ"],
+          ["Q²M MetalPolish", "その他", "金属用ポリッシュ"],
+          ["Q²M TotalRemover", "その他", "コーティング除去剤"],
+          ["Q²M DeFrost", "その他", "解氷剤"],
+          ["Q²M OdorRemover", "その他", "消臭剤"],
+          ["Q² Purify Coat", "コーティング", "抗菌・消臭コーティング"],
+          ["Q² Purify Maintain", "QD", "抗菌コーティングメンテナンス"],
+        ]),
+        ...catalogRows("Koch-Chemie", [
+          ["Green Star", "アルカリ", "アルカリ性万能クリーナー", ["Koch-Chemie Green Star"]],
+          ["Active Foam", "アルカリ", "アルカリ性アクティブフォーム"],
+          ["Gentle Snow Foam", "中性", "中性スノーフォーム"],
+          ["NanoMagic Shampoo", "中性", "保護成分配合シャンプー"],
+          ["Ceramic Effect Shampoo", "コーティング", "セラミック効果シャンプー"],
+          ["Reactivation Shampoo", "酸性", "コーティング再活性シャンプー"],
+          ["Rapid Rinseless Wash", "中性", "リンスレス洗車"],
+          ["Insect & DirtRemover", "アルカリ", "虫・汚れ除去剤"],
+          ["Reactive Rust Remover", "鉄粉除去", "鉄粉除去剤"],
+          ["Magic Wheel Cleaner", "鉄粉除去", "ホイールクリーナー"],
+          ["Alkali Wheel Cleaner", "アルカリ", "アルカリ性ホイールクリーナー"],
+          ["Eulex", "その他", "接着剤・樹脂・タール除去剤"],
+          ["Orange Power", "その他", "接着剤・樹脂除去剤"],
+          ["Clay Spray", "その他", "クレイ潤滑剤"],
+          ["Allround Surface Cleaner", "その他", "表面クリーナー"],
+          ["MultiInteriorCleaner", "その他", "インテリアクリーナー"],
+          ["Pol Star", "中性", "布・革・内装クリーナー"],
+          ["Leather Star", "コーティング", "レザーケア"],
+          ["Top Star", "コーティング", "内装樹脂ケア"],
+          ["Glas Star", "その他", "濃縮ガラスクリーナー"],
+          ["SpeedGlassCleaner", "その他", "ガラスクリーナー"],
+          ["Panel Preparation Spray", "脱脂", "パネル脱脂剤"],
+          ["Heavy Cut H9.02", "その他", "高研削コンパウンド"],
+          ["Heavy Quick Cut B9.01", "その他", "高研削コンパウンド"],
+          ["Fine Cut F6.01", "その他", "中研削コンパウンド"],
+          ["Micro Cut M3.02", "その他", "仕上げ用コンパウンド"],
+          ["Micro Cut & Finish P3.01", "その他", "仕上げ・保護ポリッシュ"],
+          ["One Cut & Finish P6.02", "その他", "ワンステップポリッシュ"],
+          ["Ceramic Effect Polish", "その他", "セラミック効果ポリッシュ"],
+          ["Metal Polish", "その他", "金属用ポリッシュ"],
+          ["Spray Sealant", "コーティング", "スプレーシーラント"],
+          ["Hydro Foam Sealant", "コーティング", "フォームシーラント"],
+          ["Finish Spray exterior", "QD", "外装仕上げスプレー"],
+          ["AllroundQuickShine", "QD", "クイックディテイラー"],
+          ["Hand Wax W0.01", "コーティング", "ハンドワックス"],
+          ["ProtectorWax", "コーティング", "保護ワックス"],
+          ["Ceramic Body Cb0.01", "コーティング", "ボディ用セラミックコーティング"],
+          ["Ceramic Rims Cr0.01", "コーティング", "ホイール用セラミックコーティング"],
+          ["Ceramic Allround C0.02", "コーティング", "多用途セラミックコーティング"],
+          ["NanoMagicPlastCare", "コーティング", "外装樹脂ケア"],
+          ["Plast Star siliconölfrei", "コーティング", "外装樹脂ドレッシング"],
+          ["Motorplast", "コーティング", "エンジンルーム保護剤"],
+          ["Headlight Polish 1", "その他", "ヘッドライト研磨・下地処理"],
+          ["Headlight Polish 2", "その他", "ヘッドライト仕上げ・保護"],
+          ["Spotless Ceramic Finish", "QD", "セラミック仕上げ剤"],
+        ]),
+        ...catalogRows("VONIXX", [
+          ["V-FLOC", "中性", "中性カーシャンプー"],
+          ["V-MOL", "アルカリ", "弱アルカリ性カーシャンプー"],
+          ["CITRON", "アルカリ", "強力脱脂クリーナー"],
+          ["IMPACT", "アルカリ", "強力万能クリーナー"],
+          ["VEXUS", "アルカリ", "ホイール・エンジンクリーナー"],
+          ["IZER", "鉄粉除去", "鉄粉除去剤"],
+          ["DELET", "アルカリ", "タイヤ・ゴムクリーナー"],
+          ["ACIDUS FAST", "酸性", "酸性ミネラルクリーナー"],
+          ["ACIDUS PRO", "酸性", "プロ用酸性クリーナー"],
+          ["GLADIUS", "QD", "セラミックコーティング再生剤"],
+          ["STRIKE", "その他", "タール・接着剤除去剤"],
+          ["V-LUB", "その他", "クレイ潤滑剤"],
+          ["PRIZM", "酸性", "ガラス水ジミ除去剤"],
+          ["FOCUS", "その他", "ガラス水ジミ用ポリッシュ"],
+          ["SINTRA FAST", "その他", "インテリアクリーナー"],
+          ["INTENSE", "その他", "内装樹脂クリーナー"],
+          ["HIGICOURO", "その他", "レザークリーナー"],
+          ["HIDRACOURO", "コーティング", "レザーコンディショナー"],
+          ["REVOX", "コーティング", "タイヤ用シーラント"],
+          ["V-ECO FAST", "中性", "水なし・リンスレス洗車"],
+          ["SIO2-PRO", "コーティング", "SiO₂スプレー保護剤"],
+          ["SINERGY PAINT", "コーティング", "塗装面用セラミックコーティング"],
+          ["TRYON", "コーティング", "樹脂・ゴム用SiO₂コーティング"],
+          ["V-PAINT", "コーティング", "塗装面用セラミックコーティング"],
+          ["V-PAINT PRO", "コーティング", "プロ用塗装面コーティング"],
+          ["V-PLASTIC PRO", "コーティング", "樹脂用セラミックコーティング"],
+          ["V-PLASTIC", "コーティング", "樹脂用コーティング"],
+          ["SINERGY PLASTIC", "コーティング", "樹脂用コーティング"],
+          ["SINERGY WHEEL", "コーティング", "ホイール用コーティング"],
+          ["SHINY", "コーティング", "タイヤドレッシング"],
+          ["DURAX AEROSSOL", "コーティング", "タイヤドレッシング"],
+          ["BLEND CLEANER WAX", "コーティング", "SiO₂・カルナバクリーナーワックス"],
+          ["BLEND CLEANER WAX BLACK EDITION", "コーティング", "濃色車用クリーナーワックス"],
+          ["BLEND CERAMIC & CARNAÚBA PASTE WAX", "コーティング", "セラミック・カルナバ固形ワックス", ["BONIX BLEND"]],
+          ["BLEND CERAMIC & CARNAÚBA PASTE WAX – BLACK EDITION", "コーティング", "濃色車用固形ワックス"],
+          ["BLEND SPRAY WAX", "QD", "セラミック・カルナバスプレーワックス"],
+          ["BLEND SPRAY WAX BLACK EDITION", "QD", "濃色車用スプレーワックス"],
+          ["BLEND ALL IN ONE", "その他", "研磨・艶出し・保護剤"],
+          ["NATIVE BRAZILIAN CARNAÚBA CLEANER WAX", "コーティング", "カルナバクリーナーワックス"],
+          ["NATIVE PASTE WAX", "コーティング", "カルナバ固形ワックス", ["BONIX NATIVE"]],
+          ["NATIVE BRAZILIAN CARNAÚBA SPRAY WAX", "QD", "カルナバスプレーワックス"],
+          ["NATIVE PASTE WAX BLACK EDITION", "コーティング", "濃色車用カルナバ固形ワックス"],
+          ["CARNAÚBA HYBRID WAX", "コーティング", "ハイブリッドカルナバワックス"],
+          ["CARNAÚBA TOK FINAL", "QD", "カルナバ仕上げワックス"],
+          ["CARNAÚBA EXPRESS ULTRA", "QD", "カルナバスプレーワックス"],
+          ["CARNAÚBA PLUS", "コーティング", "クリーナーワックス"],
+          ["V10", "その他", "アジア塗装用カットコンパウンド"],
+          ["V20", "その他", "アジア塗装用中間ポリッシュ"],
+          ["V30", "その他", "アジア塗装用仕上げポリッシュ"],
+          ["V40", "その他", "4-in-1ポリッシュ"],
+          ["V-CUT", "その他", "カットコンパウンド"],
+          ["V-POLISH", "その他", "中間ポリッシュ"],
+          ["V-FINISH", "その他", "仕上げポリッシュ"],
+          ["V80", "その他", "ワンステップポリッシュ"],
+        ]),
+      ];
+      let activeCatalogManufacturer = "すべて";
+      let catalogSearchText = "";
+      const selectedCatalogIds = new Set();
+      function normalizeCatalogText(value) {
+        return String(value || "")
+          .normalize("NFKC")
+          .toLowerCase()
+          .replace(/detail\s*artist/g, "detailartist")
+          .replace(/koch[\s-]*chemie/g, "kochchemie")
+          .replace(/[^a-z0-9\p{L}\p{N}]+/gu, "");
+      }
+      function chemicalDisplayName(chemical) {
+        const name = String(chemical?.name || "名称なし").trim();
+        const manufacturer = String(chemical?.manufacturer || "").trim();
+        if (!manufacturer) return name;
+        const makerKey = normalizeCatalogText(manufacturer);
+        const nameKey = normalizeCatalogText(name);
+        return nameKey.startsWith(makerKey) ? name : `${manufacturer} ${name}`;
+      }
+      function catalogItemMatchesChemical(item, chemical) {
+        if (!item || !chemical) return false;
+        if (chemical.catalogId && chemical.catalogId === item.id) return true;
+        const existing = new Set(
+          [
+            chemical.name,
+            chemicalDisplayName(chemical),
+            `${chemical.manufacturer || ""} ${chemical.name || ""}`,
+          ]
+            .map(normalizeCatalogText)
+            .filter(Boolean),
+        );
+        return [
+          item.name,
+          `${item.manufacturer} ${item.name}`,
+          ...(item.aliases || []),
+        ]
+          .map(normalizeCatalogText)
+          .filter(Boolean)
+          .some((key) => existing.has(key));
+      }
+      function registeredCatalogIndex(item, chemicals = load("chemicals", [])) {
+        return chemicals.findIndex((chemical) =>
+          catalogItemMatchesChemical(item, chemical),
+        );
+      }
+      function migrateLegacyChemicalCatalog() {
+        const chemicals = load("chemicals", []);
+        let changed = false;
+        chemicals.forEach((chemical) => {
+          const item = CHEMICAL_CATALOG.find((candidate) =>
+            catalogItemMatchesChemical(candidate, chemical),
+          );
+          if (!item) return;
+          if (chemical.catalogId !== item.id) {
+            chemical.catalogId = item.id;
+            changed = true;
+          }
+          if (chemical.manufacturer !== item.manufacturer) {
+            chemical.manufacturer = item.manufacturer;
+            changed = true;
+          }
+          if (!chemical.purpose && item.purpose) {
+            chemical.purpose = item.purpose;
+            changed = true;
+          }
+          if (
+            chemical.preset &&
+            (chemical.name !== item.name || chemical.type !== item.type)
+          ) {
+            chemical.name = item.name;
+            chemical.type = item.type;
+            changed = true;
           }
         });
-        if (save("chemicals", a)) {
+        if (changed) save("chemicals", chemicals);
+      }
+      function filteredCatalogProducts() {
+        const query = normalizeCatalogText(catalogSearchText);
+        return CHEMICAL_CATALOG.filter((item) => {
+          if (
+            activeCatalogManufacturer !== "すべて" &&
+            item.manufacturer !== activeCatalogManufacturer
+          )
+            return false;
+          if (!query) return true;
+          return normalizeCatalogText(
+            `${item.manufacturer} ${item.name} ${item.purpose}`,
+          ).includes(query);
+        });
+      }
+      function openChemicalCatalog() {
+        selectedCatalogIds.clear();
+        activeCatalogManufacturer = "すべて";
+        catalogSearchText = "";
+        if ($("catalogSearch")) $("catalogSearch").value = "";
+        $("chemicalCatalogOverlay")?.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+        renderChemicalCatalog();
+      }
+      function closeChemicalCatalog() {
+        $("chemicalCatalogOverlay")?.classList.add("hidden");
+        document.body.style.overflow = "";
+      }
+      function setCatalogManufacturer(manufacturer) {
+        activeCatalogManufacturer = manufacturer;
+        renderChemicalCatalog();
+      }
+      function setCatalogSearch(value) {
+        catalogSearchText = value || "";
+        renderChemicalCatalog();
+      }
+      function toggleCatalogProduct(id, checked) {
+        if (checked) selectedCatalogIds.add(id);
+        else selectedCatalogIds.delete(id);
+        renderChemicalCatalog();
+      }
+      function toggleVisibleCatalogProducts() {
+        const chemicals = load("chemicals", []);
+        const available = filteredCatalogProducts().filter(
+          (item) => registeredCatalogIndex(item, chemicals) < 0,
+        );
+        const allSelected =
+          available.length > 0 &&
+          available.every((item) => selectedCatalogIds.has(item.id));
+        available.forEach((item) =>
+          allSelected
+            ? selectedCatalogIds.delete(item.id)
+            : selectedCatalogIds.add(item.id),
+        );
+        renderChemicalCatalog();
+      }
+      function renderChemicalCatalog() {
+        const list = $("chemicalCatalogList");
+        if (!list) return;
+        const chemicals = load("chemicals", []);
+        const visible = filteredCatalogProducts();
+        const registeredCount = CHEMICAL_CATALOG.filter(
+          (item) => registeredCatalogIndex(item, chemicals) >= 0,
+        ).length;
+        $("catalogSummary").textContent =
+          `${CHEMICAL_CATALOG.length}商品 ・ 登録済み${registeredCount}件`;
+        $("catalogBrandFilters").innerHTML = [
+          { name: "すべて" },
+          ...CATALOG_MANUFACTURERS,
+        ]
+          .map((manufacturer) => {
+            const count =
+              manufacturer.name === "すべて"
+                ? CHEMICAL_CATALOG.length
+                : CHEMICAL_CATALOG.filter(
+                    (item) => item.manufacturer === manufacturer.name,
+                  ).length;
+            return `<button class="catalog-brand${manufacturer.name === activeCatalogManufacturer ? " active" : ""}" type="button" data-manufacturer="${escapeHTML(manufacturer.name)}" onclick="setCatalogManufacturer(this.dataset.manufacturer)">${escapeHTML(manufacturer.name)} ${count}</button>`;
+          })
+          .join("");
+        const sourceLink = $("catalogSourceLink");
+        const activeSource = CATALOG_MANUFACTURERS.find(
+          (item) => item.name === activeCatalogManufacturer,
+        );
+        if (activeSource) {
+          sourceLink.href = activeSource.source;
+          sourceLink.textContent = `表記確認元：${activeSource.name} 公式サイト ↗`;
+          sourceLink.classList.remove("hidden");
+        } else {
+          sourceLink.classList.add("hidden");
+        }
+        list.innerHTML = visible.length
+          ? visible
+              .map((item) => {
+                const registered = registeredCatalogIndex(item, chemicals) >= 0;
+                const checked = selectedCatalogIds.has(item.id);
+                return `<label class="catalog-product${registered ? " is-registered" : ""}">
+                  <input type="checkbox" value="${escapeHTML(item.id)}" ${checked ? "checked" : ""} ${registered ? "disabled" : ""} onchange="toggleCatalogProduct(this.value,this.checked)">
+                  <span><span class="catalog-maker">${escapeHTML(item.manufacturer)}</span><b>${escapeHTML(item.name)}</b><span class="catalog-purpose">${escapeHTML(item.purpose)} ・ ${escapeHTML(item.type)}</span></span>
+                  ${registered ? '<span class="catalog-registered">登録済み</span>' : ""}
+                </label>`;
+              })
+              .join("")
+          : '<div class="catalog-empty">該当する商品がありません。</div>';
+        const selectableVisible = visible.filter(
+          (item) => registeredCatalogIndex(item, chemicals) < 0,
+        );
+        const visibleSelected =
+          selectableVisible.length > 0 &&
+          selectableVisible.every((item) => selectedCatalogIds.has(item.id));
+        $("catalogSelectVisibleButton").textContent = visibleSelected
+          ? "表示中を解除"
+          : "表示中を選択";
+        $("catalogSelectVisibleButton").disabled =
+          selectableVisible.length === 0;
+        $("catalogSelectedCount").textContent =
+          `${selectedCatalogIds.size}件選択`;
+        $("catalogAddButton").disabled = selectedCatalogIds.size === 0;
+      }
+      function addSelectedCatalogProducts() {
+        const chemicals = load("chemicals", []);
+        let added = 0;
+        CHEMICAL_CATALOG.filter((item) => selectedCatalogIds.has(item.id)).forEach(
+          (item) => {
+            if (registeredCatalogIndex(item, chemicals) >= 0) return;
+            chemicals.push({
+              manufacturer: item.manufacturer,
+              name: item.name,
+              type: item.type,
+              purpose: item.purpose,
+              ratio: 0,
+              capacity: 0,
+              stock: 0,
+              image: "",
+              catalogId: item.id,
+              catalogSource: item.source,
+            });
+            added++;
+          },
+        );
+        if (!added) {
+          alert("選択した商品はすべて登録済みです。");
+          renderChemicalCatalog();
+          return;
+        }
+        if (save("chemicals", chemicals)) {
+          selectedCatalogIds.clear();
+          closeChemicalCatalog();
           render();
-          if (!silent)
-            alert(
-              added
-                ? `${added}件のプリセットを追加しました。`
-                : "プリセットはすべて登録済みです。",
-            );
+          alert(`${added}件の商品をケミカル一覧へ追加しました。`);
         }
       }
       async function addChemical() {
@@ -4187,6 +4845,7 @@
           stock = +$("chemStock").value || 0;
         if (cap > 0 && stock === 0) stock = cap;
         a.unshift({
+          manufacturer: $("chemManufacturer").value.trim(),
           name,
           type: $("chemType").value,
           ratio: +$("chemRatio").value || 0,
@@ -4196,6 +4855,7 @@
         });
         if (save("chemicals", a)) {
           [
+            "chemManufacturer",
             "chemName",
             "chemRatio",
             "chemCapacity",
@@ -4293,6 +4953,7 @@
           c = a[i];
         if (!c) return;
         $("editChemIndex").value = i;
+        $("editChemManufacturer").value = c.manufacturer || "";
         $("editChemName").value = c.name || "";
         $("editChemType").value = c.type || "その他";
         $("editChemRatio").value = c.ratio || "";
@@ -4326,12 +4987,24 @@
         }
         a[i] = {
           ...a[i],
+          manufacturer: $("editChemManufacturer").value.trim(),
           name,
           type: $("editChemType").value,
           ratio: +$("editChemRatio").value || 0,
           capacity: +$("editChemCapacity").value || 0,
           stock: +$("editChemStock").value || 0,
         };
+        const catalogItem = CHEMICAL_CATALOG.find((item) =>
+          catalogItemMatchesChemical(item, a[i]),
+        );
+        if (catalogItem) {
+          a[i].catalogId = catalogItem.id;
+          a[i].purpose = catalogItem.purpose;
+          a[i].catalogSource = catalogItem.source;
+        } else {
+          delete a[i].catalogId;
+          delete a[i].catalogSource;
+        }
         if (save("chemicals", a)) {
           closeChemicalEditor();
           render();
@@ -4372,7 +5045,9 @@
       }
       function applyChemicalPreset() {
         let c = load("chemicals", []).find(
-          (x) => x.name === $("dilutionChemical").value,
+          (x) =>
+            chemicalDisplayName(x) === $("dilutionChemical").value ||
+            x.name === $("dilutionChemical").value,
         );
         if (c && c.ratio) {
           $("mode").value = "x";
@@ -4483,7 +5158,7 @@
                 const image = chemicalDisplayImage(chemical);
                 const capacity = numberOr(chemical.capacity, 0);
                 const stock = numberOr(chemical.stock, 0);
-                return `<div class="list-item row"><img class="mini-img" src="${image}" alt=""><div style="flex:1"><div class="row between"><b>${escapeHTML(chemical.name || "名称なし")}</b><span class="tag">${escapeHTML(chemical.type || "その他")}</span></div><div class="muted tiny">${capacity ? `残量 ${stock}/${capacity}mL` : `残量 ${stock || 0}mL`}</div></div></div>`;
+                return `<div class="list-item row"><img class="mini-img" src="${image}" alt=""><div style="flex:1">${chemical.manufacturer ? `<span class="chemical-maker">${escapeHTML(chemical.manufacturer)}</span>` : ""}<div class="row between"><b>${escapeHTML(chemical.name || "名称なし")}</b><span class="tag">${escapeHTML(chemical.type || "その他")}</span></div><div class="muted tiny">${capacity ? `残量 ${stock}/${capacity}mL` : `残量 ${stock || 0}mL`}</div></div></div>`;
               })
               .join("")
           : "まだ登録されていません。";
@@ -4544,7 +5219,7 @@
                           Math.min(100, Math.round((stock / cap) * 100)),
                         )
                       : 0;
-                return `<div class="list-item row"><img class="mini-img" src="${image}" alt="${escapeHTML(x.type || "ケミカル")}のイメージ"><div style="flex:1"><div class="row between"><b>${escapeHTML(x.name || "名称なし")}</b><span class="tag">${escapeHTML(x.type || "その他")}</span></div><div class="muted tiny">推奨 ${x.ratio ? numberOr(x.ratio, 0) + "倍" : "—"} / ${cap ? `残量 ${stock}/${cap}mL (${pct}%)` : `残量 ${stock || 0}mL`}</div><div class="progress"><i style="width:${pct}%"></i></div><div class="stock-actions"><button class="secondary tiny" onclick="openChemicalEditor(${i})">編集</button><button class="ghost danger tiny" onclick="delChem(${i})">削除</button></div></div></div>`;
+                return `<div class="list-item row"><img class="mini-img" src="${image}" alt="${escapeHTML(x.type || "ケミカル")}のイメージ"><div style="flex:1">${x.manufacturer ? `<span class="chemical-maker">${escapeHTML(x.manufacturer)}</span>` : ""}<div class="row between"><b>${escapeHTML(x.name || "名称なし")}</b><span class="tag">${escapeHTML(x.type || "その他")}</span></div>${x.purpose ? `<div class="muted tiny">${escapeHTML(x.purpose)}</div>` : ""}<div class="muted tiny">推奨 ${x.ratio ? numberOr(x.ratio, 0) + "倍" : "—"} / ${cap ? `残量 ${stock}/${cap}mL (${pct}%)` : `残量 ${stock || 0}mL`}</div><div class="progress"><i style="width:${pct}%"></i></div><div class="stock-actions"><button class="secondary tiny" onclick="openChemicalEditor(${i})">編集</button><button class="ghost danger tiny" onclick="delChem(${i})">削除</button></div></div></div>`;
               })
               .join("")
           : '<span class="muted">まだありません。</span>';
@@ -4555,8 +5230,10 @@
           '<option value="">未選択</option>' +
           c
             .map(
-              (x) =>
-                `<option value="${escapeHTML(x.name)}">${escapeHTML(x.name)}${x.ratio ? "（" + numberOr(x.ratio, 0) + "倍）" : ""}</option>`,
+              (x) => {
+                const displayName = chemicalDisplayName(x);
+                return `<option value="${escapeHTML(displayName)}">${escapeHTML(displayName)}${x.ratio ? "（" + numberOr(x.ratio, 0) + "倍）" : ""}</option>`;
+              },
             )
             .join("");
         if ([...sel.options].some((o) => o.value === cur)) sel.value = cur;
@@ -4857,12 +5534,7 @@
       }
 
       migrateMultiCarData();
-      if (load("chemicals", []).length === 0) {
-        save(
-          "chemicals",
-          CHEMICAL_PRESETS.map((x) => ({ ...x, image: "", preset: true })),
-        );
-      }
+      migrateLegacyChemicalCatalog();
       if (!localStorage.getItem("dmSetupDone") && getCars().length === 0)
         $("setupOverlay").classList.remove("hidden");
       render();
