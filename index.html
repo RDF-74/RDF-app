@@ -1133,115 +1133,6 @@
         margin: 3px 0 8px;
         color: #8294a3;
       }
-      .finder-candidate-details > summary {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        justify-content: space-between;
-        color: #e5eef5;
-        font-weight: 900;
-        cursor: pointer;
-        list-style: none;
-      }
-      .finder-candidate-details > summary::-webkit-details-marker {
-        display: none;
-      }
-      .finder-candidate-details > summary::after {
-        content: "＋";
-        color: #69b9ed;
-        font-size: 20px;
-      }
-      .finder-candidate-details[open] > summary::after {
-        content: "−";
-      }
-      .finder-candidate-summary {
-        display: grid;
-        gap: 3px;
-      }
-      .finder-candidate-summary small {
-        color: #8294a3;
-        font-size: 10px;
-        font-weight: 700;
-      }
-      .finder-process-list {
-        display: grid;
-        gap: 12px;
-        margin-top: 14px;
-      }
-      .finder-process-group {
-        overflow: hidden;
-        border: 1px solid #2b3e4c;
-        border-radius: 16px;
-        background: #0e171f;
-      }
-      .finder-process-head {
-        display: grid;
-        grid-template-columns: 30px minmax(0, 1fr) auto;
-        gap: 9px;
-        align-items: center;
-        padding: 11px;
-        border-bottom: 1px solid #273844;
-        background: #13212c;
-      }
-      .finder-process-number {
-        display: grid;
-        place-items: center;
-        width: 28px;
-        height: 28px;
-        border: 1px solid #3c81b5;
-        border-radius: 999px;
-        color: #a9dcff;
-        font-size: 11px;
-        font-weight: 900;
-      }
-      .finder-process-title {
-        color: #e9f2f8;
-        font-size: 13px;
-        font-weight: 900;
-      }
-      .finder-process-description {
-        margin-top: 2px;
-        color: #8294a3;
-        font-size: 10px;
-      }
-      .finder-process-count {
-        color: #7ebfe9;
-        font-size: 10px;
-        font-weight: 850;
-      }
-      .finder-candidate-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 8px;
-        align-items: center;
-        width: 100%;
-        padding: 10px 11px;
-        border: 0;
-        border-bottom: 1px solid #202f39;
-        border-radius: 0;
-        background: transparent;
-        color: inherit;
-        text-align: left;
-      }
-      .finder-candidate-row:last-child {
-        border-bottom: 0;
-      }
-      .finder-candidate-row:active {
-        background: #172630;
-      }
-      .finder-candidate-row .catalog-maker {
-        display: block;
-      }
-      .finder-candidate-row b {
-        display: block;
-        margin-top: 2px;
-        color: #e4edf3;
-        font-size: 12px;
-      }
-      .finder-candidate-row .finder-price {
-        margin-top: 0;
-        white-space: nowrap;
-      }
       .finder-result-head {
         margin-top: 13px;
         padding: 13px;
@@ -1338,34 +1229,6 @@
         color: #a8d9fa;
         font-size: 11px;
         font-weight: 800;
-      }
-      .finder-price {
-        display: inline-flex;
-        gap: 5px;
-        align-items: center;
-        margin-top: 7px;
-        padding: 5px 8px;
-        border: 1px solid #40505c;
-        border-radius: 999px;
-        background: #101920;
-        color: #d7e2e9;
-        font-size: 10px;
-        font-weight: 850;
-      }
-      .finder-price.low {
-        border-color: #34745b;
-        background: #10251d;
-        color: #9de2bf;
-      }
-      .finder-cost-summary {
-        margin-top: 9px;
-        padding: 9px 10px;
-        border: 1px solid #38546a;
-        border-radius: 12px;
-        background: rgba(15, 32, 45, 0.74);
-        color: #c7d8e4;
-        font-size: 11px;
-        line-height: 1.5;
       }
       .finder-alternative {
         margin-top: 10px;
@@ -1787,6 +1650,49 @@
       }
       .setup-overlay.hidden {
         display: none;
+      }
+      .notification-settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .notification-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .notification-next {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 9px 0;
+        border-bottom: 1px solid #25323f;
+        font-size: 13px;
+      }
+      .notification-next:last-child {
+        border-bottom: 0;
+      }
+      .notification-next span {
+        color: #9aa8b7;
+        text-align: right;
+      }
+      .advanced-settings {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid #25323f;
+      }
+      .advanced-settings summary {
+        cursor: pointer;
+        color: #9aa8b7;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      @media (max-width: 430px) {
+        .notification-settings-grid,
+        .notification-actions {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -2416,10 +2322,10 @@
               alt="ケミカル選びのイメージ"
             />
             <div>
-              <span class="pill">追加2〜5問</span>
+              <span class="pill">約1分</span>
               <h3 style="margin: 7px 0 4px">必要な商品だけ選ぶ</h3>
               <div class="muted tiny">
-                最初に目的を選ぶと、診断に必要な質問だけを表示。各工程から1商品ずつ提案します。
+                目的ごとに役割を分け、各工程から1商品ずつ提案します。別候補への変更もできます。
               </div>
             </div>
           </div>
@@ -2430,38 +2336,37 @@
             <div class="finder-question">
               <label for="finderGoal">1. 何をしたい？</label>
               <small>一番近い目的を選択</small>
-              <select id="finderGoal" onchange="updateProductFinderQuestions()">
-                <option value="" selected>目的を選んでください</option>
+              <select id="finderGoal" onchange="clearProductFinderResult()">
                 <option value="starter">最初に基本セットを揃えたい</option>
                 <option value="maintenance">普段の洗車・コーティング維持</option>
                 <option value="reset">汚れと古い残留物をリセット</option>
                 <option value="scale">水ジミ・スケールを落としたい</option>
                 <option value="iron">鉄粉・ブレーキダストを落としたい</option>
                 <option value="protect">艶・撥水・保護を足したい</option>
-                <option value="wax">ワックスで艶・濡れ感を出したい</option>
                 <option value="glass">ガラスをきれいにして撥水させたい</option>
                 <option value="wheel">ホイール・タイヤを仕上げたい</option>
+                <option value="interior">内装をきれいにして保護したい</option>
                 <option value="coating">コーティング前の下地を作りたい</option>
               </select>
             </div>
-            <div class="finder-question hidden" data-finder-question="environment">
-              <label for="finderEnvironment" data-finder-label="施工環境は？">施工環境は？</label>
+            <div class="finder-question">
+              <label for="finderEnvironment">2. 施工環境は？</label>
               <small>十分なすすぎができるかで使える商品が変わります</small>
               <select id="finderEnvironment" onchange="clearProductFinderResult()">
                 <option value="rinse">水道・高圧洗浄機で十分すすげる</option>
                 <option value="limited">使える水が少ない／リンスレス中心</option>
               </select>
             </div>
-            <div class="finder-question hidden" data-finder-question="level">
-              <label for="finderLevel" data-finder-label="ケミカルの使用経験は？">ケミカルの使用経験は？</label>
+            <div class="finder-question">
+              <label for="finderLevel">3. ケミカルの使用経験は？</label>
               <small>濃縮品や強い薬剤の優先度を調整</small>
               <select id="finderLevel" onchange="clearProductFinderResult()">
                 <option value="beginner">初めて・失敗しにくさ重視</option>
                 <option value="experienced">希釈や酸性・アルカリ性に慣れている</option>
               </select>
             </div>
-            <div class="finder-question hidden" data-finder-question="protection">
-              <label for="finderProtection" data-finder-label="今のボディ保護は？">今のボディ保護は？</label>
+            <div class="finder-question">
+              <label for="finderProtection">4. 今のボディ保護は？</label>
               <small>既存コーティングを維持するか、保護を新しく作るか判断</small>
               <select id="finderProtection" onchange="clearProductFinderResult()">
                 <option value="protected">コーティング・ワックス施工済み</option>
@@ -2469,18 +2374,17 @@
                 <option value="unprotected">未施工・下地から作り直す</option>
               </select>
             </div>
-            <div class="finder-question hidden" data-finder-question="priority">
-              <label for="finderPriority" data-finder-label="商品選びで優先したいことは？">商品選びで優先したいことは？</label>
-              <small>購入時の安さ・扱いやすさ・使用量・性能のどれを優先するか</small>
+            <div class="finder-question">
+              <label for="finderPriority">5. 商品選びで優先したいことは？</label>
+              <small>扱いやすさ・使用量・性能のどれを優先するか</small>
               <select id="finderPriority" onchange="clearProductFinderResult()">
-                <option value="budget">まず安く揃える（1本3,000円前後）</option>
                 <option value="easy">扱いやすさ</option>
                 <option value="value">濃縮タイプ・使用量の少なさ</option>
                 <option value="performance">性能を優先</option>
               </select>
             </div>
-            <div class="finder-question hidden" data-finder-question="finish">
-              <label for="finderFinish" data-finder-label="車をどんな方向に仕上げたい？">車をどんな方向に仕上げたい？</label>
+            <div class="finder-question">
+              <label for="finderFinish">6. 車をどんな方向に仕上げたい？</label>
               <small>保護剤・QD・ワックスの候補順位に反映</small>
               <select id="finderFinish" onchange="clearProductFinderResult()">
                 <option value="balance">艶・滑り・撥水のバランス</option>
@@ -2491,41 +2395,15 @@
                 <option value="durability">耐久性を重視</option>
               </select>
             </div>
-            <div class="finder-question hidden" data-finder-question="paintColor">
-              <label for="finderPaintColor" data-finder-label="車の色は？">車の色は？</label>
-              <small>濃色車専用ワックスを誤って提案しないために使用</small>
-              <select id="finderPaintColor" onchange="clearProductFinderResult()">
-                <option value="light">白・シルバーなど明るい色</option>
-                <option value="dark">黒・濃紺など濃い色</option>
-                <option value="other">その他・分からない</option>
-              </select>
-            </div>
           </div>
           <button
-            id="finderRunButton"
-            class="primary hidden"
+            class="primary"
             type="button"
             style="width: 100%; margin-top: 14px"
             onclick="runProductFinder()"
           >
             おすすめを診断する
           </button>
-        </div>
-
-        <div class="card">
-          <details
-            class="finder-candidate-details"
-            ontoggle="if(this.open)renderFinderCandidateOverview()"
-          >
-            <summary>
-              <span class="finder-candidate-summary">
-                診断候補を工程別に見る
-                <small>内装用品・研磨剤を除き、ワックス15商品を含む候補</small>
-              </span>
-              <span class="pill" id="finderCandidateCount">97商品</span>
-            </summary>
-            <div id="finderCandidateOverview"></div>
-          </details>
         </div>
 
         <div id="finderResults"></div>
@@ -2865,7 +2743,7 @@
         <div class="card">
           <div class="section-title">
             <h2>設定</h2>
-            <span class="version-badge">v3.6 β5</span>
+            <span class="version-badge">v3.7 β1</span>
           </div>
           <p class="muted">
             β版のデータはこの端末内に保存されます。機種変更や不具合に備えて、JSONファイルへ定期的に保存してください。
@@ -2885,7 +2763,7 @@
             </button>
           </div>
           <div class="settings-note tiny muted">
-            写真は保存前に最大1200px・約180KBを目安に自動圧縮します。大事な施工記録は定期的に書き出してください。
+            写真は最大1600px・約280KBを目安に圧縮し、写真専用の大容量領域へ保存します。大事な施工記録は定期的に書き出してください。
           </div>
           <div id="storageStatus" class="backup-status fresh tiny">
             端末内データ量を確認しています…
@@ -2893,6 +2771,56 @@
           <div id="backupStatus" class="backup-status tiny">
             バックアップ状況を確認しています…
           </div>
+        </div>
+        <div class="card" id="notificationCard">
+          <div class="section-title">
+            <h3>メンテ通知</h3>
+            <span class="tag">iPhone対応</span>
+          </div>
+          <p class="muted tiny">
+            車両ごとのコーティング日とメンテ周期から、次回メンテの時期を知らせます。
+          </p>
+          <div class="notification-settings-grid">
+            <div>
+              <label for="notificationLeadDays">何日前に通知</label>
+              <select id="notificationLeadDays">
+                <option value="0">当日</option>
+                <option value="1">1日前</option>
+                <option value="3">3日前</option>
+                <option value="7">7日前</option>
+                <option value="14">14日前</option>
+                <option value="30">30日前</option>
+              </select>
+            </div>
+            <div>
+              <label for="notificationTime">通知時刻</label>
+              <input id="notificationTime" type="time" value="09:00" />
+            </div>
+          </div>
+          <div class="notification-actions">
+            <button id="notificationEnableButton" class="primary" type="button" onclick="toggleMaintenanceNotifications()">
+              通知を有効にする
+            </button>
+            <button id="notificationTestButton" class="secondary" type="button" onclick="testMaintenanceNotification()" disabled>
+              テスト通知
+            </button>
+          </div>
+          <button class="ghost" style="width:100%;margin-top:10px" type="button" onclick="saveNotificationSettings()">
+            通知タイミングを保存
+          </button>
+          <div id="notificationStatus" class="backup-status tiny">通知状態を確認しています…</div>
+          <div id="notificationNextList" style="margin-top:8px"></div>
+          <details class="advanced-settings">
+            <summary>バックグラウンド通知サーバー</summary>
+            <p class="muted tiny">
+              サーバーへ接続すると、アプリを閉じている時も通知できます。空欄の場合はアプリを開いた時に通知します。
+            </p>
+            <label for="pushServerUrl">通知サーバーURL</label>
+            <input id="pushServerUrl" type="url" inputmode="url" placeholder="https://〜.workers.dev" />
+            <button class="secondary" style="width:100%;margin-top:10px" type="button" onclick="saveNotificationSettings()">
+              接続設定を保存
+            </button>
+          </details>
         </div>
         <div class="card" id="updateHistoryCard">
           <div class="section-title">
@@ -3118,7 +3046,7 @@
     </div>
     <div id="setupOverlay" class="setup-overlay hidden">
       <div class="setup-box">
-        <span class="version-badge">Detailing Manager v3.6 β5</span>
+        <span class="version-badge">Detailing Manager v3.7 β1</span>
         <h2>無料βテストへようこそ</h2>
         <p class="muted">
           愛車の洗車・コーティング・ケミカル在庫を、このiPhoneでまとめて管理できます。
@@ -3161,62 +3089,31 @@
         </button>
       </div>
     </div>
+    <script src="./photo-store.js"></script>
+    <script src="./push-config.js"></script>
+    <script src="./notifications.js"></script>
     <script>
-      const DM_VERSION = "3.6-beta.5";
+      const DM_VERSION = "3.7-beta.1";
       const MAX_CARS = 5;
       const MULTI_CAR_SCHEMA_KEY = "dmMultiCarSchema";
       const MULTI_CAR_SCHEMA_VERSION = "3";
-      const PHOTO_MAX_EDGE = 1200;
-      const PHOTO_TARGET_BYTES = 180 * 1024;
+      const PHOTO_MAX_EDGE = 1600;
+      const PHOTO_TARGET_BYTES = 280 * 1024;
       const UPDATE_SEEN_KEY = "dmLastSeenVersion";
       const UPDATE_HISTORY = [
         {
-          version: "3.6-beta.5",
-          label: "v3.6 β5",
-          date: "2026年8月13日",
-          title: "ワックス診断を本格追加",
-          summary: "固形・ペースト・スプレーワックス15商品に対応",
+          version: "3.7-beta.1",
+          label: "v3.7 β1",
+          date: "2026年8月23日",
+          title: "写真容量を拡大し、メンテ通知を追加",
+          summary: "写真専用保存とiPhone通知に対応",
           changes: [
-            "最初は「何をしたい？」だけを表示し、選んだ目的に必要な質問だけが続く可変式へ変更",
-            "目的選択後の質問を2〜5問へ整理し、回答が候補順位や安全判定へ反映されない項目は非表示",
-            "表示しない条件は目的に合う既定値へ切り替え、隠れた回答が順位を不自然に変えないよう修正",
-            "診断目的へ「ワックスで艶・濡れ感を出したい」を追加",
-            "LUMINUS、DETAIL ARTIST、GYEON、Koch-Chemie、VONIXXのワックス15商品を診断対象へ追加",
-            "診断候補を84商品から97商品へ拡張し、工程別一覧へ「ワックス仕上げ」を独立表示",
-            "固形・ペースト・スプレーを、艶・滑り・撥水・耐久・扱いやすさ・価格で順位付け",
-            "車体色の質問を追加し、BLACK EDITIONを白・淡色車へ提案しないよう修正",
-            "VONIXX BLENDスプレーワックス2商品の名称を公式表記へ修正",
-            "研磨成分を含むクリーナーワックスは診断候補から除外したまま維持",
-          ],
-        },
-        {
-          version: "3.6-beta.4",
-          label: "v3.6 β4",
-          date: "2026年8月13日",
-          title: "診断候補を洗車工程ごとに整理",
-          summary: "内装用品とコンパウンドを診断対象から除外",
-          changes: [
-            "診断対象を103商品から84商品へ整理",
-            "内装の洗浄・保護を診断目的と候補一覧から一旦除外",
-            "ボディ用・ガラス用のコンパウンドとポリッシュを診断候補から除外",
-            "診断画面へ、全候補を洗車工程順に確認できる一覧を追加",
-            "予洗い、通常洗車、除染、脱脂、保護、ガラス、足回りの7工程で表示",
-            "コンパウンドと内装用品はメーカー商品カタログには残し、必要なら手動登録可能",
-          ],
-        },
-        {
-          version: "3.6-beta.3",
-          label: "v3.6 β3",
-          date: "2026年8月13日",
-          title: "価格とメーカーの偏りを診断へ反映",
-          summary: "安く揃える選択肢と参考価格を追加",
-          changes: [
-            "「まず安く揃える」を追加し、初心者の初期費用が高くなりすぎないよう候補順位を調整",
-            "診断カード・別候補・商品カタログへ参考価格帯を表示",
-            "未登録のおすすめ一式について参考合計金額を表示",
-            "同一メーカーへの偏りを抑え、登録済みの手持ち商品を優先",
-            "診断候補を68商品から103商品へ拡張し、8メーカーすべてを第一候補へ反映",
-            "LUMINUS PREP PRO、ながら洗車 IRON DELETEなどを下地・鉄粉除去の候補へ追加",
+            "写真を小容量の設定データから分離し、IndexedDBの写真専用領域へ保存",
+            "以前の車両・施工・整備・ケミカル写真を初回起動時に自動移行",
+            "写真を最大1600px・約280KBへ調整し、保存枚数と画質を両立",
+            "車両ごとのメンテ目安を指定日数前・指定時刻に通知",
+            "通知サーバー接続時は、アプリを閉じていても届くWeb Pushに対応",
+            "写真を含むバックアップの書き出し・復元と、不要写真の自動整理を更新",
           ],
         },
         {
@@ -3817,10 +3714,14 @@
               "'": "&#39;",
             })[char],
         );
-      const safeImage = (value) =>
-        /^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(value || "")
+      const safePhotoValue = (value) => {
+        if (window.DMPhotoStore?.isRef(value)) return value;
+        return /^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(value || "")
           ? value
           : "";
+      };
+      const safeImage = (value) =>
+        window.DMPhotoStore?.resolve(value) || safePhotoValue(value);
       function safeBundledImage(value) {
         if (/^data:image\/webp;base64,[a-z0-9+/=]+$/i.test(value || ""))
           return value;
@@ -4351,7 +4252,7 @@
           coating: String((car && car.coating) || "").trim(),
           coatDate: String((car && car.coatDate) || ""),
           maintDays: Math.max(1, numberOr(car && car.maintDays, 90)),
-          image: safeImage(car && car.image),
+          image: safePhotoValue(car && car.image),
           photoZoom: numberOr(car && car.photoZoom, 100),
           photoX: numberOr(car && car.photoX, 50),
           photoY: numberOr(car && car.photoY, 50),
@@ -4623,6 +4524,7 @@
         );
       }
       const photoInputCache = new WeakMap();
+      const pendingPhotoRefs = new Set();
       function dataUrlBytes(value) {
         const comma = String(value || "").indexOf(",");
         if (comma < 0) return 0;
@@ -4701,8 +4603,17 @@
           }
         });
       }
-      async function photoResultToDataUrl(result) {
-        return result.dataUrl || blobToDataUrl(result.blob);
+      async function photoResultToBlob(result) {
+        if (result.blob) return result.blob;
+        const match = String(result.dataUrl || "").match(
+          /^data:([^;,]+);base64,(.+)$/i,
+        );
+        if (!match) throw new Error("image data");
+        const binary = atob(match[2]);
+        const bytes = new Uint8Array(binary.length);
+        for (let index = 0; index < binary.length; index += 1)
+          bytes[index] = binary.charCodeAt(index);
+        return new Blob([bytes], { type: match[1] });
       }
       async function compressPhoto(file) {
         const loaded = await loadPhotoSource(file);
@@ -4710,8 +4621,8 @@
         const context = canvas.getContext("2d");
         if (!context || !loaded.width || !loaded.height)
           throw new Error("canvas");
-        const edgeSteps = [1200, 1080, 960, 840, 720, 640, 560];
-        const qualities = [0.82, 0.74, 0.66, 0.58, 0.5, 0.44];
+        const edgeSteps = [1600, 1440, 1280, 1200, 1080, 960, 840, 720];
+        const qualities = [0.86, 0.8, 0.74, 0.68, 0.61, 0.54, 0.48];
         let mime = "image/webp";
         let smallest = null;
         let previousSize = "";
@@ -4740,11 +4651,11 @@
               if (!result) continue;
               if (!smallest || result.bytes < smallest.bytes) smallest = result;
               if (result.bytes <= PHOTO_TARGET_BYTES)
-                return await photoResultToDataUrl(result);
+                return await photoResultToBlob(result);
             }
           }
           if (!smallest) throw new Error("encode");
-          return await photoResultToDataUrl(smallest);
+          return await photoResultToBlob(smallest);
         } finally {
           loaded.release();
         }
@@ -4753,19 +4664,29 @@
         const file = input?.files?.[0];
         if (!file) return "";
         const cached = photoInputCache.get(input);
-        if (cached?.file === file) return cached.dataUrl;
+        if (cached?.file === file) return cached.value;
         if (file.type && !file.type.startsWith("image/")) {
           alert("画像ファイルを選んでください。");
           return "";
         }
         try {
-          const dataUrl = await compressPhoto(file);
-          photoInputCache.set(input, { file, dataUrl });
-          return dataUrl;
+          const blob = await compressPhoto(file);
+          let value;
+          if (window.DMPhotoStore?.isAvailable()) {
+            value = await window.DMPhotoStore.storeBlob(blob, {
+              kind: input.id || "photo",
+            });
+            pendingPhotoRefs.add(value);
+            window.DMPhotoStore.requestPersistence().catch(() => {});
+          } else {
+            value = await blobToDataUrl(blob);
+          }
+          photoInputCache.set(input, { file, value });
+          return value;
         } catch (error) {
           console.error("Photo compression failed", error);
           alert(
-            "この写真を圧縮できませんでした。HEIC・JPEG・PNGなど、別の写真を選び直してください。元の大きな写真は保存していません。",
+            "この写真を保存できませんでした。HEIC・JPEG・PNGなど、別の写真を選び直してください。元の大きな写真は保存していません。",
           );
           return "";
         }
@@ -4850,7 +4771,7 @@
         pendingCarImage = "";
         render();
       }
-      function deleteCar(id) {
+      async function deleteCar(id) {
         const cars = getCars();
         const car = cars.find((item) => item.id === id);
         if (!car) return;
@@ -4889,13 +4810,15 @@
         save("activeCarId", nextId);
         $("carEditId").value = nextId;
         pendingCarImage = "";
+        await cleanupUnusedPhotos();
+        window.DMNotifications?.sync(getCars()).catch(() => {});
         render();
       }
       async function previewSelectedCarImage() {
         const v = await readFile($("carImage"));
         if (v) {
           pendingCarImage = v;
-          $("carPreview").src = v;
+          $("carPreview").src = safeImage(v);
           $("carPreview").style.display = "block";
           updatePhotoPreview();
         }
@@ -4953,11 +4876,14 @@
         if (index >= 0) cars[index] = car;
         else cars.push(car);
         if (!save("cars", cars)) return;
+        markPhotoRefsSaved({ cars: [car] });
         save("activeCarId", car.id);
         attachUnassignedRecords(car.id);
         $("carEditId").value = car.id;
         renderCarSelectors(true);
         pendingCarImage = "";
+        await cleanupUnusedPhotos();
+        window.DMNotifications?.sync(getCars()).catch(() => {});
         go("home");
       }
       function chemicalOptions(selected = "") {
@@ -5147,7 +5073,7 @@
         let v = await readFile($(inputId)),
           img = $(previewId);
         if (v) {
-          img.src = v;
+          img.src = safeImage(v);
           img.style.display = "block";
         } else {
           img.removeAttribute("src");
@@ -5182,6 +5108,7 @@
           after,
         });
         if (save("history", a)) {
+          markPhotoRefsSaved({ history: [a[0]] });
           deductChemicalStock(chemicalUsages);
           $("histMileage").value = "";
           $("histMinutes").value = "";
@@ -5194,6 +5121,7 @@
             .querySelectorAll('input[name="histProcess"]')
             .forEach((x) => (x.checked = false));
           resetChemicalUsageRows();
+          await cleanupUnusedPhotos();
           render();
         }
       }
@@ -5480,8 +5408,8 @@
           ["BLEND CLEANER WAX BLACK EDITION", "コーティング", "濃色車用クリーナーワックス"],
           ["BLEND CERAMIC & CARNAÚBA PASTE WAX", "コーティング", "セラミック・カルナバ固形ワックス", ["BONIX BLEND"]],
           ["BLEND CERAMIC & CARNAÚBA PASTE WAX – BLACK EDITION", "コーティング", "濃色車用固形ワックス"],
-          ["BLEND CERAMIC & CARNAÚBA SPRAY WAX", "QD", "セラミック・カルナバスプレーワックス", ["BLEND SPRAY WAX"]],
-          ["BLEND CERAMIC & CARNAÚBA SPRAY WAX BLACK EDITION", "QD", "濃色車用スプレーワックス", ["BLEND SPRAY WAX BLACK EDITION"]],
+          ["BLEND SPRAY WAX", "QD", "セラミック・カルナバスプレーワックス"],
+          ["BLEND SPRAY WAX BLACK EDITION", "QD", "濃色車用スプレーワックス"],
           ["BLEND ALL IN ONE", "その他", "研磨・艶出し・保護剤"],
           ["NATIVE BRAZILIAN CARNAÚBA CLEANER WAX", "コーティング", "カルナバクリーナーワックス"],
           ["NATIVE PASTE WAX", "コーティング", "カルナバ固形ワックス", ["BONIX NATIVE"]],
@@ -5570,29 +5498,10 @@
         "LUMINUS::BLACK DIAMOND": { gloss: 5, slickness: 4, water: 4, selfCleaning: 3, durability: 3 },
         "LUMINUS::Luminus BLACK SLICK EDITION": { gloss: 4, slickness: 5, water: 4, selfCleaning: 5, durability: 3 },
         "LUMINUS::Luminus AQUA": { gloss: 3, slickness: 3, water: 5, selfCleaning: 4, durability: 3 },
-        "LUMINUS::GLOSSY": { gloss: 5, slickness: 4, water: 3, selfCleaning: 2, durability: 2 },
-        "VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX": { gloss: 5, slickness: 4, water: 4, selfCleaning: 3, durability: 3 },
+        "VONIXX::BLEND SPRAY WAX": { gloss: 5, slickness: 4, water: 4, selfCleaning: 3, durability: 3 },
         "VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX": { gloss: 5, slickness: 4, water: 3, selfCleaning: 2, durability: 2 },
-        "LUMINUS::Luminous Ceramic Wax": { gloss: 5, slickness: 4, water: 5, selfCleaning: 4, durability: 4 },
-        "LUMINUS::ECLIPSE": { gloss: 5, slickness: 5, water: 4, selfCleaning: 3, durability: 4 },
-        "DETAIL ARTIST::DOPE": { gloss: 5, slickness: 4, water: 3, selfCleaning: 2, durability: 2 },
-        "GYEON::Q² Wax": { gloss: 5, slickness: 4, water: 5, selfCleaning: 5, durability: 5 },
-        "Koch-Chemie::Hand Wax W0.01": { gloss: 5, slickness: 4, water: 5, selfCleaning: 4, durability: 5 },
-        "VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX": { gloss: 5, slickness: 4, water: 5, selfCleaning: 4, durability: 5 },
-        "VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX – BLACK EDITION": { gloss: 5, slickness: 4, water: 5, selfCleaning: 4, durability: 5 },
-        "VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX BLACK EDITION": { gloss: 5, slickness: 4, water: 4, selfCleaning: 3, durability: 3 },
-        "VONIXX::NATIVE PASTE WAX": { gloss: 5, slickness: 5, water: 4, selfCleaning: 3, durability: 4 },
-        "VONIXX::NATIVE PASTE WAX BLACK EDITION": { gloss: 5, slickness: 5, water: 4, selfCleaning: 3, durability: 4 },
-        "VONIXX::CARNAÚBA HYBRID WAX": { gloss: 5, slickness: 4, water: 4, selfCleaning: 4, durability: 4 },
-        "VONIXX::CARNAÚBA TOK FINAL": { gloss: 5, slickness: 4, water: 3, selfCleaning: 2, durability: 2 },
-        "VONIXX::CARNAÚBA EXPRESS ULTRA": { gloss: 4, slickness: 4, water: 3, selfCleaning: 2, durability: 2 },
         "Labocosmetica::CUPÌDO": { gloss: 5, slickness: 4, water: 4, selfCleaning: 5, durability: 5 },
         "Koch-Chemie::Spray Sealant": { gloss: 4, slickness: 4, water: 4, selfCleaning: 4, durability: 4 },
-        "ながら洗車::ビーディング": { gloss: 4, slickness: 3, water: 5, selfCleaning: 4, durability: 3 },
-        "ながら洗車::プラズマコーティングα": { gloss: 4, slickness: 4, water: 4, selfCleaning: 5, durability: 4 },
-        "ながら洗車::ビギナーズラック": { gloss: 4, slickness: 4, water: 3, selfCleaning: 3, durability: 2 },
-        "DETAIL ARTIST::ICE": { gloss: 4, slickness: 3, water: 4, selfCleaning: 4, durability: 3 },
-        "DETAIL ARTIST::AIR": { gloss: 4, slickness: 4, water: 3, selfCleaning: 3, durability: 2 },
       };
       function finderFinishLabel(value) {
         return PRODUCT_FINISH_LABELS[value] || PRODUCT_FINISH_LABELS.balance;
@@ -5631,10 +5540,6 @@
                 finderCandidate("Labocosmetica::PRELUDIO ALKALINE", "リンスレス・水なし洗車前の有機汚れを柔らかくする専用プレソークです。", "水が少ない環境向けですが、商品指定の希釈と拭き取り方法を守ります。", ["beginner", "experienced", "limited", "protected", "unknown", "value"]),
                 finderCandidate("Labocosmetica::PRÌMUS 2.0", "濃縮アルカリ性フォームで、通常の洗車前に道路汚れを落としやすくします。", "希釈を正確に行い、乾燥させず完全にすすぎます。", ["experienced", "rinse", "protected", "unprotected", "value"]),
                 finderCandidate("Koch-Chemie::Green Star", "車外の汚れ具合に合わせて濃度を調整できる万能アルカリクリーナーです。", "原液：水と○倍希釈を混同せず、弱い濃度から試します。", ["experienced", "rinse", "unprotected", "unknown", "value"]),
-                finderCandidate("ながら洗車::レッドアルカリバブル", "国内で入手しやすいアルカリ性シャンプーで、予洗いへ取り入れやすい候補です。", "乾燥させず、商品指定の希釈と施工方法を守って十分すすぎます。", ["beginner", "rinse", "protected", "unknown", "easy", "budget"]),
-                finderCandidate("LUMINUS::L-PREWASH 2.0", "アルカリ性プレウォッシュとして用途が分かりやすく、LUMINUSで揃えたい場合にも選べます。", "冷えた面へ使い、乾燥前に完全にすすぎます。", ["beginner", "experienced", "rinse", "protected", "unknown", "easy", "budget"]),
-                finderCandidate("OVERcoat::OVERcoat pH+ アルカリ性シャンプー", "アルカリ性シャンプーとして予洗いとリセット洗浄へ使える候補です。", "既存保護への影響を確認し、薄い濃度・短時間から試します。", ["beginner", "rinse", "protected", "unknown", "easy"]),
-                finderCandidate("DETAIL ARTIST::DIVE", "アルカリ性カーシャンプーで、国産ブランドから選びたい場合の予洗い候補です。", "熱い面を避け、洗浄液を乾かさず十分すすぎます。", ["beginner", "rinse", "protected", "unknown", "easy", "budget"]),
               ],
             },
             {
@@ -5645,9 +5550,6 @@
                 finderCandidate("GYEON::Q²M Bathe", "中性の基本シャンプーで、コーティング施工車の日常洗車にも合わせやすい候補です。", "砂や泥を予洗いで落としてからミットを使います。", ["beginner", "rinse", "protected", "unknown", "easy"]),
                 finderCandidate("ながら洗車::スノーシャンプー", "中性シャンプーとして通常洗車へ取り入れやすく、最初の1本に向く候補です。", "乾かさず、パネルごとに洗ってすすぎます。", ["beginner", "rinse", "protected", "unknown", "easy"]),
                 finderCandidate("Labocosmetica::IDROSAVE", "十分な流水を使えない環境で選べる、ポリマー配合のリンスレス洗車剤です。", "泥や砂が多い車は無理に拭かず、先に十分な予洗いができる環境を選びます。", ["beginner", "experienced", "limited", "protected", "unknown", "value"]),
-                finderCandidate("LUMINUS::MINT", "中性の基本シャンプーで、初めてでも用途を迷いにくい候補です。", "予洗いで砂を落とし、乾燥させずにすすぎます。", ["beginner", "rinse", "protected", "unknown", "easy", "budget"]),
-                finderCandidate("DETAIL ARTIST::LUFT", "中性カーシャンプーとして日常洗車へ使いやすく、国内で揃えやすい候補です。", "洗浄液を乾かさず、きれいなミットで上から下へ洗います。", ["beginner", "rinse", "protected", "unknown", "easy", "budget"]),
-                finderCandidate("OVERcoat::OVERcoat Neutral pH 中性シャンプー", "既存保護を維持する通常洗車へ使える中性シャンプーです。", "砂や泥を先に流してからコンタクト洗車します。", ["beginner", "rinse", "protected", "unknown", "easy"]),
               ],
             },
             {
@@ -5661,8 +5563,6 @@
                 finderCandidate("LUMINUS::Luminus BLACK SLICK EDITION", "滑りと汚れにくさを優先したい時に選ぶ、乾式のスプレーシーラント候補です。", "洗浄・乾燥した面へ薄く使い、別のトップコートを同時に重ねすぎません。", ["beginner", "limited", "protected", "unprotected", "finish"]),
                 finderCandidate("VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX", "カルナバらしい濡れ感と艶を足したい時のスプレーワックス候補です。", "砂や汚れのない面へ薄く施工し、余剰分を均一に拭き取ります。", ["beginner", "limited", "protected", "unprotected", "finish"]),
                 finderCandidate("Labocosmetica::PERFÉCTA 2.0", "艶・色の深み・シルキーな触り心地を優先する仕上げ用QDです。", "保護の土台ではなく仕上げ向けです。PERFÉCTA SiO2と同時に重ねません。", ["beginner", "limited", "protected", "finish"]),
-                finderCandidate("ながら洗車::ビーディング", "濡れた面へ施工してすすぐタイプで、国内製品から手軽に撥水を足せます。", "塗り広げたまま乾燥させず、商品指定どおり十分すすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget", "finish"]),
-                finderCandidate("DETAIL ARTIST::ICE", "洗車後の濡れた面へ使う湿式コーティングで、工程を増やしにくい候補です。", "パネルごとに施工し、乾燥する前に十分すすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget", "finish"]),
               ],
             },
           ],
@@ -5679,9 +5579,6 @@
                 finderCandidate("Koch-Chemie::Gentle Snow Foam", "中性スノーフォームとして予洗いと手洗いの両方に使える候補です。", "Green Starを加える場合は公式レシピ以外へ流用しません。", ["beginner", "rinse", "protected", "easy"]),
                 finderCandidate("Labocosmetica::PRELUDIO ALKALINE", "少ない水で洗う前に有機汚れを浮かせるプレソークです。", "希釈と拭き取り手順を守り、重い砂汚れには流水洗車を選びます。", ["experienced", "limited", "protected", "value"]),
                 finderCandidate("Labocosmetica::PRÌMUS 2.0", "濃縮タイプで、日常汚れから少し強い道路汚れまで濃度を調整できます。", "保護施工車では弱い濃度から使い、乾燥させません。", ["experienced", "rinse", "protected", "value"]),
-                finderCandidate("LUMINUS::N-PREWASH", "中性プレウォッシュで、既存コーティングを維持したい普段洗いへ合わせやすい候補です。", "乾燥前に十分すすぎ、落ちない汚れだけ別工程で処理します。", ["beginner", "rinse", "protected", "easy", "budget"]),
-                finderCandidate("ながら洗車::スノーバブル", "中性フォームシャンプーとして、泡の予洗いへ導入しやすい国内製品です。", "フォームを乾燥させず、接触洗車前に十分すすぎます。", ["beginner", "rinse", "protected", "easy", "budget"]),
-                finderCandidate("GYEON::Q²M Foam", "プレウォッシュ専用フォームで、通常洗車前の汚れを浮かせる候補です。", "商品指定の希釈を守り、乾く前に高圧水で流します。", ["beginner", "experienced", "rinse", "protected", "value"]),
               ],
             },
             {
@@ -5691,9 +5588,6 @@
                 finderCandidate("Labocosmetica::SÈMPER", "中性・高濃縮で、普段のメンテナンス洗車を一本化しやすいシャンプーです。", "先に砂を落とし、きれいなミットで上から下へ洗います。", ["beginner", "experienced", "rinse", "protected", "value"]),
                 finderCandidate("GYEON::Q²M Bathe", "コーティング施工車の日常洗車へ合わせやすい中性シャンプーです。", "炎天下や熱い面では使いません。", ["beginner", "rinse", "protected", "easy"]),
                 finderCandidate("Labocosmetica::IDROSAVE", "流水を多く使えない時のリンスレス洗車へ対応します。", "クロス面を頻繁に替え、重い汚れには使いません。", ["beginner", "experienced", "limited", "protected", "value"]),
-                finderCandidate("ながら洗車::スノーシャンプー", "日常のコンタクト洗車へ使いやすく、国内で購入しやすい中性シャンプーです。", "予洗いで砂を落とし、洗浄液を乾かしません。", ["beginner", "rinse", "protected", "easy", "budget"]),
-                finderCandidate("LUMINUS::MINT", "LUMINUSの中性シャンプーで、保護施工車の普段洗いに使える候補です。", "商品指定の希釈を守り、パネルごとにすすぎます。", ["beginner", "rinse", "protected", "easy", "budget"]),
-                finderCandidate("DETAIL ARTIST::LUFT", "中性カーシャンプーとして既存保護を維持する日常洗車へ使えます。", "きれいなミットを使い、砂を引きずらないようにします。", ["beginner", "rinse", "protected", "easy", "budget"]),
               ],
             },
             {
@@ -5709,8 +5603,6 @@
                 finderCandidate("GYEON::Q²M CeramicDetailer", "艶・滑りと撥水のバランスを取りやすいSiO₂配合ディテイラーです。", "洗浄済みの面へ少量ずつ使い、ムラがないか確認します。", ["beginner", "limited", "protected", "finish"]),
                 finderCandidate("GYEON::Q²M QuickDetailer", "保護よりも艶と滑りを最優先したい時の仕上げ用QDです。", "単体の保護剤として数えず、必要なら別の保護層を用意します。", ["beginner", "limited", "protected", "finish"]),
                 finderCandidate("VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX", "カルナバらしい濡れ感と艶を足すメンテナンス用スプレーワックスです。", "既存トップコートへ重ねる前に、小面積で仕上がりを確認します。", ["beginner", "limited", "protected", "finish"]),
-                finderCandidate("ながら洗車::ビギナーズラック", "洗車後の拭き上げ時に使いやすいQDで、初心者が国内製品から始める候補です。", "砂や重い汚れが残る面には使わず、少量ずつ仕上げます。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
-                finderCandidate("DETAIL ARTIST::AIR", "乾いた清潔な面で使うドライ型QDとして、艶と手触りを整える候補です。", "洗浄剤ではないため、汚れが残る面へ直接使いません。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
               ],
             },
           ],
@@ -5726,10 +5618,6 @@
                 finderCandidate("Labocosmetica::PRÌMUS 2.0", "アルカリ性フォームで道路汚れや油分を予洗い段階から落とします。", "冷えた面で希釈し、乾燥前に完全にすすぎます。", ["experienced", "rinse", "protected", "unprotected", "value"]),
                 finderCandidate("Koch-Chemie::Green Star", "汚れに合わせて原液：水5〜30の範囲を使い分けられる万能クリーナーです。", "部位ごとの公式希釈を守り、酸性剤と混ぜません。", ["experienced", "rinse", "unprotected", "unknown", "value"]),
                 finderCandidate("Labocosmetica::LIBERA", "固着した交通被膜へ使う高性能TFRで、深いリセット向けです。", "フォームではなくミストとして使う指定を守り、初心者は弱い濃度から試します。", ["experienced", "rinse", "protected", "unprotected", "finish", "advanced"]),
-                finderCandidate("DETAIL ARTIST::DIVE", "アルカリ性カーシャンプーで、有機汚れを落とすリセット工程へ使える国内製品です。", "既存保護が弱くなる可能性を考え、冷えた面で乾燥前にすすぎます。", ["beginner", "experienced", "rinse", "protected", "unprotected", "easy", "budget"]),
-                finderCandidate("ながら洗車::レッドアルカリバブル", "アルカリ洗浄をシャンプー工程へ取り入れやすく、初めてのリセット洗車候補になります。", "強い汚れへ濃くしすぎず、商品指定どおりに完全にすすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget"]),
-                finderCandidate("LUMINUS::L-PREWASH 2.0", "LUMINUSのアルカリ性プレウォッシュで、有機汚れを予洗いから落とします。", "熱い面を避け、乾燥前に十分な水ですすぎます。", ["beginner", "experienced", "rinse", "protected", "unprotected", "easy", "budget"]),
-                finderCandidate("OVERcoat::OVERcoat pH+ アルカリ性シャンプー", "アルカリ性シャンプーとしてリセット工程へ組み込みやすい候補です。", "既存保護への影響を確認し、酸性剤と混ぜません。", ["beginner", "rinse", "protected", "unprotected", "easy"]),
               ],
             },
             {
@@ -5739,9 +5627,6 @@
                 finderCandidate("Labocosmetica::PURÌFICA (Upgrade Formula)", "酸性除染シャンプーで、面全体の軽いミネラル残留とコーティングの詰まりを整えます。", "アルカリ工程を完全にすすいでから別工程で使い、乾燥させません。", ["beginner", "experienced", "rinse", "protected", "value"]),
                 finderCandidate("DETAIL ARTIST::ACID CLEANER", "固着したスケールを狙って落としたい時の酸性クリーナー候補です。", "素材適合を確認し、局所・短時間から試します。", ["experienced", "rinse", "unprotected", "finish", "advanced"]),
                 finderCandidate("GYEON::Q²M WaterSpot", "ウォータースポットへ目的を絞った酸性クリーナーです。", "ガラスや樹脂を含む対応素材を確認してから使用します。", ["experienced", "rinse", "protected", "easy"]),
-                finderCandidate("ながら洗車::グリーンアシッドバブル", "酸性シャンプーとして面全体の軽いミネラル汚れを洗車工程で狙えます。", "アルカリ工程を完全にすすいだ後、別工程で使います。", ["beginner", "experienced", "rinse", "protected", "easy", "budget"]),
-                finderCandidate("DETAIL ARTIST::KEEP", "酸性カーシャンプーとして、軽いスケールや保護層の詰まりを整える候補です。", "対応素材を確認し、乾燥させずに十分すすぎます。", ["beginner", "experienced", "rinse", "protected", "easy", "budget"]),
-                finderCandidate("OVERcoat::OVERcoat pH- 酸性シャンプー", "酸性シャンプーで面全体のミネラル汚れを整える候補です。", "アルカリ性薬剤と混ぜず、工程間で完全にすすぎます。", ["beginner", "experienced", "rinse", "protected", "easy"]),
               ],
             },
             {
@@ -5751,10 +5636,6 @@
                 finderCandidate("Labocosmetica::SIDERO", "鉄粉とミネラル残留を一工程で狙えるジェルタイプです。", "皮膚・目を保護し、反応後は残留しないよう十分すすぎます。", ["experienced", "rinse", "protected", "unprotected", "value"]),
                 finderCandidate("OVERcoat::OVERcoat IRON REMOVER 鉄粉除去剤", "塗装面の鉄粉除去を単独工程で行いたい時の候補です。", "乾燥させず、酸性・アルカリ性ケミカルと混ぜません。", ["beginner", "rinse", "protected", "easy"]),
                 finderCandidate("GYEON::Q²M Iron REDEFINED", "ボディの鉄粉除去へ用途が明確な専用品です。", "冷えた面で使い、反応後は完全にすすぎます。", ["beginner", "rinse", "protected", "easy"]),
-                finderCandidate("ながら洗車::IRON DELETE", "臭いを抑えた鉄粉除去剤で、国内製品から始めたい場合の候補です。", "冷えた面へ使い、反応後は擦りすぎず大量の水ですすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget"]),
-                finderCandidate("LUMINUS::VAMPIRE PLUS DIRECT", "希釈不要で使える鉄粉除去剤として、LUMINUSで揃えたい場合に選べます。", "熱い面や直射日光を避け、乾燥前に完全にすすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget"]),
-                finderCandidate("DETAIL ARTIST::MELT", "鉄粉除去専用品として、国内ブランドから選べる候補です。", "酸性・アルカリ性剤と混ぜず、工程を分けて十分すすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget"]),
-                finderCandidate("VONIXX::IZER", "ボディの鉄粉除去へ使える専用品で、別ブランドの候補として選べます。", "反応中に乾燥させず、目と皮膚を保護して十分すすぎます。", ["experienced", "rinse", "protected", "unprotected", "value"]),
               ],
             },
             {
@@ -5764,9 +5645,6 @@
                 finderCandidate("Labocosmetica::VÈRITAS", "油分・フィラーを除去し、コーティング前の素地確認に使える前処理剤です。", "塗装面が冷えた状態で、清潔なクロスを使います。", ["experienced", "rinse", "unprotected", "finish"]),
                 finderCandidate("OVERcoat::OVERcoat Surface PREP 脱脂スプレー", "下地処理後の油分を落とすパネル脱脂剤です。", "強く擦らず、クロス面を替えながら拭き取ります。", ["beginner", "unprotected", "easy"]),
                 finderCandidate("GYEON::Q²M Prep", "研磨油や残留分を除去してコーティング前の状態を整えます。", "施工するコーティングの前処理指定を優先します。", ["beginner", "unprotected", "easy"]),
-                finderCandidate("LUMINUS::PREP PRO", "油分と残留水分を除くパネル脱脂剤で、価格を抑えて下地を仕上げたい候補です。", "洗浄済みの冷えた面へ少量ずつ使い、清潔なクロスで拭き取ります。", ["beginner", "unprotected", "easy", "budget"]),
-                finderCandidate("DETAIL ARTIST::NUDE", "IPA系の脱脂剤として、コーティング前の最終確認へ使える国内製品です。", "換気し、塗装面が冷えた状態で小面積ずつ作業します。", ["beginner", "unprotected", "easy", "budget"]),
-                finderCandidate("Koch-Chemie::Panel Preparation Spray", "研磨後の油分除去とパネル確認へ使える専用プレップです。", "施工するコーティングメーカーの前処理指定を優先します。", ["experienced", "unprotected", "finish"]),
               ],
             },
           ],
@@ -5781,9 +5659,7 @@
               candidates: [
                 finderCandidate("Labocosmetica::PURÌFICA (Upgrade Formula)", "酸性シャンプーとして広い面の軽いスケールとコーティングの詰まりを整えます。", "熱い面を避け、乾燥前に十分すすぎます。", ["beginner", "experienced", "rinse", "protected", "value"]),
                 finderCandidate("Koch-Chemie::Reactivation Shampoo", "コーティング表面のミネラル汚れを洗浄し、撥水の再活性を狙うシャンプーです。", "通常シャンプーと同じ感覚で放置せず、説明どおりにすすぎます。", ["beginner", "rinse", "protected", "easy"]),
-                finderCandidate("ながら洗車::グリーンアシッドバブル", "酸性シャンプーとしてミネラル汚れを洗車工程で落とす候補です。", "素材適合を確認し、他のケミカルと混ぜません。", ["beginner", "experienced", "rinse", "protected", "easy", "budget"]),
-                finderCandidate("DETAIL ARTIST::KEEP", "酸性カーシャンプーで、面全体の軽いスケールとコーティングの詰まりを整える候補です。", "乾燥させず、別の薬剤と混ぜないで十分すすぎます。", ["beginner", "experienced", "rinse", "protected", "easy", "budget"]),
-                finderCandidate("OVERcoat::OVERcoat pH- 酸性シャンプー", "酸性シャンプーとして、面全体のミネラル汚れを洗車工程で処理できます。", "素材適合を確認し、熱い面を避けて完全にすすぎます。", ["beginner", "experienced", "rinse", "protected", "easy"]),
+                finderCandidate("ながら洗車::グリーンアシッドバブル", "酸性シャンプーとしてミネラル汚れを洗車工程で落とす候補です。", "素材適合を確認し、他のケミカルと混ぜません。", ["experienced", "rinse", "protected", "easy"]),
               ],
             },
             {
@@ -5805,8 +5681,6 @@
                 finderCandidate("LUMINUS::Luminus BLACK SLICK EDITION", "スケール除去後に、滑りと防汚・水切れを補いたい時の候補です。", "除染剤を完全にすすぎ、乾燥させてから薄く施工します。", ["beginner", "protected", "finish"]),
                 finderCandidate("Labocosmetica::PERFÉCTA 2.0", "除染後の艶・色の深み・シルキーな仕上がりを優先するQDです。", "PERFÉCTA SiO2と同時に重ねず、どちらか一方を選びます。", ["beginner", "limited", "protected", "finish"]),
                 finderCandidate("GYEON::Q²M QuickDetailer", "保護層が十分で、艶と滑りだけを強く足したい時の仕上げ候補です。", "保護性能の補充が必要な時は、別の保護剤を選びます。", ["beginner", "limited", "protected", "finish"]),
-                finderCandidate("ながら洗車::ビギナーズラック", "酸性洗浄後の清潔な面へ、艶と手触りを手軽に補う国内QDです。", "スケールが残る面を隠す目的では使わず、少量ずつ仕上げます。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
-                finderCandidate("DETAIL ARTIST::AIR", "除染後の乾いた面で艶と滑りを整えるドライ型QDです。", "酸性剤を完全にすすいで乾燥させてから使います。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
               ],
             },
           ],
@@ -5822,10 +5696,6 @@
                 finderCandidate("Labocosmetica::SIDERO", "鉄粉とミネラル汚れを同時に狙え、ボディ・ガラス・ホイールへ使える候補です。", "手袋・目の保護を行い、乾燥前に大量の水ですすぎます。", ["experienced", "rinse", "protected", "value"]),
                 finderCandidate("OVERcoat::OVERcoat IRON REMOVER 鉄粉除去剤", "鉄粉除去へ用途が明確で、ボディの定期除染に選びやすい候補です。", "反応を長く置きすぎず、乾かしません。", ["beginner", "rinse", "protected", "easy"]),
                 finderCandidate("GYEON::Q²M Iron REDEFINED", "ボディの鉄粉を化学反応で除去する専用品です。", "熱いホイールや直射日光下を避けます。", ["beginner", "rinse", "protected", "easy"]),
-                finderCandidate("ながら洗車::IRON DELETE", "臭いを抑えた鉄粉除去剤で、初心者が国内製品から選びやすい候補です。", "冷えた面で反応させ、乾燥前に大量の水ですすぎます。", ["beginner", "rinse", "protected", "easy", "budget"]),
-                finderCandidate("LUMINUS::VAMPIRE PLUS DIRECT", "希釈不要の鉄粉除去剤として、LUMINUS製品から選びたい場合に使えます。", "熱い面を避け、反応液を残さず十分すすぎます。", ["beginner", "rinse", "protected", "easy", "budget"]),
-                finderCandidate("DETAIL ARTIST::MELT", "ボディ用の鉄粉除去剤として、国内ブランドから選べる候補です。", "他のケミカルと混ぜず、別工程として完全にすすぎます。", ["beginner", "rinse", "protected", "easy", "budget"]),
-                finderCandidate("VONIXX::IZER", "鉄粉除去へ用途が明確な専用品で、濃度や施工に慣れた人の別候補です。", "目と皮膚を保護し、反応後は完全にすすぎます。", ["experienced", "rinse", "protected", "value"]),
               ],
             },
             {
@@ -5835,9 +5705,6 @@
                 finderCandidate("Labocosmetica::SÈMPER", "鉄粉除去剤をすすいだ後、面全体を中性洗浄して残留を防ぎます。", "鉄粉除去剤とバケツ内で混ぜません。", ["beginner", "experienced", "rinse", "protected", "value"]),
                 finderCandidate("GYEON::Q²M Bathe", "除染後の通常洗車へ使える中性シャンプーです。", "鉄粉除去工程を完全にすすいでから使います。", ["beginner", "rinse", "protected", "easy"]),
                 finderCandidate("ながら洗車::スノーシャンプー", "中性洗浄で除染工程を仕上げる候補です。", "別工程として新しい洗浄液を作ります。", ["beginner", "rinse", "protected", "easy"]),
-                finderCandidate("LUMINUS::MINT", "中性シャンプーで鉄粉除去剤の残留を洗い流し、通常洗車へ戻せます。", "鉄粉除去剤を一度十分すすいでから、新しい洗浄液で使います。", ["beginner", "rinse", "protected", "easy", "budget"]),
-                finderCandidate("DETAIL ARTIST::LUFT", "中性カーシャンプーとして除染後の仕上げ洗浄へ使える候補です。", "鉄粉除去剤と混ぜず、別工程で使用します。", ["beginner", "rinse", "protected", "easy", "budget"]),
-                finderCandidate("OVERcoat::OVERcoat Neutral pH 中性シャンプー", "中性洗浄で鉄粉除去後の残留を減らす候補です。", "反応液を先に完全にすすいでから使用します。", ["beginner", "rinse", "protected", "easy"]),
               ],
             },
           ],
@@ -5852,12 +5719,9 @@
               candidates: [
                 finderCandidate("Labocosmetica::BENEFÌCIA", "濡れた面へ施工して洗車の最後に保護を追加できる湿式タイプです。", "一度に広範囲へ掛けず、指定どおりすすぎます。", ["beginner", "rinse", "unprotected", "unknown", "easy", "finish"]),
                 finderCandidate("GYEON::Q²M WetCoat", "スプレーしてすすぐ工程で撥水を作りやすい候補です。", "乾燥させないようパネルごとに施工します。", ["beginner", "rinse", "protected", "unprotected", "easy", "finish"]),
-                finderCandidate("VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX", "流水を使わず乾式施工できるスプレーワックスで、艶と保護を追加できます。", "砂や汚れがない洗浄済みの面へ薄く使います。", ["beginner", "limited", "protected", "unprotected", "easy", "finish"]),
+                finderCandidate("VONIXX::BLEND SPRAY WAX", "流水を使わず乾式施工できるスプレーワックスで、艶と保護を追加できます。", "砂や汚れがない洗浄済みの面へ薄く使います。", ["beginner", "limited", "protected", "unprotected", "easy", "finish"]),
                 finderCandidate("Labocosmetica::CUPÌDO", "乾式シーラントとして艶とセルフクリーニング性を重視する場合の候補です。", "完全に洗浄・乾燥した面へ薄く施工し、説明書の定着時間を守ります。", ["experienced", "unprotected", "finish", "advanced"]),
                 finderCandidate("LUMINUS::Luminus AQUA", "湿式で施工でき、初めてでも工程を増やしにくい保護剤です。", "塗布量を守り、すすぎ残しを防ぎます。", ["beginner", "rinse", "unknown", "easy", "finish"]),
-                finderCandidate("ながら洗車::ビーディング", "濡れた面へスプレーして流す湿式タイプで、国内製品から手軽に撥水を作れます。", "乾燥前にパネルごとに十分すすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget", "finish"]),
-                finderCandidate("DETAIL ARTIST::ICE", "湿式施工で洗車後の保護を追加でき、初めてでも工程を増やしにくい候補です。", "商品指定量を守り、ムラになる前にすすぎます。", ["beginner", "rinse", "protected", "unprotected", "easy", "budget", "finish"]),
-                finderCandidate("ながら洗車::プラズマコーティングα", "防汚性を重視した国内の簡易コーティング候補です。", "洗浄・下地処理後の面へ説明どおり施工し、定着時間を守ります。", ["beginner", "protected", "unprotected", "finish"]),
               ],
             },
             {
@@ -5872,43 +5736,13 @@
                 finderCandidate("GYEON::Q²M QuickDetailer", "保護よりも艶と滑りを優先する純粋な仕上げ用QDです。", "これだけをベース保護とは考えず、必要に応じて保護剤を別に選びます。", ["beginner", "limited", "protected", "finish"]),
                 finderCandidate("VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX", "カルナバらしい濡れ感と艶を優先するスプレーワックスです。", "洗浄・乾燥した面へ薄く施工し、余剰分を拭き取ります。", ["beginner", "limited", "protected", "finish"]),
                 finderCandidate("Koch-Chemie::Spray Sealant", "スプレー式シーラントで、洗浄後の保護を乾式で追加できます。", "施工面とクロスを清潔にし、薄く均一に塗布します。", ["experienced", "protected", "unprotected", "finish"]),
-                finderCandidate("ながら洗車::ビギナーズラック", "洗車後の拭き上げ時に艶と手触りを整えやすい、初心者向けの国内QDです。", "洗浄済みの面へ少量ずつ使い、厚塗りを避けます。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
-                finderCandidate("DETAIL ARTIST::AIR", "乾式QDとして艶と滑りを整え、価格を抑えた仕上げ候補になります。", "砂や汚れが残る面へ使わず、清潔なクロスで仕上げます。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
-                finderCandidate("LUMINUS::GLOSSY", "LUMINUSのクイックディテイラーで、艶を足す仕上げ候補です。", "別のトップコートと一度に重ねず、単品の仕上がりを確認します。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
-              ],
-            },
-          ],
-        },
-        wax: {
-          title: "ワックス仕上げ",
-          summary: "固形・ペースト・スプレーから、艶の方向、扱いやすさ、車体色に合う1商品を選びます。",
-          steps: [
-            {
-              key: "wax-finish",
-              role: "ワックス仕上げ",
-              candidates: [
-                finderCandidate("LUMINUS::Luminous Ceramic Wax", "SiO₂とカルナバを組み合わせた固形ワックスで、価格と扱いやすさのバランスを取りやすい候補です。", "洗浄・乾燥後に薄く塗り、5〜10分を目安に置いてから清潔なクロスで拭き取ります。", ["beginner", "limited", "protected", "unprotected", "easy", "budget", "finish"]),
-                finderCandidate("DETAIL ARTIST::DOPE", "カルナバ系スプレーワックスで、固形ワックスより短時間で濡れ感と艶を足したい時に向きます。", "砂や汚れのない冷えた面へ少量ずつ使い、乾燥する前に均一に仕上げます。", ["beginner", "limited", "protected", "unprotected", "easy", "budget", "finish"]),
-                finderCandidate("GYEON::Q² Wax", "高い撥水と艶、耐久性を重視できるフッ素配合ワックスで、単体保護にもコーティングのトップにも使えます。", "洗浄・除染・脱脂した乾いた面へ薄く塗り、メーカー指定どおり30分以上置いてから拭き取ります。", ["beginner", "experienced", "limited", "protected", "unprotected", "easy", "finish"]),
-                finderCandidate("Koch-Chemie::Hand Wax W0.01", "プレミアムカルナバによる深い艶、滑らかさ、撥水を狙う本格的なハンドワックスです。", "十分に洗浄・脱脂した面へごく薄く塗り、10〜15分置いてからマイクロファイバーで仕上げます。", ["experienced", "limited", "protected", "unprotected", "value", "finish"]),
-                finderCandidate("VONIXX::NATIVE PASTE WAX", "高純度ブラジリアンカルナバらしい温かい艶と濡れ感を重視するペーストワックスです。", "冷えた清潔な塗装へ薄く使い、3〜5分後に拭き取ります。未塗装樹脂には付けません。", ["beginner", "experienced", "limited", "protected", "unprotected", "value", "finish"]),
-                finderCandidate("LUMINUS::ECLIPSE", "仕上がりの艶と滑りを重視するハイブリッド固形ワックスで、ショーカー寄りの仕上げ候補です。", "冷えた洗浄済みの塗装へ薄く施工し、塗布量と放置時間は商品ラベルを優先します。", ["experienced", "limited", "protected", "unprotected", "finish"]),
-                finderCandidate("VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX", "SiO₂の耐久・撥水とカルナバの温かい艶を両立したハイブリッドペーストワックスです。", "汚れと付着物を除去した面へ薄く使い、5〜10分後に拭き取ります。未塗装樹脂には付けません。", ["beginner", "experienced", "limited", "protected", "unprotected", "value", "finish"]),
-                finderCandidate("VONIXX::CARNAÚBA HYBRID WAX", "車体色を選びにくく、カルナバの艶とポリマーの耐久性を両立する固形ワックスです。", "清潔で乾いた塗装へ少量を均一に塗り、5〜10分後に拭き取ります。樹脂・ゴムには使いません。", ["beginner", "limited", "protected", "unprotected", "easy", "value", "finish"]),
-                finderCandidate("VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX", "カルナバらしい濡れ感を手軽に足せるスプレーワックスで、固形NATIVEのメンテナンスにも向きます。", "洗浄済みの面へ少量ずつ使い、厚塗りや拭き残しを避けます。", ["beginner", "limited", "protected", "unprotected", "easy", "finish"]),
-                finderCandidate("VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX", "SiO₂とカルナバを組み合わせたスプレーワックスで、固形BLENDの艶と撥水を手軽に補えます。", "砂や汚れのない面へ薄く使い、清潔なクロスで均一に仕上げます。", ["beginner", "limited", "protected", "unprotected", "easy", "finish"]),
-                finderCandidate("VONIXX::CARNAÚBA TOK FINAL", "洗車後やイベント前にカルナバの艶と手触りを素早く足す、定期メンテナンス向けワックスです。", "長期保護の土台ではなく仕上げ用として、清潔な面へ少量ずつ使います。", ["beginner", "limited", "protected", "easy", "budget", "finish"]),
-                finderCandidate("VONIXX::CARNAÚBA EXPRESS ULTRA", "希釈して使える高濃縮カルナバワックスで、施工台数とコストパフォーマンスを重視する場合に向きます。", "用途別の指定希釈を守り、小範囲ずつ施工して塗装面で乾燥させません。", ["experienced", "limited", "protected", "unprotected", "value", "finish"]),
-                finderCandidate("VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX – BLACK EDITION", "黒・濃色車の色の深みを強調しながら、SiO₂とカルナバの保護を追加する専用ペーストワックスです。", "濃色車専用です。洗浄済みの面へ薄く使い、5〜10分後に拭き取ります。未塗装樹脂には付けません。", ["beginner", "experienced", "limited", "protected", "unprotected", "value", "finish", "darkPaint"]),
-                finderCandidate("VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX BLACK EDITION", "黒・濃色車の深い艶を短時間で補う、SiO₂・カルナバ系スプレーワックスです。", "濃色車専用です。冷えた清潔な面へ少量ずつ使い、拭き残しを確認します。", ["beginner", "limited", "protected", "unprotected", "easy", "finish", "darkPaint"]),
-                finderCandidate("VONIXX::NATIVE PASTE WAX BLACK EDITION", "黒・濃色車でカルナバ特有の濡れたような深い艶を優先するペーストワックスです。", "濃色車専用です。塗装面へ薄く均一に使い、未塗装樹脂へ付着させません。", ["experienced", "limited", "protected", "unprotected", "finish", "darkPaint"]),
               ],
             },
           ],
         },
         glass: {
-          title: "ガラス洗浄・撥水",
-          summary: "日常洗浄と撥水保護を分け、研磨剤を使わない商品から選びます。",
+          title: "ガラス洗浄・研磨・撥水",
+          summary: "日常洗浄、油膜・固着汚れの研磨、撥水保護を別工程で選びます。",
           steps: [
             {
               key: "glass-clean",
@@ -5917,8 +5751,16 @@
                 finderCandidate("Labocosmetica::NITIDO", "高透明仕上げを狙うガラス専用クリーナーです。", "清潔なガラス用クロスを2枚使い、拭き筋を残さないよう仕上げます。", ["beginner", "limited", "easy", "finish"]),
                 finderCandidate("GYEON::Q²M Glass", "外窓・内窓の基本洗浄へ使えるガラスクリーナーです。", "直射日光で乾きやすい時は小範囲ずつ作業します。", ["beginner", "limited", "easy"]),
                 finderCandidate("Koch-Chemie::SpeedGlassCleaner", "希釈不要で使えるガラスクリーナーとして扱いやすい候補です。", "コーティング面では強く擦らず、対応を確認します。", ["beginner", "limited", "easy"]),
-                finderCandidate("LUMINUS::SHINE", "ガラスクリーナーとして、価格を抑えて日常の窓拭きへ使える候補です。", "直射日光を避け、ガラス用クロスで拭き筋を残さないよう仕上げます。", ["beginner", "limited", "easy", "budget"]),
-                finderCandidate("DETAIL ARTIST::CLEAR", "ガラスの日常洗浄へ使える国内製品候補です。", "液量が多いとギラつきや拭き筋が出やすいため、少量をクロスへ取り二度拭きします。", ["beginner", "limited", "easy", "budget"]),
+              ],
+            },
+            {
+              key: "glass-polish",
+              role: "油膜・固着汚れ",
+              requiresRinse: true,
+              candidates: [
+                finderCandidate("Labocosmetica::VITREO", "ガラスの固着汚れを研磨で除去し、撥水前の下地を作る専用品です。", "傷・飛び石・内側のフィルムには使用せず、研磨後は完全に洗い流します。", ["experienced", "rinse", "unprotected", "finish"]),
+                finderCandidate("OVERcoat::OVERcoat GLASS RESET ガラス専用コンパウンド", "油膜や古いガラス保護をリセットする研磨剤です。", "施工前にガラスの状態と対応面を確認します。", ["beginner", "rinse", "unprotected", "easy"]),
+                finderCandidate("DETAIL ARTIST::G・POLISH", "ガラス研磨へ用途が明確な候補です。", "研磨粉を残さず洗浄し、ワイパーゴムも確認します。", ["experienced", "rinse", "unprotected", "value"]),
               ],
             },
             {
@@ -5928,9 +5770,6 @@
                 finderCandidate("Labocosmetica::AQUAVÈLOX", "ガラス用ナノシーラントとして洗浄・研磨後の撥水保護を作れます。", "完全に脱脂・乾燥したガラスへ、指定手順で施工します。", ["experienced", "unprotected", "finish"]),
                 finderCandidate("GYEON::Q² QuickView", "簡易施工のガラス撥水コーティングとして、扱いやすさを重視する候補です。", "施工直後の水濡れ制限を確認します。", ["beginner", "unprotected", "easy"]),
                 finderCandidate("OVERcoat::OVERcoat Final Touch GLASS ガラス専用コーティング剤", "ガラス専用の簡易コーティングとして撥水を追加できます。", "油膜や汚れを除去してから使います。", ["beginner", "unprotected", "easy", "finish"]),
-                finderCandidate("ながら洗車::スプラッシュ＆リムーバー", "油膜除去とガラス撥水を一つにまとめたい初心者向けの国内製品です。", "ガラスの状態を確認し、商品指定の下地処理と乾燥時間を守ります。", ["beginner", "unprotected", "easy", "budget", "finish"]),
-                finderCandidate("LUMINUS::GLIDE", "LUMINUSのガラス撥水シーラントで、同ブランドから揃えたい場合に選べます。", "完全に洗浄・脱脂したガラスへ施工し、定着時間を守ります。", ["beginner", "unprotected", "easy", "budget", "finish"]),
-                finderCandidate("DETAIL ARTIST::DROP COAT", "ガラス用コーティングとして、国内ブランドから選べる候補です。", "油膜と水分を除去し、説明書の施工量と硬化時間を優先します。", ["beginner", "unprotected", "easy", "budget", "finish"]),
               ],
             },
           ],
@@ -5946,9 +5785,6 @@
                 finderCandidate("Labocosmetica::SIDERO", "鉄粉とミネラル残留を同時に狙え、ホイール内部の深い洗浄にも使えます。", "ホイールが完全に冷えてから使い、ブレーキへ残留させません。", ["experienced", "rinse", "value", "finish"]),
                 finderCandidate("GYEON::Q²M Iron WheelCleaner REDEFINED", "ホイール専用の鉄粉クリーナーで、用途を迷いにくい候補です。", "乾燥させず、大量の水ですすぎます。", ["beginner", "rinse", "easy"]),
                 finderCandidate("LUMINUS::VAMPIRE PLUS DIRECT", "希釈不要の鉄粉・ホイールクリーナーとして手早く使える候補です。", "熱いホイールへ使用しません。", ["beginner", "rinse", "easy"]),
-                finderCandidate("ながら洗車::IRON DELETE", "臭いを抑えた鉄粉除去剤で、ホイールの鉄粉処理にも使える国内製品候補です。", "ホイールを完全に冷まし、反応液を乾燥させず十分すすぎます。", ["beginner", "rinse", "easy", "budget"]),
-                finderCandidate("DETAIL ARTIST::MELT", "鉄粉除去専用品として、ホイールのブレーキダスト処理にも選べる候補です。", "素材適合を確認し、熱いホイールへ使いません。", ["beginner", "rinse", "easy", "budget"]),
-                finderCandidate("Koch-Chemie::Reactive Rust Remover", "鉄粉反応型クリーナーとして、ボディとホイールの除染へ使える候補です。", "反応後はブラシや隙間まで大量の水ですすぎます。", ["experienced", "rinse", "value"]),
               ],
             },
             {
@@ -5967,16 +5803,46 @@
                 finderCandidate("Labocosmetica::NERO", "乾きが速くベタつきにくいタイヤドレッシングジェルで、均一な黒さを作ります。", "洗浄・乾燥したタイヤ側面だけへ薄く塗り、トレッドには付けません。", ["beginner", "easy", "finish"]),
                 finderCandidate("LUMINUS::ONIX", "タイヤの艶と黒さを整えるドレッシング候補です。", "走行前に余剰分を拭き取ります。", ["beginner", "easy", "finish"]),
                 finderCandidate("OVERcoat::OVERcoat Final Touch TIRE タイヤ艶出し剤", "タイヤ専用品として仕上げ工程へ追加しやすい候補です。", "ブレーキや接地面へ付着させません。", ["beginner", "easy", "finish"]),
-                finderCandidate("DETAIL ARTIST::DEEP", "水性タイヤワックスとして、価格を抑えて自然な黒さを作る国内製品です。", "乾燥したタイヤ側面へ薄く塗り、走行前に余剰分を拭き取ります。", ["beginner", "easy", "budget", "finish"]),
-                finderCandidate("ながら洗車::ブラックレジン", "タイヤと未塗装樹脂へ使える水性ワックスで、用途をまとめたい候補です。", "タイヤの接地面やブレーキへ付着させず、余剰分を拭き取ります。", ["beginner", "easy", "budget", "finish"]),
-                finderCandidate("GYEON::Q²M Tire Express", "タイヤの黒さを整える扱いやすいドレッシング候補です。", "洗浄・乾燥した側面だけへ薄く施工します。", ["beginner", "easy", "finish"]),
+              ],
+            },
+          ],
+        },
+        interior: {
+          title: "内装の洗浄・保護",
+          summary: "日常の軽い汚れと深い洗浄を分け、最後に内装保護を追加します。",
+          steps: [
+            {
+              key: "interior-daily",
+              role: "日常の軽い汚れ",
+              candidates: [
+                finderCandidate("Labocosmetica::VARIUS", "希釈不要のAPCで、布・樹脂・レザーなど内外装の軽〜中程度汚れへ使えます。", "素材ごとに目立たない場所で試し、直接大量に吹き掛けません。", ["beginner", "limited", "easy"]),
+                finderCandidate("Labocosmetica::IGEA", "ホコリ・指紋・軽い汚れを素早く整える日常用インテリアクリーナーです。", "画面や特殊コーティング面は対応を確認します。", ["beginner", "limited", "easy", "finish"]),
+                finderCandidate("GYEON::Q²M InteriorDetailer", "内装の日常清掃と仕上げを短時間で行う候補です。", "砂や重い汚れは先に吸引・専用洗浄します。", ["beginner", "limited", "easy"]),
+              ],
+            },
+            {
+              key: "interior-deep",
+              role: "深い洗浄",
+              candidates: [
+                finderCandidate("Labocosmetica::OMNIA 2.0", "樹脂や内装全般を深く洗浄するインテリア専用クリーナーです。", "希釈と素材適合を確認し、洗浄液を残しません。", ["experienced", "limited", "value"]),
+                finderCandidate("Koch-Chemie::Pol Star", "布・革・アルカンターラなどを中性で洗う候補です。", "湿らせた布やバキュームで洗剤残留を除去します。", ["beginner", "limited", "easy"]),
+                finderCandidate("LUMINUS::BLANC", "内装クリーナーとして樹脂・一般内装の洗浄へ使う候補です。", "素材へ直接大量に吹かず、クロスやブラシへ取って試します。", ["beginner", "limited", "easy"]),
+              ],
+            },
+            {
+              key: "interior-protect",
+              role: "内装保護",
+              candidates: [
+                finderCandidate("GYEON::Q²M Preserve", "内装樹脂の色と仕上がりを整えるドレッシングです。", "ハンドル・ペダル・シフトなど滑ると危険な場所には使いません。", ["beginner", "limited", "easy", "finish"]),
+                finderCandidate("LUMINUS::SYNC", "内装の洗浄と保護をまとめたい時の候補です。", "素材ごとに対応を確認し、余剰分を拭き取ります。", ["beginner", "limited", "easy"]),
+                finderCandidate("OVERcoat::OVERcoat Final Touch INTERIOR インテリアコーティング剤", "洗浄後の内装面へ保護を追加する専用品です。", "運転操作部や画面への使用可否を確認します。", ["beginner", "limited", "finish"]),
               ],
             },
           ],
         },
         coating: {
           title: "コーティング前の下地セット",
-          summary: "洗浄・化学除染・脱脂を分け、研磨剤を使わず油分のない状態へ整えます。",
+          summary: "洗浄・除染・仕上げ研磨・脱脂を分け、油分のない状態へ整えます。",
           steps: [
             {
               key: "coating-clean",
@@ -5985,10 +5851,6 @@
                 finderCandidate("Labocosmetica::PRÌMUS 2.0", "アルカリ性予洗いで有機汚れと道路汚れを先に落とします。", "冷えた面で使用し、次工程前に完全にすすぎます。", ["experienced", "rinse", "unprotected", "value"]),
                 finderCandidate("Koch-Chemie::Green Star", "汚れに応じて希釈を調整し、下地洗浄に使える万能クリーナーです。", "濃度を強くしすぎず、酸性工程と混ぜません。", ["experienced", "rinse", "unprotected", "value"]),
                 finderCandidate("Labocosmetica::INITIO", "希釈不要で、初めての下地洗浄でも濃度を間違えにくい候補です。", "乾燥させず、高圧水で十分すすぎます。", ["beginner", "rinse", "unprotected", "easy"]),
-                finderCandidate("DETAIL ARTIST::DIVE", "アルカリ性カーシャンプーで、コーティング前の有機汚れを落とす国内製品候補です。", "既存保護が落ちる前提で、乾燥させず完全にすすぎます。", ["beginner", "experienced", "rinse", "unprotected", "easy", "budget"]),
-                finderCandidate("ながら洗車::レッドアルカリバブル", "アルカリ性シャンプーとして、初めての下地洗浄へ取り入れやすい候補です。", "商品指定の希釈を守り、熱い面を避けて十分すすぎます。", ["beginner", "rinse", "unprotected", "easy", "budget"]),
-                finderCandidate("LUMINUS::L-PREWASH 2.0", "LUMINUSのアルカリ性プレウォッシュで、有機汚れを予洗いから落とします。", "薬剤を乾燥させず、次工程前に完全にすすぎます。", ["beginner", "experienced", "rinse", "unprotected", "easy", "budget"]),
-                finderCandidate("OVERcoat::OVERcoat pH+ アルカリ性シャンプー", "アルカリ洗浄をコーティング前の下地工程へ組み込める候補です。", "酸性剤と混ぜず、工程間で完全にすすぎます。", ["beginner", "rinse", "unprotected", "easy"]),
               ],
             },
             {
@@ -5998,9 +5860,15 @@
                 finderCandidate("Labocosmetica::SIDERO", "鉄粉とミネラル残留をまとめて処理し、研磨前の面を整えます。", "薬剤を混ぜず、反応ごとに完全にすすぎます。", ["experienced", "rinse", "unprotected", "value"]),
                 finderCandidate("GYEON::Q²M Iron REDEFINED", "塗装面の鉄粉を研磨前に化学除去する専用品です。", "乾燥前に十分すすぎ、残った付着物は別工程で判断します。", ["beginner", "rinse", "unprotected", "easy"]),
                 finderCandidate("OVERcoat::OVERcoat IRON REMOVER 鉄粉除去剤", "鉄粉除去工程を分かりやすく追加できる候補です。", "必要な時だけ使い、反応を長く置きすぎません。", ["beginner", "rinse", "unprotected", "easy"]),
-                finderCandidate("ながら洗車::IRON DELETE", "臭いを抑えた国内の鉄粉除去剤で、初めての下地処理にも選びやすい候補です。", "冷えた面で反応させ、乾燥前に大量の水ですすぎます。", ["beginner", "rinse", "unprotected", "easy", "budget"]),
-                finderCandidate("LUMINUS::VAMPIRE PLUS DIRECT", "希釈不要の鉄粉除去剤として、LUMINUSで下地製品を揃えたい場合に選べます。", "直射日光と熱い面を避け、反応液を完全にすすぎます。", ["beginner", "rinse", "unprotected", "easy", "budget"]),
-                finderCandidate("DETAIL ARTIST::MELT", "ボディ用鉄粉除去剤として、国内ブランドから選べる候補です。", "ほかの薬剤と混ぜず、別工程で完全にすすぎます。", ["beginner", "rinse", "unprotected", "easy", "budget"]),
+              ],
+            },
+            {
+              key: "coating-polish",
+              role: "仕上げ研磨",
+              candidates: [
+                finderCandidate("Labocosmetica::FIERO", "仕上げポリッシュ兼コーティング用プライマーとして、艶と結合準備を整えます。", "組み合わせるコーティングとの適合を確認し、研磨経験がない場合は小面積で試します。", ["experienced", "unprotected", "finish", "advanced"]),
+                finderCandidate("Koch-Chemie::Micro Cut M3.02", "微細傷と曇りを整える仕上げ用コンパウンドです。", "適切なバフと回転・圧力を選び、磨きすぎを防ぎます。", ["experienced", "unprotected", "finish", "advanced"]),
+                finderCandidate("VONIXX::V30", "仕上げ研磨で艶を整えるポリッシュ候補です。", "塗装膜厚と傷の深さを確認し、エッジを攻めすぎません。", ["experienced", "unprotected", "value", "advanced"]),
               ],
             },
             {
@@ -6010,9 +5878,6 @@
                 finderCandidate("Labocosmetica::VÈRITAS", "研磨油・フィラーを除去して、コーティング前の実際の塗装状態を確認できます。", "清潔なクロスで小面積ずつ拭き、残留を確認します。", ["experienced", "unprotected", "finish"]),
                 finderCandidate("GYEON::Q²M Prep", "研磨後の油分を除去するパネル脱脂剤として扱いやすい候補です。", "施工するコーティングの前処理指定を優先します。", ["beginner", "unprotected", "easy"]),
                 finderCandidate("OVERcoat::OVERcoat Surface PREP 脱脂スプレー", "コーティング前の脱脂を単独工程で行う専用品です。", "クロスを頻繁に替え、油分を引き伸ばさないようにします。", ["beginner", "unprotected", "easy"]),
-                finderCandidate("LUMINUS::PREP PRO", "LUMINUSのパネル脱脂剤で、油分と残留水分を除きながら初期費用を抑えやすい候補です。", "洗浄済みの冷えた面へ少量ずつ使い、清潔なクロスで拭き取ります。", ["beginner", "unprotected", "easy", "budget"]),
-                finderCandidate("DETAIL ARTIST::NUDE", "IPA系の脱脂剤として、コーティング前の油分除去に使える国内製品です。", "換気し、小面積ずつ拭き残しを確認します。", ["beginner", "unprotected", "easy", "budget"]),
-                finderCandidate("Koch-Chemie::Panel Preparation Spray", "研磨油と残留物を除去する専用パネルプレップです。", "施工するコーティングの指定と適合を最優先します。", ["experienced", "unprotected", "finish"]),
               ],
             },
           ],
@@ -6025,302 +5890,6 @@
         "wheel",
         "coating",
       ]);
-      const PRODUCT_FINDER_PRODUCT_IDS = new Set(
-        Object.values(PRODUCT_FINDER_PLANS).flatMap((plan) =>
-          plan.steps.flatMap((step) =>
-            step.candidates.map((candidate) => candidate.id),
-          ),
-        ),
-      );
-      const PRODUCT_FINDER_PROCESS_GROUPS = [
-        {
-          title: "予洗い・有機汚れ",
-          description: "泡やアルカリ洗浄で、触る前に道路汚れを落とす",
-          ids: [
-            "Labocosmetica::INITIO",
-            "Labocosmetica::PRELUDIO ALKALINE",
-            "Labocosmetica::PRÌMUS 2.0",
-            "Koch-Chemie::Green Star",
-            "ながら洗車::レッドアルカリバブル",
-            "LUMINUS::L-PREWASH 2.0",
-            "OVERcoat::OVERcoat pH+ アルカリ性シャンプー",
-            "DETAIL ARTIST::DIVE",
-            "Labocosmetica::NÈVE",
-            "Koch-Chemie::Gentle Snow Foam",
-            "LUMINUS::N-PREWASH",
-            "ながら洗車::スノーバブル",
-            "GYEON::Q²M Foam",
-            "Labocosmetica::LIBERA",
-          ],
-        },
-        {
-          title: "手洗い・通常洗車",
-          description: "ミット洗車やリンスレス洗車で表面の汚れを落とす",
-          ids: [
-            "Labocosmetica::SÈMPER",
-            "GYEON::Q²M Bathe",
-            "ながら洗車::スノーシャンプー",
-            "Labocosmetica::IDROSAVE",
-            "LUMINUS::MINT",
-            "DETAIL ARTIST::LUFT",
-            "OVERcoat::OVERcoat Neutral pH 中性シャンプー",
-          ],
-        },
-        {
-          title: "除染・リセット",
-          description: "水ジミ・ミネラル・鉄粉を状態に合わせて除去する",
-          ids: [
-            "Labocosmetica::PURÌFICA (Upgrade Formula)",
-            "DETAIL ARTIST::ACID CLEANER",
-            "GYEON::Q²M WaterSpot",
-            "ながら洗車::グリーンアシッドバブル",
-            "DETAIL ARTIST::KEEP",
-            "OVERcoat::OVERcoat pH- 酸性シャンプー",
-            "Koch-Chemie::Reactivation Shampoo",
-            "Labocosmetica::ÈNERGO",
-            "Labocosmetica::SIDERO",
-            "OVERcoat::OVERcoat IRON REMOVER 鉄粉除去剤",
-            "GYEON::Q²M Iron REDEFINED",
-            "ながら洗車::IRON DELETE",
-            "LUMINUS::VAMPIRE PLUS DIRECT",
-            "DETAIL ARTIST::MELT",
-            "VONIXX::IZER",
-          ],
-        },
-        {
-          title: "脱脂・コーティング前処理",
-          description: "残留油分を除去し、保護剤を施工できる面へ整える",
-          ids: [
-            "Labocosmetica::VÈRITAS",
-            "OVERcoat::OVERcoat Surface PREP 脱脂スプレー",
-            "GYEON::Q²M Prep",
-            "LUMINUS::PREP PRO",
-            "DETAIL ARTIST::NUDE",
-            "Koch-Chemie::Panel Preparation Spray",
-          ],
-        },
-        {
-          title: "コーティング・QD仕上げ",
-          description: "簡易保護、シーラント、QDから仕上がり方向で選ぶ",
-          ids: [
-            "Labocosmetica::BENEFÌCIA",
-            "GYEON::Q²M WetCoat",
-            "Labocosmetica::PERFÉCTA SiO2",
-            "LUMINUS::Luminus AQUA",
-            "LUMINUS::Luminus BLACK SLICK EDITION",
-            "Labocosmetica::PERFÉCTA 2.0",
-            "ながら洗車::ビーディング",
-            "DETAIL ARTIST::ICE",
-            "GYEON::Q²M Cure REDEFINED",
-            "LUMINUS::BLACK DIAMOND",
-            "GYEON::Q²M CeramicDetailer",
-            "GYEON::Q²M QuickDetailer",
-            "ながら洗車::ビギナーズラック",
-            "DETAIL ARTIST::AIR",
-            "Labocosmetica::CUPÌDO",
-            "ながら洗車::プラズマコーティングα",
-            "Koch-Chemie::Spray Sealant",
-            "LUMINUS::GLOSSY",
-          ],
-        },
-        {
-          title: "ワックス仕上げ",
-          description: "固形・ペースト・スプレーを艶、耐久、施工性で選ぶ",
-          ids: [
-            "LUMINUS::Luminous Ceramic Wax",
-            "LUMINUS::ECLIPSE",
-            "DETAIL ARTIST::DOPE",
-            "GYEON::Q² Wax",
-            "Koch-Chemie::Hand Wax W0.01",
-            "VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX",
-            "VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX – BLACK EDITION",
-            "VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX",
-            "VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX BLACK EDITION",
-            "VONIXX::NATIVE PASTE WAX",
-            "VONIXX::NATIVE BRAZILIAN CARNAÚBA SPRAY WAX",
-            "VONIXX::NATIVE PASTE WAX BLACK EDITION",
-            "VONIXX::CARNAÚBA HYBRID WAX",
-            "VONIXX::CARNAÚBA TOK FINAL",
-            "VONIXX::CARNAÚBA EXPRESS ULTRA",
-          ],
-        },
-        {
-          title: "ガラス洗浄・撥水",
-          description: "研磨剤を除き、日常洗浄と撥水保護から選ぶ",
-          ids: [
-            "Labocosmetica::NITIDO",
-            "GYEON::Q²M Glass",
-            "Koch-Chemie::SpeedGlassCleaner",
-            "LUMINUS::SHINE",
-            "DETAIL ARTIST::CLEAR",
-            "Labocosmetica::AQUAVÈLOX",
-            "GYEON::Q² QuickView",
-            "OVERcoat::OVERcoat Final Touch GLASS ガラス専用コーティング剤",
-            "ながら洗車::スプラッシュ＆リムーバー",
-            "LUMINUS::GLIDE",
-            "DETAIL ARTIST::DROP COAT",
-          ],
-        },
-        {
-          title: "ホイール・タイヤ",
-          description: "専用鉄粉洗浄、タイヤ洗浄、ドレッシングで仕上げる",
-          ids: [
-            "GYEON::Q²M Iron WheelCleaner REDEFINED",
-            "Koch-Chemie::Reactive Rust Remover",
-            "GYEON::Q²M TireCleaner",
-            "LUMINUS::BLAZE DIRECT",
-            "DETAIL ARTIST::LUSH",
-            "Labocosmetica::NERO",
-            "LUMINUS::ONIX",
-            "OVERcoat::OVERcoat Final Touch TIRE タイヤ艶出し剤",
-            "DETAIL ARTIST::DEEP",
-            "ながら洗車::ブラックレジン",
-            "GYEON::Q²M Tire Express",
-          ],
-        },
-      ];
-      const REFERENCE_PRICE_BANDS = {
-        1: { min: 1800, max: 3000, label: "約1,800〜3,000円" },
-        2: { min: 3000, max: 5000, label: "約3,000〜5,000円" },
-        3: { min: 5000, max: 8000, label: "約5,000〜8,000円" },
-        4: { min: 8000, max: 12000, label: "約8,000円以上" },
-      };
-      const EXACT_REFERENCE_PRICES = {
-        "LUMINUS::PREP PRO": { min: 1980, max: 2980, size: "500mL" },
-        "ながら洗車::IRON DELETE": { min: 3120, max: 3900, size: "500mL" },
-        "ながら洗車::スノーシャンプー": { min: 3120, max: 3120, size: "ミットセット" },
-        "ながら洗車::脱脂シャンプー": { min: 3900, max: 3900, size: "350mL" },
-        "ながら洗車::ビーディング": { min: 3900, max: 3900, size: "代表容量" },
-        "ながら洗車::プラズマコーティングα": { min: 7800, max: 7800, size: "350mL" },
-        "Labocosmetica::SÈMPER": { min: 3820, max: 5980, size: "500mL" },
-        "Labocosmetica::PERFÉCTA 2.0": { min: 3960, max: 4950, size: "500mL" },
-        "Labocosmetica::PERFÉCTA SiO2": { min: 4730, max: 5730, size: "500mL" },
-        "Labocosmetica::SIDERO": { min: 2880, max: 4960, size: "500mL" },
-        "Labocosmetica::VÈRITAS": { min: 4840, max: 5840, size: "1000mL" },
-        "GYEON::Q²M WetCoat": { min: 3600, max: 5100, size: "1000mL" },
-        "VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX": { min: 6000, max: 6000, size: "100mL" },
-        "VONIXX::BLEND CERAMIC & CARNAÚBA PASTE WAX – BLACK EDITION": { min: 6000, max: 6000, size: "100mL" },
-        "VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX": { min: 4400, max: 4400, size: "代表容量" },
-        "VONIXX::BLEND CERAMIC & CARNAÚBA SPRAY WAX BLACK EDITION": { min: 4400, max: 4400, size: "代表容量" },
-        "VONIXX::CARNAÚBA HYBRID WAX": { min: 5000, max: 5000, size: "代表容量" },
-        "VONIXX::CARNAÚBA EXPRESS ULTRA": { min: 7500, max: 7500, size: "1.5L" },
-      };
-      const LOW_PRICE_PRODUCTS = new Set([
-        "LUMINUS::PREP PRO",
-        "LUMINUS::MINT",
-        "LUMINUS::N-PREWASH",
-        "LUMINUS::L-PREWASH 2.0",
-        "LUMINUS::GLOSSY",
-        "DETAIL ARTIST::DIVE",
-        "DETAIL ARTIST::LUFT",
-        "DETAIL ARTIST::KEEP",
-        "DETAIL ARTIST::MELT",
-        "DETAIL ARTIST::NUDE",
-        "DETAIL ARTIST::AIR",
-        "GYEON::Q²M Glass",
-        "GYEON::Q²M Prep",
-        "GYEON::Q²M QuickDetailer",
-      ]);
-      const HIGH_PRICE_PRODUCTS = new Set([
-        "Labocosmetica::AQUAVÈLOX",
-        "Labocosmetica::CUPÌDO",
-        "Labocosmetica::FIERO",
-        "Labocosmetica::SÈMPER",
-        "Labocosmetica::PERFÉCTA SiO2",
-        "Labocosmetica::VÈRITAS",
-        "GYEON::Q² QuickView",
-        "LUMINUS::ECLIPSE",
-        "GYEON::Q² Wax",
-        "VONIXX::NATIVE PASTE WAX",
-        "VONIXX::NATIVE PASTE WAX BLACK EDITION",
-        "Koch-Chemie::Micro Cut M3.02",
-        "ながら洗車::プラズマコーティングα",
-      ]);
-      const PREMIUM_PRICE_PRODUCTS = new Set([
-        "Koch-Chemie::Hand Wax W0.01",
-      ]);
-      function referencePriceTier(min, max) {
-        if (max <= 3000) return 1;
-        if (max <= 5000) return 2;
-        if (max <= 8000) return 3;
-        return 4;
-      }
-      function productReferencePrice(id) {
-        if (!PRODUCT_FINDER_PRODUCT_IDS.has(id)) return null;
-        const exact = EXACT_REFERENCE_PRICES[id];
-        if (exact) {
-          const tier = referencePriceTier(exact.min, exact.max);
-          const price =
-            exact.min === exact.max
-              ? `約${exact.min.toLocaleString("ja-JP")}円`
-              : `約${exact.min.toLocaleString("ja-JP")}〜${exact.max.toLocaleString("ja-JP")}円`;
-          return { ...exact, tier, label: `${price}（${exact.size}）`, checked: true };
-        }
-        const tier = LOW_PRICE_PRODUCTS.has(id)
-          ? 1
-          : PREMIUM_PRICE_PRODUCTS.has(id)
-            ? 4
-            : HIGH_PRICE_PRODUCTS.has(id)
-              ? 3
-              : 2;
-        return {
-          ...REFERENCE_PRICE_BANDS[tier],
-          tier,
-          label: `${REFERENCE_PRICE_BANDS[tier].label}（代表容量）`,
-          checked: false,
-        };
-      }
-      function finderPriceHTML(id) {
-        const price = productReferencePrice(id);
-        if (!price) return "";
-        return `<span class="finder-price${price.tier === 1 ? " low" : ""}">参考価格 ${escapeHTML(price.label)}</span>`;
-      }
-      function renderFinderCandidateOverview() {
-        const count = $("finderCandidateCount");
-        if (count) count.textContent = `${PRODUCT_FINDER_PRODUCT_IDS.size}商品`;
-        const box = $("finderCandidateOverview");
-        if (!box) return;
-        const groupedIds = new Set(
-          PRODUCT_FINDER_PROCESS_GROUPS.flatMap((group) => group.ids),
-        );
-        const ungroupedIds = [...PRODUCT_FINDER_PRODUCT_IDS].filter(
-          (id) => !groupedIds.has(id),
-        );
-        const groups = ungroupedIds.length
-          ? [
-              ...PRODUCT_FINDER_PROCESS_GROUPS,
-              {
-                title: "その他",
-                description: "新しく追加された未分類の診断候補",
-                ids: ungroupedIds,
-              },
-            ]
-          : PRODUCT_FINDER_PROCESS_GROUPS;
-        box.innerHTML = `<div class="finder-process-list">${groups
-          .map((group, index) => {
-            const products = group.ids
-              .filter((id) => PRODUCT_FINDER_PRODUCT_IDS.has(id))
-              .map((id) => CHEMICAL_CATALOG.find((item) => item.id === id))
-              .filter(Boolean);
-            if (!products.length) return "";
-            return `<section class="finder-process-group">
-              <div class="finder-process-head">
-                <span class="finder-process-number">${index + 1}</span>
-                <span><span class="finder-process-title">${escapeHTML(group.title)}</span><span class="finder-process-description">${escapeHTML(group.description)}</span></span>
-                <span class="finder-process-count">${products.length}商品</span>
-              </div>
-              <div>${products
-                .map(
-                  (product) => `<button class="finder-candidate-row" type="button" data-manufacturer="${escapeHTML(product.manufacturer)}" data-product-name="${escapeHTML(product.name)}" onclick="openChemicalCatalogForProduct(this.dataset.manufacturer,this.dataset.productName)">
-                    <span><span class="catalog-maker">${escapeHTML(product.manufacturer)}</span><b>${escapeHTML(product.name)}</b><span class="catalog-purpose">${escapeHTML(product.purpose)}</span></span>
-                    ${finderPriceHTML(product.id)}
-                  </button>`,
-                )
-                .join("")}</div>
-            </section>`;
-          })
-          .join("")}</div>`;
-      }
       let activeFinderResult = null;
       const activeFinderSelections = {};
       let activeCatalogManufacturer = "すべて";
@@ -6409,87 +5978,15 @@
         });
         if (changed) save("chemicals", chemicals);
       }
-      const PRODUCT_FINDER_QUESTION_FLOW = {
-        starter: ["environment", "level", "protection", "priority", "finish"],
-        maintenance: ["environment", "level", "priority", "finish"],
-        reset: ["environment", "level", "protection", "priority"],
-        scale: ["environment", "level", "protection", "priority"],
-        iron: ["environment", "level", "priority"],
-        protect: ["environment", "level", "protection", "priority", "finish"],
-        wax: ["level", "priority", "finish", "paintColor"],
-        glass: ["level", "priority"],
-        wheel: ["environment", "level", "priority"],
-        coating: ["environment", "level", "priority"],
-      };
-      const PRODUCT_FINDER_SELECT_IDS = {
-        environment: "finderEnvironment",
-        level: "finderLevel",
-        protection: "finderProtection",
-        priority: "finderPriority",
-        finish: "finderFinish",
-        paintColor: "finderPaintColor",
-      };
-      const PRODUCT_FINDER_DEFAULT_ANSWERS = {
-        environment: "rinse",
-        level: "beginner",
-        protection: "unknown",
-        priority: "budget",
-        finish: "balance",
-        paintColor: "other",
-      };
-      const PRODUCT_FINDER_GOAL_DEFAULTS = {
-        maintenance: { protection: "protected" },
-        wax: { environment: "limited" },
-        glass: { environment: "limited", protection: "unprotected" },
-        coating: { protection: "unprotected" },
-      };
-      let activeFinderQuestionGoal = null;
-      function updateProductFinderQuestions() {
-        const goal = $("finderGoal")?.value || "";
-        const visibleQuestions = new Set(
-          PRODUCT_FINDER_QUESTION_FLOW[goal] || [],
-        );
-        if (goal !== activeFinderQuestionGoal) {
-          const defaults = {
-            ...PRODUCT_FINDER_DEFAULT_ANSWERS,
-            ...(PRODUCT_FINDER_GOAL_DEFAULTS[goal] || {}),
-          };
-          Object.entries(PRODUCT_FINDER_SELECT_IDS).forEach(([key, id]) => {
-            const select = $(id);
-            if (select) select.value = defaults[key];
-          });
-          activeFinderQuestionGoal = goal;
-        }
-        let questionNumber = 2;
-        document.querySelectorAll("[data-finder-question]").forEach((card) => {
-          const key = card.dataset.finderQuestion;
-          const isVisible = visibleQuestions.has(key);
-          card.classList.toggle("hidden", !isVisible);
-          const label = card.querySelector("[data-finder-label]");
-          if (isVisible && label)
-            label.textContent = `${questionNumber++}. ${label.dataset.finderLabel}`;
-        });
-        $("finderRunButton")?.classList.toggle("hidden", !goal);
-        clearProductFinderResult();
-      }
       function productFinderAnswers() {
         return {
-          goal: $("finderGoal")?.value || "",
+          goal: $("finderGoal")?.value || "starter",
           environment: $("finderEnvironment")?.value || "rinse",
           level: $("finderLevel")?.value || "beginner",
-          protection: $("finderProtection")?.value || "unknown",
-          priority: $("finderPriority")?.value || "budget",
+          protection: $("finderProtection")?.value || "protected",
+          priority: $("finderPriority")?.value || "easy",
           finish: $("finderFinish")?.value || "balance",
-          paintColor: $("finderPaintColor")?.value || "other",
         };
-      }
-      function finderCandidateAllowed(candidate, answers) {
-        if (
-          candidate.traits.includes("darkPaint") &&
-          answers.paintColor !== "dark"
-        )
-          return false;
-        return true;
       }
       function finderCandidateScore(candidate, index, answers) {
         let score = 100 - index * 2;
@@ -6499,7 +5996,7 @@
           { values: ["beginner", "experienced"], selected: answers.level, match: 12, miss: -6 },
           { values: ["rinse", "limited"], selected: answers.environment, match: 30, miss: -45 },
           { values: ["protected", "unknown", "unprotected"], selected: answers.protection, match: 12, miss: -6 },
-          { values: ["budget", "easy", "value", "finish"], selected: priority, match: 16, miss: -6 },
+          { values: ["easy", "value", "finish"], selected: priority, match: 12, miss: -6 },
         ];
         groups.forEach((group) => {
           const tagged = group.values.filter((trait) =>
@@ -6511,11 +6008,6 @@
         if (answers.level === "beginner" && candidate.traits.includes("advanced"))
           score -= 28;
         if (
-          answers.paintColor === "dark" &&
-          candidate.traits.includes("darkPaint")
-        )
-          score += 38;
-        if (
           answers.protection === "protected" &&
           candidate.traits.includes("unprotected") &&
           !candidate.traits.includes("protected")
@@ -6524,24 +6016,6 @@
         const finishProfile = PRODUCT_FINISH_PROFILES[candidate.id];
         if (finishProfile && answers.finish !== "balance")
           score += (finishProfile[answers.finish] || 0) * 16;
-        const referencePrice = productReferencePrice(candidate.id);
-        if (referencePrice && answers.priority === "budget") {
-          score += { 1: 34, 2: 12, 3: -18, 4: -38 }[referencePrice.tier] || 0;
-        } else if (
-          referencePrice &&
-          answers.level === "beginner" &&
-          referencePrice.tier >= 3
-        ) {
-          score -= referencePrice.tier === 4 ? 20 : 8;
-        }
-        if (candidate.id.startsWith("Labocosmetica::")) {
-          if (answers.priority === "budget") score -= 16;
-          if (
-            answers.level === "beginner" &&
-            answers.priority !== "performance"
-          )
-            score -= 10;
-        }
         return score;
       }
       function clearProductFinderResult() {
@@ -6549,16 +6023,13 @@
         Object.keys(activeFinderSelections).forEach(
           (key) => delete activeFinderSelections[key],
         );
-        if ($("finderResults")) {
-          const hasGoal = Boolean($("finderGoal")?.value);
-          $("finderResults").innerHTML = hasGoal
-            ? '<div class="card muted tiny">表示された条件を選び、「おすすめを診断する」を押してください。</div>'
-            : '<div class="card muted tiny">最初に「何をしたい？」を選ぶと、必要な質問だけ表示されます。</div>';
-        }
+        if ($("finderResults"))
+          $("finderResults").innerHTML =
+            '<div class="card muted tiny">条件を選び、「おすすめを診断する」を押してください。</div>';
       }
       function openProductFinder() {
         go("product-finder");
-        updateProductFinderQuestions();
+        runProductFinder();
       }
       function runProductFinder() {
         const answers = productFinderAnswers();
@@ -6581,8 +6052,6 @@
           return;
         }
         const skippedRoles = [];
-        const chemicals = load("chemicals", []);
-        const selectedMakerCounts = {};
         const recommendations = plan.steps
           .map((step) => {
             if (answers.environment === "limited" && step.requiresRinse) {
@@ -6590,40 +6059,16 @@
               return null;
             }
             const ranked = step.candidates
-              .filter((candidate) => finderCandidateAllowed(candidate, answers))
               .filter((candidate) =>
                 CHEMICAL_CATALOG.some((item) => item.id === candidate.id),
               )
-              .map((candidate, index) => {
-                const product = CHEMICAL_CATALOG.find(
-                  (item) => item.id === candidate.id,
-                );
-                let score = finderCandidateScore(candidate, index, answers);
-                const registered =
-                  product && registeredCatalogIndex(product, chemicals) >= 0;
-                if (registered) score += 46;
-                const repeatCount = product
-                  ? selectedMakerCounts[product.manufacturer] || 0
-                  : 0;
-                const repeatPenalty =
-                  answers.priority === "performance"
-                    ? 8
-                    : answers.priority === "budget" ||
-                        answers.level === "beginner"
-                      ? 30
-                      : 18;
-                score -= repeatCount * repeatPenalty;
-                return { ...candidate, score, registered };
-              })
+              .map((candidate, index) => ({
+                ...candidate,
+                score: finderCandidateScore(candidate, index, answers),
+              }))
               .sort((a, b) => b.score - a.score);
             if (!ranked.length) return null;
             activeFinderSelections[step.key] = ranked[0].id;
-            const selectedProduct = CHEMICAL_CATALOG.find(
-              (item) => item.id === ranked[0].id,
-            );
-            if (selectedProduct)
-              selectedMakerCounts[selectedProduct.manufacturer] =
-                (selectedMakerCounts[selectedProduct.manufacturer] || 0) + 1;
             return { key: step.key, role: step.role, ranked };
           })
           .filter(Boolean);
@@ -6676,15 +6121,13 @@
               product.id,
               activeFinderResult.answers.finish,
             );
-            const priceHTML = finderPriceHTML(product.id);
             const options = recommendation.ranked
               .map((item) => {
                 const catalogItem = CHEMICAL_CATALOG.find(
                   (productItem) => productItem.id === item.id,
                 );
                 if (!catalogItem) return "";
-                const optionPrice = productReferencePrice(item.id)?.label || "価格確認中";
-                return `<option value="${escapeHTML(item.id)}" ${item.id === candidate.id ? "selected" : ""}>${escapeHTML(catalogItem.manufacturer)}｜${escapeHTML(catalogItem.name)}｜${escapeHTML(optionPrice)}</option>`;
+                return `<option value="${escapeHTML(item.id)}" ${item.id === candidate.id ? "selected" : ""}>${escapeHTML(catalogItem.manufacturer)}｜${escapeHTML(catalogItem.name)}</option>`;
               })
               .join("");
             return `<article class="finder-result-card">
@@ -6695,7 +6138,6 @@
                   <div class="catalog-maker">${escapeHTML(product.manufacturer)}</div>
                   <div class="finder-product-name">${escapeHTML(product.name)}</div>
                   <div class="muted tiny">${escapeHTML(product.purpose)}</div>
-                  ${priceHTML}
                   ${finishBadges}
                 </div>
               </div>
@@ -6715,23 +6157,6 @@
         const unregisteredCount = selected.filter(
           ({ product }) => registeredCatalogIndex(product, chemicals) < 0,
         ).length;
-        const unregisteredSelected = selected.filter(
-          ({ product }) => registeredCatalogIndex(product, chemicals) < 0,
-        );
-        const pricedUnregistered = unregisteredSelected
-          .map(({ product }) => productReferencePrice(product.id))
-          .filter(Boolean);
-        const estimatedMin = pricedUnregistered.reduce(
-          (total, price) => total + price.min,
-          0,
-        );
-        const estimatedMax = pricedUnregistered.reduce(
-          (total, price) => total + price.max,
-          0,
-        );
-        const costSummary = unregisteredSelected.length
-          ? `<div class="finder-cost-summary"><b>未登録分の参考合計：</b>約${estimatedMin.toLocaleString("ja-JP")}〜${estimatedMax.toLocaleString("ja-JP")}円<br>2026年8月確認の代表容量・国内販売価格をもとにした目安です。セール、送料、容量違いで変動します。</div>`
-          : '<div class="finder-cost-summary"><b>買い足し目安：0円</b><br>選ばれた商品はすべてケミカル一覧へ登録済みです。</div>';
         const skippedNote = activeFinderResult.skippedRoles?.length
           ? `<div class="guide-warning">水が少ない環境のため、十分な洗浄・すすぎが必要な「${activeFinderResult.skippedRoles.map(escapeHTML).join("・")}」は候補から外しました。</div>`
           : "";
@@ -6749,7 +6174,6 @@
           <h2 style="margin:8px 0 4px">${escapeHTML(activeFinderResult.plan.title)}</h2>
           <div class="muted tiny">${escapeHTML(activeFinderResult.plan.summary)}</div>
           <div class="finder-direction-note">${escapeHTML(directionNote)}</div>
-          ${costSummary}
         </div>
         ${skippedNote}
         <div class="finder-result-list">${cards}</div>
@@ -6859,7 +6283,7 @@
                 const checked = selectedCatalogIds.has(item.id);
                 return `<label class="catalog-product${registered ? " is-registered" : ""}">
                   <input type="checkbox" value="${escapeHTML(item.id)}" ${checked ? "checked" : ""} ${registered ? "disabled" : ""} onchange="toggleCatalogProduct(this.value,this.checked)">
-                  <span><span class="catalog-maker">${escapeHTML(item.manufacturer)}</span><b>${escapeHTML(item.name)}</b><span class="catalog-purpose">${escapeHTML(item.purpose)} ・ ${escapeHTML(item.type)}</span>${finderPriceHTML(item.id)}</span>
+                  <span><span class="catalog-maker">${escapeHTML(item.manufacturer)}</span><b>${escapeHTML(item.name)}</b><span class="catalog-purpose">${escapeHTML(item.purpose)} ・ ${escapeHTML(item.type)}</span></span>
                   ${registered ? '<span class="catalog-registered">登録済み</span>' : ""}
                 </label>`;
               })
@@ -6968,6 +6392,7 @@
           image: img,
         });
         if (save("chemicals", a)) {
+          markPhotoRefsSaved({ chemicals: [a[0]] });
           [
             "chemManufacturer",
             "chemName",
@@ -6976,6 +6401,7 @@
             "chemStock",
             "chemImage",
           ].forEach((id) => ($(id).value = ""));
+          await cleanupUnusedPhotos();
           render();
         }
       }
@@ -7012,7 +6438,7 @@
         const v = await readFile($("maintRecordImage")),
           img = $("maintRecordPreview");
         if (v) {
-          img.src = v;
+          img.src = safeImage(v);
           img.style.display = "block";
         } else {
           img.removeAttribute("src");
@@ -7041,26 +6467,33 @@
           image,
         });
         if (save("maintenanceRecords", records)) {
+          markPhotoRefsSaved({ maintenanceRecords: [records[0]] });
           $("maintRecordDate").value = today();
           $("maintRecordMileage").value = "";
           $("maintRecordContent").value = "";
           $("maintRecordImage").value = "";
           $("maintRecordPreview").style.display = "none";
+          await cleanupUnusedPhotos();
           render();
         }
       }
-      function delMaintenanceRecord(i) {
+      async function delMaintenanceRecord(i) {
         if (!confirm("この整備記録を削除しますか？")) return;
         const records = load("maintenanceRecords", []);
         records.splice(i, 1);
-        if (save("maintenanceRecords", records)) render();
+        if (save("maintenanceRecords", records)) {
+          await cleanupUnusedPhotos();
+          render();
+        }
       }
-      function delHistory(i) {
+      async function delHistory(i) {
         if (!confirm("この施工記録を削除しますか？")) return;
         let a = load("history", []);
         a.splice(i, 1);
-        save("history", a);
-        render();
+        if (save("history", a)) {
+          await cleanupUnusedPhotos();
+          render();
+        }
       }
       function openChemicalEditor(i) {
         let a = load("chemicals", []),
@@ -7124,12 +6557,14 @@
           render();
         }
       }
-      function delChem(i) {
+      async function delChem(i) {
         if (!confirm("このケミカルを削除しますか？")) return;
         let a = load("chemicals", []);
         a.splice(i, 1);
-        save("chemicals", a);
-        render();
+        if (save("chemicals", a)) {
+          await cleanupUnusedPhotos();
+          render();
+        }
       }
       function dateSerial(dateString) {
         const [year, month, day] = String(dateString || "")
@@ -7363,6 +6798,7 @@
         renderGuide();
         renderCoatingManual();
         renderBetaStatus();
+        window.DMNotifications?.render(cars);
       }
       const DM_DATA_KEYS = [
         "cars",
@@ -7373,6 +6809,7 @@
         "processTemplates",
         "customTemplates",
         "maintenanceRecords",
+        "dmNotificationSettings",
         COATING_PREP_PROGRESS_KEY,
       ];
       const DM_LEGACY_KEYS = ["car"];
@@ -7404,8 +6841,142 @@
           customTemplates: Array.isArray(source.customTemplates)
             ? source.customTemplates
             : [],
+          dmNotificationSettings:
+            source.dmNotificationSettings &&
+            typeof source.dmNotificationSettings === "object"
+              ? { ...source.dmNotificationSettings, remoteConnected: false }
+              : {},
           [COATING_PREP_PROGRESS_KEY]: prepStore,
         };
+      }
+      async function transformUserPhotos(source, transform) {
+        const data = JSON.parse(JSON.stringify(source || {}));
+        const apply = async (item, field, kind) => {
+          if (!item || typeof item !== "object" || !item[field]) return;
+          item[field] = await transform(item[field], kind);
+        };
+        for (const car of Array.isArray(data.cars) ? data.cars : [])
+          await apply(car, "image", "car");
+        for (const record of Array.isArray(data.history) ? data.history : []) {
+          await apply(record, "before", "history-before");
+          await apply(record, "after", "history-after");
+          await apply(record, "image", "history");
+        }
+        for (const record of Array.isArray(data.maintenanceRecords)
+          ? data.maintenanceRecords
+          : [])
+          await apply(record, "image", "maintenance");
+        for (const chemical of Array.isArray(data.chemicals)
+          ? data.chemicals
+          : [])
+          await apply(chemical, "image", "chemical");
+        return data;
+      }
+      function collectPhotoRefs(source, target = new Set()) {
+        const add = (value) => {
+          if (window.DMPhotoStore?.isRef(value)) target.add(value);
+        };
+        (Array.isArray(source?.cars) ? source.cars : []).forEach((item) =>
+          add(item?.image),
+        );
+        (Array.isArray(source?.history) ? source.history : []).forEach(
+          (item) => {
+            add(item?.before);
+            add(item?.after);
+            add(item?.image);
+          },
+        );
+        (Array.isArray(source?.maintenanceRecords)
+          ? source.maintenanceRecords
+          : []
+        ).forEach((item) => add(item?.image));
+        (Array.isArray(source?.chemicals) ? source.chemicals : []).forEach(
+          (item) => add(item?.image),
+        );
+        return target;
+      }
+      function currentPhotoData() {
+        const cars = load("cars", []);
+        const history = load("history", []);
+        const maintenanceRecords = load("maintenanceRecords", []);
+        const chemicals = load("chemicals", []);
+        return {
+          cars: Array.isArray(cars) ? cars : [],
+          history: Array.isArray(history) ? history : [],
+          maintenanceRecords: Array.isArray(maintenanceRecords)
+            ? maintenanceRecords
+            : [],
+          chemicals: Array.isArray(chemicals) ? chemicals : [],
+        };
+      }
+      function markPhotoRefsSaved(source) {
+        collectPhotoRefs(source).forEach((ref) => pendingPhotoRefs.delete(ref));
+      }
+      async function cleanupUnusedPhotos() {
+        if (!window.DMPhotoStore?.isAvailable()) return 0;
+        const refs = collectPhotoRefs(currentPhotoData());
+        pendingPhotoRefs.forEach((ref) => refs.add(ref));
+        return window.DMPhotoStore.cleanupUnused(refs);
+      }
+      async function externalizePhotoData(source, stagedRefs = []) {
+        if (!window.DMPhotoStore?.isAvailable()) return source;
+        const deduplicated = new Map();
+        return transformUserPhotos(source, async (value, kind) => {
+          if (window.DMPhotoStore.isRef(value)) return value;
+          if (!window.DMPhotoStore.isDataUrl(value)) return "";
+          if (deduplicated.has(value)) return deduplicated.get(value);
+          const ref = await window.DMPhotoStore.storeDataUrl(value, { kind });
+          deduplicated.set(value, ref);
+          stagedRefs.push(ref);
+          return ref;
+        });
+      }
+      async function inlinePhotoData(source) {
+        return transformUserPhotos(source, async (value) => {
+          if (window.DMPhotoStore?.isRef(value)) {
+            const dataUrl = await window.DMPhotoStore.toDataUrl(value);
+            if (!dataUrl) throw new Error("保存写真を読み出せませんでした");
+            return dataUrl;
+          }
+          return safePhotoValue(value);
+        });
+      }
+      async function migratePhotosToIndexedDb() {
+        if (!window.DMPhotoStore?.isAvailable()) return false;
+        const source = currentPhotoData();
+        const hasLegacyPhotos = [
+          ...source.cars.map((item) => item?.image),
+          ...source.history.flatMap((item) => [
+            item?.before,
+            item?.after,
+            item?.image,
+          ]),
+          ...source.maintenanceRecords.map((item) => item?.image),
+          ...source.chemicals.map((item) => item?.image),
+        ].some((value) => window.DMPhotoStore.isDataUrl(value));
+        if (!hasLegacyPhotos) {
+          await cleanupUnusedPhotos();
+          return true;
+        }
+        const stagedRefs = [];
+        try {
+          const migrated = await externalizePhotoData(source, stagedRefs);
+          const result = replaceStorageData(migrated, [
+            "cars",
+            "history",
+            "maintenanceRecords",
+            "chemicals",
+          ]);
+          if (!result.ok) throw new Error("Photo migration storage update failed");
+          markPhotoRefsSaved(migrated);
+          await cleanupUnusedPhotos();
+          return true;
+        } catch (error) {
+          console.error("Photo migration failed", error);
+          for (const ref of stagedRefs)
+            await window.DMPhotoStore.remove(ref).catch(() => {});
+          return false;
+        }
       }
       function getLocalStorageBytes() {
         const parts = [];
@@ -7424,10 +6995,26 @@
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
         return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
       }
-      function renderStorageStatus() {
+      async function renderStorageStatus() {
         const status = $("storageStatus");
         if (!status) return;
-        status.textContent = `端末内データ：約${formatDataSize(getLocalStorageBytes())}（車両・記録・写真の合計）`;
+        const settingsBytes = getLocalStorageBytes();
+        if (!window.DMPhotoStore?.isAvailable()) {
+          status.textContent = `端末内データ：約${formatDataSize(settingsBytes)}（写真専用保存を利用できない互換モード）`;
+          return;
+        }
+        try {
+          const photos = await window.DMPhotoStore.stats();
+          let remaining = "";
+          if (navigator.storage?.estimate) {
+            const estimate = await navigator.storage.estimate();
+            if (Number.isFinite(estimate.quota) && Number.isFinite(estimate.usage))
+              remaining = ` / 空き目安 ${formatDataSize(Math.max(0, estimate.quota - estimate.usage))}`;
+          }
+          status.textContent = `写真 ${photos.count}枚・${formatDataSize(photos.bytes)} / 設定データ ${formatDataSize(settingsBytes)}${remaining}`;
+        } catch {
+          status.textContent = `設定データ：約${formatDataSize(settingsBytes)}（写真容量を確認できませんでした）`;
+        }
       }
       function getTesterId() {
         let id = localStorage.getItem("dmTesterId");
@@ -7467,6 +7054,15 @@
         );
         status.className = `backup-status tiny${elapsedDays <= 7 ? " fresh" : ""}`;
         status.textContent = `最終バックアップ：${savedAt.toLocaleString("ja-JP")}（${elapsedDays === 0 ? "今日" : elapsedDays + "日前"}）`;
+      }
+      async function toggleMaintenanceNotifications() {
+        await window.DMNotifications?.toggle(getCars());
+      }
+      async function saveNotificationSettings() {
+        await window.DMNotifications?.saveFromForm(getCars());
+      }
+      async function testMaintenanceNotification() {
+        await window.DMNotifications?.test(getCars());
       }
       function buildFeedbackText() {
         const history = load("history", []);
@@ -7530,52 +7126,61 @@
           await copyFeedback();
         }
       }
-      function exportBackup() {
-        const multiCarData = buildMultiCarData({
-          cars: load("cars", []),
-          activeCarId: load("activeCarId", ""),
-          car: load("car", {}),
-          history: load("history", []),
-          maintenanceRecords: load("maintenanceRecords", []),
-        });
-        const data = {
-          app: "Detailing Manager",
-          version: DM_VERSION,
-          exportedAt: new Date().toISOString(),
-          data: {},
-        };
-        DM_DATA_KEYS.forEach((k) => {
-          const fallback =
-            k === "activeCarId"
-              ? ""
-              : k === COATING_PREP_PROGRESS_KEY
-                ? { schema: COATING_PREP_STORE_SCHEMA, vehicles: [] }
-                : [];
-          data.data[k] = Object.prototype.hasOwnProperty.call(multiCarData, k)
-            ? multiCarData[k]
-            : load(k, fallback);
-        });
-        const blob = new Blob([JSON.stringify(data, null, 2)], {
-            type: "application/json",
-          }),
-          a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `DetailingManager_backup_${today()}.json`;
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
+      async function exportBackup() {
         try {
-          localStorage.setItem("dmLastBackupAt", new Date().toISOString());
-        } catch {}
-        renderBetaStatus();
-        setTimeout(() => {
-          URL.revokeObjectURL(a.href);
-          a.remove();
-        }, 1000);
+          const multiCarData = buildMultiCarData({
+            cars: load("cars", []),
+            activeCarId: load("activeCarId", ""),
+            car: load("car", {}),
+            history: load("history", []),
+            maintenanceRecords: load("maintenanceRecords", []),
+          });
+          const data = {
+            app: "Detailing Manager",
+            version: DM_VERSION,
+            exportedAt: new Date().toISOString(),
+            data: {},
+          };
+          DM_DATA_KEYS.forEach((k) => {
+            const fallback =
+              k === "activeCarId"
+                ? ""
+                : k === "dmNotificationSettings"
+                  ? {}
+                : k === COATING_PREP_PROGRESS_KEY
+                  ? { schema: COATING_PREP_STORE_SCHEMA, vehicles: [] }
+                  : [];
+            data.data[k] = Object.prototype.hasOwnProperty.call(multiCarData, k)
+              ? multiCarData[k]
+              : load(k, fallback);
+          });
+          data.data = await inlinePhotoData(data.data);
+          const blob = new Blob([JSON.stringify(data, null, 2)], {
+              type: "application/json",
+            }),
+            a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = `DetailingManager_backup_${today()}.json`;
+          a.style.display = "none";
+          document.body.appendChild(a);
+          a.click();
+          try {
+            localStorage.setItem("dmLastBackupAt", new Date().toISOString());
+          } catch {}
+          renderBetaStatus();
+          setTimeout(() => {
+            URL.revokeObjectURL(a.href);
+            a.remove();
+          }, 1000);
+        } catch (error) {
+          console.error("Backup export failed", error);
+          alert("写真を含むバックアップを書き出せませんでした。画面を閉じず、もう一度お試しください。");
+        }
       }
       async function importBackup(input) {
         const f = input.files && input.files[0];
         if (!f) return;
+        const stagedRefs = [];
         try {
           const obj = JSON.parse(await f.text());
           if (!obj || obj.app !== "Detailing Manager" || !obj.data)
@@ -7588,7 +7193,8 @@
             input.value = "";
             return;
           }
-          const imported = buildImportData(obj.data);
+          let imported = buildImportData(obj.data);
+          imported = await externalizePhotoData(imported, stagedRefs);
           imported[MULTI_CAR_SCHEMA_KEY] = MULTI_CAR_SCHEMA_VERSION;
           const result = replaceStorageData(imported, [
             ...DM_DATA_KEYS,
@@ -7596,6 +7202,9 @@
             MULTI_CAR_SCHEMA_KEY,
           ]);
           if (!result.ok) {
+            for (const ref of stagedRefs)
+              if (window.DMPhotoStore)
+                await window.DMPhotoStore.remove(ref).catch(() => {});
             alert(
               result.restored
                 ? "バックアップの復元に必要な空き容量がありません。現在のデータは元に戻しました。"
@@ -7604,6 +7213,8 @@
             input.value = "";
             return;
           }
+          markPhotoRefsSaved(imported);
+          await cleanupUnusedPhotos();
           try {
             localStorage.setItem("dmSetupDone", "1");
           } catch {}
@@ -7615,13 +7226,16 @@
           );
           location.reload();
         } catch (e) {
+          for (const ref of stagedRefs)
+            if (window.DMPhotoStore)
+              await window.DMPhotoStore.remove(ref).catch(() => {});
           alert(
             "Detailing Managerのバックアップファイルを読み込めませんでした。",
           );
           input.value = "";
         }
       }
-      function resetAllData() {
+      async function resetAllData() {
         if (
           !confirm(
             "車両・施工履歴・ケミカルなど、すべてのデータを削除します。\nこの操作は元に戻せません。",
@@ -7629,6 +7243,10 @@
         )
           return;
         if (!confirm("本当に初期化しますか？")) return;
+        if (window.DMNotifications)
+          await window.DMNotifications.disable().catch(() => {});
+        if (window.DMPhotoStore)
+          await window.DMPhotoStore.clear().catch(() => {});
         [...DM_DATA_KEYS, ...DM_LEGACY_KEYS].forEach((k) =>
           localStorage.removeItem(k),
         );
@@ -7639,6 +7257,10 @@
         localStorage.removeItem(UPDATE_SEEN_KEY);
         localStorage.removeItem(COATING_PREP_PROGRESS_KEY);
         localStorage.removeItem(COATING_PREP_MODE_KEY);
+        localStorage.removeItem("dmNotificationSettings");
+        localStorage.removeItem("dmNotificationSent");
+        localStorage.removeItem("dmPushClientId");
+        localStorage.removeItem("dmPushClientToken");
         location.reload();
       }
       function finishSetup() {
@@ -7647,16 +7269,30 @@
         go("cars");
       }
 
-      migrateMultiCarData();
-      migrateLegacyChemicalCatalog();
-      if (!localStorage.getItem("dmSetupDone") && getCars().length === 0)
-        $("setupOverlay").classList.remove("hidden");
-      render();
-      showUpdateNoticeIfNeeded();
-      if ($("chemicalUsageRows") && !$("chemicalUsageRows").children.length)
-        addChemicalUsageRow();
-      if ("serviceWorker" in navigator)
-        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      async function initializeApp() {
+        await window.DMPhotoStore?.init();
+        migrateMultiCarData();
+        migrateLegacyChemicalCatalog();
+        const photoMigrationOk = await migratePhotosToIndexedDb();
+        if (!photoMigrationOk && window.DMPhotoStore?.isAvailable())
+          alert("写真専用保存への移行を完了できませんでした。現在の写真は残しています。先にバックアップを書き出してから、もう一度開き直してください。");
+        if (!localStorage.getItem("dmSetupDone") && getCars().length === 0)
+          $("setupOverlay").classList.remove("hidden");
+        if ("serviceWorker" in navigator)
+          await navigator.serviceWorker.register("./sw.js").catch(() => null);
+        render();
+        const requestedTab = location.hash.replace(/^#/, "");
+        if (requestedTab && document.getElementById(requestedTab)?.classList.contains("tab"))
+          go(requestedTab);
+        showUpdateNoticeIfNeeded();
+        if ($("chemicalUsageRows") && !$("chemicalUsageRows").children.length)
+          addChemicalUsageRow();
+        await window.DMNotifications?.init(getCars());
+      }
+      initializeApp().catch((error) => {
+        console.error("App initialization failed", error);
+        render();
+      });
     </script>
   </body>
 </html>

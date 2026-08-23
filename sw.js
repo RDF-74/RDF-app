@@ -1,8 +1,11 @@
-const CACHE = "detailing-v3.6-beta.5";
+const CACHE = "detailing-v3.7-beta.1";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
+  "./photo-store.js",
+  "./push-config.js",
+  "./notifications.js",
   "./icon-192.png",
   "./icon-512.png",
 ];
@@ -50,5 +53,51 @@ self.addEventListener("fetch", (e) => {
           return n;
         }),
     ),
+  );
+});
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data?.text() || "メンテ時期を確認してください。" };
+  }
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(data.title || "Detailing Manager", {
+        body: data.body || "メンテ時期を確認してください。",
+        icon: data.icon || "./icon-192.png",
+        badge: data.badge || "./icon-192.png",
+        tag: data.tag || "dm-maintenance",
+        renotify: false,
+        data: data.data || { url: "./#home" },
+      }),
+      self.navigator?.setAppBadge
+        ? self.navigator.setAppBadge(1).catch(() => {})
+        : Promise.resolve(),
+    ]),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL(
+    event.notification.data?.url || "./#home",
+    self.registration.scope,
+  ).href;
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then(async (clients) => {
+        const existing = clients.find((client) =>
+          client.url.startsWith(self.registration.scope),
+        );
+        if (existing) {
+          if ("navigate" in existing) await existing.navigate(target).catch(() => {});
+          return existing.focus();
+        }
+        return self.clients.openWindow(target);
+      }),
   );
 });
