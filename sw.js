@@ -1,4 +1,4 @@
-const CACHE = "detailing-v3.7-beta.4-inspection-dashboard";
+const CACHE = "detailing-v3.7-beta.5-inspection-documents-ocr";
 const ASSETS = [
   "./",
   "./index.html",
@@ -10,6 +10,7 @@ const ASSETS = [
   "./line-official-link.js",
   "./vehicle-inspection.js",
   "./inspection-history.js",
+  "./inspection-documents.js",
   "./home-dashboard.js",
   "./release-update.js",
   "./icon-192.png",
