@@ -49,6 +49,7 @@ window.DETAILING_MANAGER_PUSH_SERVER = "";
   if (document.querySelector('script[data-dm-vehicle-inspection]')) return;
 
   if (document.readyState === "loading") {
+    document.write('<script src="./inspection-photo-keep.js" data-dm-inspection-photo-keep></script>');
     document.write('<script src="./vehicle-inspection.js" data-dm-vehicle-inspection></script>');
     document.write('<script src="./inspection-history.js" data-dm-inspection-history></script>');
     document.write('<script src="./inspection-documents.js" data-dm-inspection-documents></script>');
@@ -57,6 +58,7 @@ window.DETAILING_MANAGER_PUSH_SERVER = "";
   }
 
   const files = [
+    { src: "./inspection-photo-keep.js", key: "dmInspectionPhotoKeep" },
     { src: "./vehicle-inspection.js", key: "dmVehicleInspection" },
     { src: "./inspection-history.js", key: "dmInspectionHistory" },
     { src: "./inspection-documents.js", key: "dmInspectionDocuments" },
