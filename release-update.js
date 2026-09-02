@@ -1,13 +1,22 @@
 (function () {
   "use strict";
 
-  const VERSION = "v3.7 β4";
-  const RELEASE_ID = "3.7-beta4-inspection-history-dashboard";
+  const VERSION = "v3.7 β5";
+  const RELEASE_ID = "3.7-beta5-inspection-documents-ocr";
   const SEEN_KEY = "dmSeenReleaseUpdate";
   const MODAL_ID = "dmReleaseUpdateModal";
   const BANNER_ID = "dmReleaseUpdateBanner";
 
   const releaseItems = [
+    "車検履歴へ請求書・明細写真を最大3枚まで添付できるようになりました。",
+    "請求書写真は文字の読みやすさを残しながら1枚約500〜700KBを目安に自動圧縮します。",
+    "写真はまず端末内の写真専用領域へ保存し、RE:CORDARE公式LINE連携済みの場合はPrivate Blobにもバックアップします。",
+    "車検履歴から保存した請求書写真を拡大して確認できます。",
+    "請求書画像を端末内で解析する『OCRで読み取る β』を追加しました。",
+    "OCRでは車検費用・実施日・次回満了日の候補を自動入力し、読み取り結果を確認してから保存できます。",
+  ];
+
+  const beta4Items = [
     "車検完了時に、車検実施日・費用・交換部品やメモを記録できるようになりました。",
     "車検履歴を車両ごとに保存し、過去の実施内容と費用を確認できます。",
     "車検完了時に次回満了日をそのまま入力でき、古い通知を停止して次回通知へ自動で切り替えます。",
@@ -27,12 +36,20 @@
 
   const externalHistory = [
     {
+      id: "3.7-beta5",
+      label: "v3.7 β5",
+      date: "2026年9月2日",
+      title: "請求書写真とOCR βを追加しました",
+      summary: "圧縮写真・Private Blobバックアップ・端末内OCRに対応",
+      changes: releaseItems,
+    },
+    {
       id: "3.7-beta4",
       label: "v3.7 β4",
       date: "2026年9月2日",
       title: "車検履歴と全車両の予定を追加しました",
       summary: "車検の実施記録・次回更新・ホーム予定一覧を追加",
-      changes: releaseItems,
+      changes: beta4Items,
     },
     {
       id: "3.7-beta3",
@@ -79,8 +96,8 @@
       if (node.parentElement?.closest("#updateHistoryList")) return;
       const before = node.nodeValue || "";
       const after = before
-        .replace(/v3\.7\s*β\s*[123]/g, VERSION)
-        .replace(/v3\.7\s*beta\s*[123]/gi, VERSION);
+        .replace(/v3\.7\s*β\s*[1234]/g, VERSION)
+        .replace(/v3\.7\s*beta\s*[1234]/gi, VERSION);
       if (after !== before) node.nodeValue = after;
     });
   }
@@ -145,7 +162,7 @@
         <div>
           <div style="font-size:12px;font-weight:800;letter-spacing:.08em;color:#78a9ff">UPDATE</div>
           <div style="font-size:23px;font-weight:900;margin-top:5px">Detailing Manager ${VERSION}</div>
-          <div style="font-size:14px;opacity:.72;margin-top:4px">車検履歴・ホーム予定アップデート</div>
+          <div style="font-size:14px;opacity:.72;margin-top:4px">請求書写真・OCR βアップデート</div>
         </div>
         <button id="dmReleaseCloseX" type="button" aria-label="閉じる" style="border:0;background:transparent;color:#fff;font-size:26px;line-height:1;cursor:pointer;padding:2px 5px">×</button>
       </div>
