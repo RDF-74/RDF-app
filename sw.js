@@ -1,4 +1,4 @@
-const CACHE = "detailing-v3.7-beta.1-line-notifications-v1";
+const CACHE = "detailing-v3.7-beta.1-line-notifications-v2";
 const ASSETS = [
   "./",
   "./index.html",
