@@ -2,7 +2,7 @@
 // 例: window.DETAILING_MANAGER_PUSH_SERVER = "https://detailing-manager-push.example.workers.dev";
 window.DETAILING_MANAGER_PUSH_SERVER = "";
 
-// v3.7 β2 アップデート通知とバージョン表示。
+// v3.7 β3 アップデート通知とバージョン表示。
 (function loadReleaseUpdate() {
   if (document.querySelector('script[data-dm-release-update]')) return;
 
@@ -42,4 +42,21 @@ window.DETAILING_MANAGER_PUSH_SERVER = "";
     officialLinkScript.async = false;
     document.head.appendChild(officialLinkScript);
   }
+})();
+
+// 車検満了日・車検通知連携。
+// LINE連携ラッパーの後、notifications.js本体より前に読み込んで通知予定を拡張します。
+(function loadVehicleInspection() {
+  if (document.querySelector('script[data-dm-vehicle-inspection]')) return;
+
+  if (document.readyState === "loading") {
+    document.write('<script src="./vehicle-inspection.js" data-dm-vehicle-inspection></script>');
+    return;
+  }
+
+  const script = document.createElement("script");
+  script.src = "./vehicle-inspection.js";
+  script.dataset.dmVehicleInspection = "1";
+  script.async = false;
+  document.head.appendChild(script);
 })();
