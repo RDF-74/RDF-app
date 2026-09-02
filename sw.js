@@ -1,4 +1,4 @@
-const CACHE = "detailing-v3.7-beta.5-inspection-documents-ocr";
+const CACHE = "detailing-v3.7-beta.5-inspection-documents-ocr-r2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const ASSETS = [
   "./notifications.js",
   "./line-notifications.js",
   "./line-official-link.js",
+  "./inspection-photo-keep.js",
   "./vehicle-inspection.js",
   "./inspection-history.js",
   "./inspection-documents.js",
