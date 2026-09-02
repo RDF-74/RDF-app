@@ -1,10 +1,11 @@
-const CACHE = "detailing-v3.7-beta.5-inspection-documents-ocr-r2";
+const CACHE = "detailing-v3.7-beta.5-inspection-documents-ocr-r3-nav";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./photo-store.js",
   "./push-config.js",
+  "./nav-behavior.js",
   "./notifications.js",
   "./line-notifications.js",
   "./line-official-link.js",
