@@ -18,6 +18,22 @@ window.DETAILING_MANAGER_PUSH_SERVER = "";
   document.head.appendChild(script);
 })();
 
+// スクロール時に下部メニューバーが本文へ重なり続けないように調整します。
+(function loadNavBehavior() {
+  if (document.querySelector('script[data-dm-nav-behavior]')) return;
+
+  if (document.readyState === "loading") {
+    document.write('<script src="./nav-behavior.js" data-dm-nav-behavior></script>');
+    return;
+  }
+
+  const script = document.createElement("script");
+  script.src = "./nav-behavior.js";
+  script.dataset.dmNavBehavior = "1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
 // RE:CORDARE公式LINE通知連携。
 // このファイルはnotifications.jsより先に読み込まれるため、LINE連携ラッパーを先に準備します。
 (function loadLineNotifications() {
