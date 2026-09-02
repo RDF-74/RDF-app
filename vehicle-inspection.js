@@ -8,6 +8,7 @@
   const HOME_ID = "dmInspectionHomeSummary";
   const DAY_MS = 86400000;
   let functionsPatched = false;
+  let observerQueued = false;
 
   function loadJson(key, fallback) {
     try {
@@ -43,8 +44,9 @@
   }
 
   function parseLocalDate(value, time = "09:00") {
-    const parts = validDate(value).split("-").map(Number);
-    if (parts.length !== 3) return null;
+    const text = validDate(value);
+    if (!text) return null;
+    const parts = text.split("-").map(Number);
     const clock = String(time || "09:00").split(":").map(Number);
     const date = new Date(parts[0], parts[1] - 1, parts[2], clock[0] || 0, clock[1] || 0, 0, 0);
     return Number.isNaN(date.getTime()) ? null : date;
@@ -70,7 +72,9 @@
   }
 
   function subtractDays(date, days) {
-    return new Date(date.getTime() - days * DAY_MS);
+    const copy = new Date(date.getTime());
+    copy.setDate(copy.getDate() - days);
+    return copy;
   }
 
   function startOfToday() {
@@ -83,6 +87,14 @@
     if (!date) return null;
     const today = startOfToday();
     return Math.round((date.getTime() - today.getTime()) / DAY_MS);
+  }
+
+  function isInspectionWindow(value) {
+    const expiry = parseLocalDate(value, "00:00");
+    if (!expiry) return false;
+    const start = subtractMonths(expiry, 2);
+    start.setHours(0, 0, 0, 0);
+    return startOfToday().getTime() >= start.getTime();
   }
 
   function buildInspectionReminders(inputCars, settings = {}) {
@@ -251,7 +263,7 @@
     const days = daysUntil(expiry);
     if (days === null) return;
     if (days < 0) status.textContent = `車検満了日：${formatDate(expiry)}（${Math.abs(days)}日超過）`;
-    else if (days <= 60) status.textContent = `車検満了日：${formatDate(expiry)}（あと${days}日）・車検を受けられる期間です。`;
+    else if (isInspectionWindow(expiry)) status.textContent = `車検満了日：${formatDate(expiry)}（あと${days}日）・車検を受けられる期間です。`;
     else status.textContent = `車検満了日：${formatDate(expiry)}（あと${days}日）`;
     completeButton.style.display = car?.id ? "block" : "none";
   }
@@ -301,6 +313,12 @@
     alert("今回の車検通知を停止しました。新しい車検満了日が分かったら車両編集から登録してください。");
   }
 
+  function setHomeMarkup(box, markup) {
+    if (box.dataset.inspectionMarkup === markup) return;
+    box.dataset.inspectionMarkup = markup;
+    box.innerHTML = markup;
+  }
+
   function updateHomeSummary() {
     const nextMaint = document.getElementById("nextMaint");
     if (!nextMaint) return;
@@ -315,14 +333,15 @@
       grid.insertAdjacentElement("afterend", box);
     }
 
-    const car = cars().find((item) => item.id === activeCarId()) || cars()[0] || null;
+    const allCars = cars();
+    const car = allCars.find((item) => item.id === activeCarId()) || allCars[0] || null;
     const expiry = validDate(car?.inspectionExpiry);
     if (!car) {
-      box.innerHTML = '<div style="font-size:11px;opacity:.65">車検</div><b>車両未設定</b>';
+      setHomeMarkup(box, '<div style="font-size:11px;opacity:.65">車検</div><b>車両未設定</b>');
       return;
     }
     if (!expiry) {
-      box.innerHTML = `<div style="font-size:11px;opacity:.65">${escapeHtml(car.name || "愛車")}の車検</div><b>満了日 未登録</b>`;
+      setHomeMarkup(box, `<div style="font-size:11px;opacity:.65">${escapeHtml(car.name || "愛車")}の車検</div><b>満了日 未登録</b>`);
       return;
     }
 
@@ -330,9 +349,9 @@
     let headline = "";
     if (days < 0) headline = `${Math.abs(days)}日超過`;
     else if (days === 0) headline = "今日が満了日";
-    else if (days <= 60) headline = `あと${days}日・車検可能期間`;
+    else if (isInspectionWindow(expiry)) headline = `あと${days}日・車検可能期間`;
     else headline = `あと${days}日`;
-    box.innerHTML = `<div style="font-size:11px;opacity:.65">${escapeHtml(car.name || "愛車")}の車検</div><b style="display:block;margin-top:4px">${headline}</b><div style="font-size:12px;opacity:.7;margin-top:3px">満了日 ${formatDate(expiry)}</div>`;
+    setHomeMarkup(box, `<div style="font-size:11px;opacity:.65">${escapeHtml(car.name || "愛車")}の車検</div><b style="display:block;margin-top:4px">${headline}</b><div style="font-size:12px;opacity:.7;margin-top:3px">満了日 ${formatDate(expiry)}</div>`);
   }
 
   function escapeHtml(value) {
@@ -396,12 +415,22 @@
         const result = originalRender.apply(this, arguments);
         ensureFields();
         updateHomeSummary();
-        const car = currentFormCar();
-        if (document.getElementById("carEditId")?.value) fillInspectionField(car);
+        const editId = String(document.getElementById("carEditId")?.value || "").trim();
+        if (editId) fillInspectionField(currentFormCar());
         return result;
       };
     }
     return true;
+  }
+
+  function scheduleUiRefresh() {
+    if (observerQueued) return;
+    observerQueued = true;
+    requestAnimationFrame(() => {
+      observerQueued = false;
+      ensureFields();
+      updateHomeSummary();
+    });
   }
 
   function initUi() {
@@ -418,10 +447,7 @@
       setTimeout(() => clearInterval(timer), 12000);
     }
 
-    const observer = new MutationObserver(() => {
-      ensureFields();
-      updateHomeSummary();
-    });
+    const observer = new MutationObserver(scheduleUiRefresh);
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
