@@ -1,4 +1,4 @@
-const CACHE = "detailing-v3.7-beta.3-vehicle-inspection";
+const CACHE = "detailing-v3.7-beta.3-vehicle-inspection-r2";
 const ASSETS = [
   "./",
   "./index.html",
