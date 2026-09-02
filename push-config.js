@@ -2,6 +2,22 @@
 // 例: window.DETAILING_MANAGER_PUSH_SERVER = "https://detailing-manager-push.example.workers.dev";
 window.DETAILING_MANAGER_PUSH_SERVER = "";
 
+// v3.7 β2 アップデート通知とバージョン表示。
+(function loadReleaseUpdate() {
+  if (document.querySelector('script[data-dm-release-update]')) return;
+
+  if (document.readyState === "loading") {
+    document.write('<script src="./release-update.js" data-dm-release-update></script>');
+    return;
+  }
+
+  const script = document.createElement("script");
+  script.src = "./release-update.js";
+  script.dataset.dmReleaseUpdate = "1";
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
 // RE:CORDARE公式LINE通知連携。
 // このファイルはnotifications.jsより先に読み込まれるため、LINE連携ラッパーを先に準備します。
 (function loadLineNotifications() {
