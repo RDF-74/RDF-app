@@ -1,4 +1,18 @@
-Detailing Manager v3.7 β1 リリースノート
+Detailing Manager v3.7 β2 リリースノート
+
+v3.7 β2の変更
+・RE:CORDARE公式LINEと6桁の連携コードでDetailing Managerを紐付けできるように追加
+・車両ごとのコーティングメンテナンス予定を公式LINEへ同期
+・アプリの「○日前に通知」設定をLINE通知にも反映
+・LINEへのテスト送信、予定の再同期、連携解除に対応
+・LINE通知用バックエンドをVercel Private Blobへ保存し、端末とLINEユーザーの連携情報を安全に管理
+・Vercel CronとCRON_SECRET認証による定期通知処理に対応
+・v3.7 β2更新後の初回起動時にアップデート内容を表示
+・アプリ内のバージョン表示をv3.7 β2へ更新
+
+LINE通知を使う場合は、RE:CORDARE公式LINEへ「通知連携」と送信し、届いた6桁コードをDetailing Managerの通知設定へ入力してください。
+連携コードは10分間有効です。
+既存のローカル通知・Web Push通知はそのまま利用でき、LINE通知と併用できます。
 
 v3.7 β1の変更
 ・車両、施工Before/After、整備、ケミカルの写真をlocalStorageからIndexedDBの写真専用領域へ分離
