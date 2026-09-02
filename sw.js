@@ -1,4 +1,4 @@
-const CACHE = "detailing-v3.7-beta.1-line-notifications-v2";
+const CACHE = "detailing-v3.7-beta.2-line-notifications";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const ASSETS = [
   "./push-config.js",
   "./notifications.js",
   "./line-notifications.js",
+  "./release-update.js",
   "./icon-192.png",
   "./icon-512.png",
 ];
