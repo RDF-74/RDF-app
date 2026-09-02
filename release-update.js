@@ -16,8 +16,42 @@
     "ホーム画面から選択中の車両の車検満了日と残り日数を確認できます。",
   ];
 
+  const externalHistory = [
+    {
+      id: "3.7-beta3",
+      label: "v3.7 β3",
+      date: "2026年9月2日",
+      title: "車検管理に対応しました",
+      summary: "車検満了日・定期通知・LINE通知・完了処理を追加",
+      changes: releaseItems,
+    },
+    {
+      id: "3.7-beta2",
+      label: "v3.7 β2",
+      date: "2026年9月2日",
+      title: "RE:CORDARE公式LINE通知に対応しました",
+      summary: "6桁コードでLINE連携し、メンテ予定を通知",
+      changes: [
+        "RE:CORDARE公式LINEと6桁コードで通知連携",
+        "コーティングのメンテナンス予定を公式LINEへ同期",
+        "アプリの「○日前に通知」設定をLINE通知にも反映",
+        "LINEテスト送信、予定の再同期、連携解除に対応",
+        "LINE通知設定からRE:CORDARE公式LINEを直接開ける導線を追加",
+      ],
+    },
+  ];
+
   window.DETAILING_MANAGER_VERSION = VERSION;
   document.documentElement.dataset.dmVersion = VERSION;
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
 
   function replaceVersionText(root) {
     if (!root) return;
@@ -25,12 +59,46 @@
     const nodes = [];
     while (walker.nextNode()) nodes.push(walker.currentNode);
     nodes.forEach((node) => {
+      if (node.parentElement?.closest("#updateHistoryList")) return;
       const before = node.nodeValue || "";
       const after = before
         .replace(/v3\.7\s*β\s*[12]/g, VERSION)
         .replace(/v3\.7\s*beta\s*[12]/gi, VERSION);
       if (after !== before) node.nodeValue = after;
     });
+  }
+
+  function historyMarkup(release, latest) {
+    return `
+      <details class="update-item${latest ? " latest" : ""}" ${latest ? "open" : ""} data-dm-external-release="${escapeHtml(release.id)}">
+        <summary>
+          <span class="version-badge">${escapeHtml(release.label)}</span>
+          <span><b>${escapeHtml(release.title)}</b><span class="update-item-date">${escapeHtml(release.date)}</span></span>
+        </summary>
+        <div class="muted tiny" style="margin-top:8px">${escapeHtml(release.summary)}</div>
+        <ul>${release.changes.map((change) => `<li>${escapeHtml(change)}</li>`).join("")}</ul>
+      </details>`;
+  }
+
+  function ensureBuiltInHistory() {
+    const badge = document.getElementById("currentVersionBadge");
+    if (badge && badge.textContent !== VERSION) badge.textContent = VERSION;
+
+    const list = document.getElementById("updateHistoryList");
+    if (!list) return;
+    const hasBeta3 = list.querySelector('[data-dm-external-release="3.7-beta3"]');
+    const hasBeta2 = list.querySelector('[data-dm-external-release="3.7-beta2"]');
+    if (hasBeta3 && hasBeta2) return;
+
+    list.querySelectorAll(".update-item.latest").forEach((item) => {
+      item.classList.remove("latest");
+      item.removeAttribute("open");
+    });
+    list.querySelectorAll("[data-dm-external-release]").forEach((item) => item.remove());
+    list.insertAdjacentHTML(
+      "afterbegin",
+      externalHistory.map((release, index) => historyMarkup(release, index === 0)).join(""),
+    );
   }
 
   function closeModal(markSeen) {
@@ -98,19 +166,31 @@
     document.body.appendChild(banner);
   }
 
+  function refreshUi(root) {
+    replaceVersionText(root || document.body);
+    ensureBuiltInHistory();
+  }
+
   function init() {
-    replaceVersionText(document.body);
+    refreshUi(document.body);
     ensureBanner();
     let seen = "";
     try { seen = localStorage.getItem(SEEN_KEY) || ""; } catch {}
     if (seen !== RELEASE_ID) setTimeout(showModal, 350);
 
+    let queued = false;
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) replaceVersionText(node);
           else if (node.nodeType === Node.TEXT_NODE && node.parentElement) replaceVersionText(node.parentElement);
         });
+      });
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        ensureBuiltInHistory();
       });
     });
     observer.observe(document.body, { childList: true, subtree: true });
