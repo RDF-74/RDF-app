@@ -2,7 +2,7 @@
 // 例: window.DETAILING_MANAGER_PUSH_SERVER = "https://detailing-manager-push.example.workers.dev";
 window.DETAILING_MANAGER_PUSH_SERVER = "";
 
-// v3.7 β2 アップデート通知とバージョン表示。
+// v3.7 β3 アップデート通知とバージョン表示。
 (function loadReleaseUpdate() {
   if (document.querySelector('script[data-dm-release-update]')) return;
 
@@ -19,27 +19,30 @@ window.DETAILING_MANAGER_PUSH_SERVER = "";
 })();
 
 // RE:CORDARE公式LINE通知連携。
-// このファイルはnotifications.jsより先に読み込まれるため、LINE連携ラッパーを先に準備します。
+// このファイルはnotifications.jsより先に読み込まれるため、LINE連携ラッパーと車検通知拡張を先に準備します。
 (function loadLineNotifications() {
   if (document.querySelector('script[data-dm-line-notifications]')) return;
 
   if (document.readyState === "loading") {
     document.write('<script src="./line-notifications.js" data-dm-line-notifications></script>');
     document.write('<script src="./line-official-link.js" data-dm-line-official-link></script>');
+    document.write('<script src="./vehicle-inspection.js" data-dm-vehicle-inspection></script>');
     return;
   }
 
-  const script = document.createElement("script");
-  script.src = "./line-notifications.js";
-  script.dataset.dmLineNotifications = "1";
-  script.async = false;
-  document.head.appendChild(script);
+  const scripts = [
+    ["./line-notifications.js", "dmLineNotifications"],
+    ["./line-official-link.js", "dmLineOfficialLink"],
+    ["./vehicle-inspection.js", "dmVehicleInspection"],
+  ];
 
-  if (!document.querySelector('script[data-dm-line-official-link]')) {
-    const officialLinkScript = document.createElement("script");
-    officialLinkScript.src = "./line-official-link.js";
-    officialLinkScript.dataset.dmLineOfficialLink = "1";
-    officialLinkScript.async = false;
-    document.head.appendChild(officialLinkScript);
-  }
+  scripts.forEach(([src, datasetKey]) => {
+    const selector = `script[data-${datasetKey.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}]`;
+    if (document.querySelector(selector)) return;
+    const script = document.createElement("script");
+    script.src = src;
+    script.dataset[datasetKey] = "1";
+    script.async = false;
+    document.head.appendChild(script);
+  });
 })();
