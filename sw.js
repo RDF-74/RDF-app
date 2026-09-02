@@ -1,4 +1,4 @@
-const CACHE = "detailing-v3.7-beta.2-line-notifications-v2";
+const CACHE = "detailing-v3.7-beta.3-vehicle-inspection";
 const ASSETS = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const ASSETS = [
   "./notifications.js",
   "./line-notifications.js",
   "./line-official-link.js",
+  "./vehicle-inspection.js",
   "./release-update.js",
   "./icon-192.png",
   "./icon-512.png",
