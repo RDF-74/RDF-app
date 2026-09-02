@@ -8,7 +8,7 @@ window.DETAILING_MANAGER_PUSH_SERVER = "";
   if (document.querySelector('script[data-dm-line-notifications]')) return;
 
   if (document.readyState === "loading") {
-    document.write('<script src="./line-notifications.js" data-dm-line-notifications><\\/script>');
+    document.write('<script src="./line-notifications.js" data-dm-line-notifications></script>');
     return;
   }
 
