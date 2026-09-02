@@ -2,7 +2,7 @@
 // 例: window.DETAILING_MANAGER_PUSH_SERVER = "https://detailing-manager-push.example.workers.dev";
 window.DETAILING_MANAGER_PUSH_SERVER = "";
 
-// v3.7 β4 アップデート通知とバージョン表示。
+// v3.7 β5 アップデート通知とバージョン表示。
 (function loadReleaseUpdate() {
   if (document.querySelector('script[data-dm-release-update]')) return;
 
@@ -44,13 +44,14 @@ window.DETAILING_MANAGER_PUSH_SERVER = "";
   }
 })();
 
-// 車検通知拡張はnotifications.js本体より前に読み込み、履歴・ホーム予定はその後に同じ順序で準備します。
+// 車検通知拡張はnotifications.js本体より前に読み込み、履歴・請求書写真/OCR・ホーム予定を同じ順序で準備します。
 (function loadVehicleInspectionFeatures() {
   if (document.querySelector('script[data-dm-vehicle-inspection]')) return;
 
   if (document.readyState === "loading") {
     document.write('<script src="./vehicle-inspection.js" data-dm-vehicle-inspection></script>');
     document.write('<script src="./inspection-history.js" data-dm-inspection-history></script>');
+    document.write('<script src="./inspection-documents.js" data-dm-inspection-documents></script>');
     document.write('<script src="./home-dashboard.js" data-dm-home-dashboard></script>');
     return;
   }
@@ -58,6 +59,7 @@ window.DETAILING_MANAGER_PUSH_SERVER = "";
   const files = [
     { src: "./vehicle-inspection.js", key: "dmVehicleInspection" },
     { src: "./inspection-history.js", key: "dmInspectionHistory" },
+    { src: "./inspection-documents.js", key: "dmInspectionDocuments" },
     { src: "./home-dashboard.js", key: "dmHomeDashboard" },
   ];
 
