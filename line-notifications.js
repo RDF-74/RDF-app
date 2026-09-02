@@ -95,15 +95,17 @@
     return baseNotifications
       .buildReminders(Array.isArray(cars) ? cars : [], settings)
       .map((reminder) => {
-        const dueDate = dateKey(reminder.dueAt);
-        if (!dueDate) return null;
+        const notificationDate = dateKey(reminder.scheduledAt);
+        const targetDate = dateKey(reminder.dueAt);
+        if (!notificationDate || !targetDate) return null;
         return {
-          id: `${reminder.tag || "maintenance"}-${dueDate}`,
-          dueDate,
+          id: reminder.id || `${reminder.tag || "maintenance"}-${notificationDate}`,
+          dueDate: notificationDate,
+          targetDate,
           kind: "coating-maintenance",
-          title: `${reminder.carName || "愛車"}のメンテナンス予定`,
+          title: reminder.title || `${reminder.carName || "愛車"}のメンテナンス予定`,
           vehicleName: reminder.carName || "愛車",
-          message: "コーティングのメンテナンス目安日になりました。",
+          message: reminder.body || "コーティングのメンテナンス時期を確認してください。",
           active: true,
         };
       })
@@ -227,7 +229,7 @@
       panel.innerHTML = `
         <div style="font-weight:800;margin-bottom:6px">LINE通知</div>
         <div id="dmLineStatus" style="font-size:.9em;margin-bottom:10px">LINE通知：連携済み</div>
-        <div style="font-size:.82em;opacity:.72;margin-bottom:12px">メンテナンス予定日にRE:CORDARE公式LINEへ通知します。</div>
+        <div style="font-size:.82em;opacity:.72;margin-bottom:12px">アプリの「○日前に通知」設定に合わせて、RE:CORDARE公式LINEへメンテナンス予定を送ります。</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button id="dmLineSyncButton" type="button" style="${buttonStyle(true)}">予定を同期</button>
           <button id="dmLineTestButton" type="button" style="${buttonStyle(false)}">LINEテスト</button>
