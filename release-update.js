@@ -1,29 +1,46 @@
 (function () {
   "use strict";
 
-  const VERSION = "v3.7 β3";
-  const RELEASE_ID = "3.7-beta3-vehicle-inspection";
+  const VERSION = "v3.7 β4";
+  const RELEASE_ID = "3.7-beta4-inspection-history-dashboard";
   const SEEN_KEY = "dmSeenReleaseUpdate";
   const MODAL_ID = "dmReleaseUpdateModal";
   const BANNER_ID = "dmReleaseUpdateBanner";
 
   const releaseItems = [
+    "車検完了時に、車検実施日・費用・交換部品やメモを記録できるようになりました。",
+    "車検履歴を車両ごとに保存し、過去の実施内容と費用を確認できます。",
+    "車検完了時に次回満了日をそのまま入力でき、古い通知を停止して次回通知へ自動で切り替えます。",
+    "ホームに全車両の『これからの予定』を追加しました。",
+    "車検とコーティングメンテの予定だけを期限順にまとめ、期限超過・30日以内を確認できます。",
+    "整備管理機能は追加せず、車検とディテーリングの管理に絞っています。",
+  ];
+
+  const beta3Items = [
     "登録車両ごとに車検満了日を保存できるようになりました。",
     "車検満了日の3か月前・2か月前・1か月前・7日前に通知します。",
     "2か月前の通知では、車検を受けられる期間に入ったことを案内します。",
     "RE:CORDARE公式LINEと連携済みの場合、車検の予定もLINEへ同期します。",
-    "「車検完了」で今回分の残り通知を停止できます。新しい満了日を登録すると次回分へ自動で切り替わります。",
+    "『車検完了』で今回分の残り通知を停止できるようになりました。",
     "ホーム画面から選択中の車両の車検満了日と残り日数を確認できます。",
   ];
 
   const externalHistory = [
+    {
+      id: "3.7-beta4",
+      label: "v3.7 β4",
+      date: "2026年9月2日",
+      title: "車検履歴と全車両の予定を追加しました",
+      summary: "車検の実施記録・次回更新・ホーム予定一覧を追加",
+      changes: releaseItems,
+    },
     {
       id: "3.7-beta3",
       label: "v3.7 β3",
       date: "2026年9月2日",
       title: "車検管理に対応しました",
       summary: "車検満了日・定期通知・LINE通知・完了処理を追加",
-      changes: releaseItems,
+      changes: beta3Items,
     },
     {
       id: "3.7-beta2",
@@ -34,7 +51,7 @@
       changes: [
         "RE:CORDARE公式LINEと6桁コードで通知連携",
         "コーティングのメンテナンス予定を公式LINEへ同期",
-        "アプリの「○日前に通知」設定をLINE通知にも反映",
+        "アプリの『○日前に通知』設定をLINE通知にも反映",
         "LINEテスト送信、予定の再同期、連携解除に対応",
         "LINE通知設定からRE:CORDARE公式LINEを直接開ける導線を追加",
       ],
@@ -62,8 +79,8 @@
       if (node.parentElement?.closest("#updateHistoryList")) return;
       const before = node.nodeValue || "";
       const after = before
-        .replace(/v3\.7\s*β\s*[12]/g, VERSION)
-        .replace(/v3\.7\s*beta\s*[12]/gi, VERSION);
+        .replace(/v3\.7\s*β\s*[123]/g, VERSION)
+        .replace(/v3\.7\s*beta\s*[123]/gi, VERSION);
       if (after !== before) node.nodeValue = after;
     });
   }
@@ -86,9 +103,8 @@
 
     const list = document.getElementById("updateHistoryList");
     if (!list) return;
-    const hasBeta3 = list.querySelector('[data-dm-external-release="3.7-beta3"]');
-    const hasBeta2 = list.querySelector('[data-dm-external-release="3.7-beta2"]');
-    if (hasBeta3 && hasBeta2) return;
+    const ready = externalHistory.every((release) => list.querySelector(`[data-dm-external-release="${release.id}"]`));
+    if (ready) return;
 
     list.querySelectorAll(".update-item.latest").forEach((item) => {
       item.classList.remove("latest");
@@ -129,7 +145,7 @@
         <div>
           <div style="font-size:12px;font-weight:800;letter-spacing:.08em;color:#78a9ff">UPDATE</div>
           <div style="font-size:23px;font-weight:900;margin-top:5px">Detailing Manager ${VERSION}</div>
-          <div style="font-size:14px;opacity:.72;margin-top:4px">車検管理アップデート</div>
+          <div style="font-size:14px;opacity:.72;margin-top:4px">車検履歴・ホーム予定アップデート</div>
         </div>
         <button id="dmReleaseCloseX" type="button" aria-label="閉じる" style="border:0;background:transparent;color:#fff;font-size:26px;line-height:1;cursor:pointer;padding:2px 5px">×</button>
       </div>
