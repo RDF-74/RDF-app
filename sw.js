@@ -1,4 +1,4 @@
-const CACHE = "detailing-v3.7-beta.1";
+const CACHE = "detailing-v3.7-beta.1-line-notifications-v1";
 const ASSETS = [
   "./",
   "./index.html",
@@ -6,6 +6,7 @@ const ASSETS = [
   "./photo-store.js",
   "./push-config.js",
   "./notifications.js",
+  "./line-notifications.js",
   "./icon-192.png",
   "./icon-512.png",
 ];
