@@ -1,18 +1,19 @@
 (function () {
   "use strict";
 
-  const VERSION = "v3.7 β2";
-  const RELEASE_ID = "3.7-beta2-line-notifications";
+  const VERSION = "v3.7 β3";
+  const RELEASE_ID = "3.7-beta3-vehicle-inspection";
   const SEEN_KEY = "dmSeenReleaseUpdate";
   const MODAL_ID = "dmReleaseUpdateModal";
   const BANNER_ID = "dmReleaseUpdateBanner";
 
   const releaseItems = [
-    "RE:CORDARE公式LINEと6桁コードで通知連携できるようになりました。",
-    "コーティングのメンテナンス予定を公式LINEへ同期できます。",
-    "アプリの「○日前に通知」設定をLINE通知にも反映します。",
-    "LINEテスト送信、予定の再同期、連携解除に対応しました。",
-    "LINE通知用バックエンドをPrivate Blob保存とCron認証に対応しました。",
+    "登録車両ごとに車検満了日を保存できるようになりました。",
+    "車検満了日の3か月前・2か月前・1か月前・7日前に通知します。",
+    "2か月前の通知では、車検を受けられる期間に入ったことを案内します。",
+    "RE:CORDARE公式LINEと連携済みの場合、車検の予定もLINEへ同期します。",
+    "「車検完了」で今回分の残り通知を停止できます。新しい満了日を登録すると次回分へ自動で切り替わります。",
+    "ホーム画面から選択中の車両の車検満了日と残り日数を確認できます。",
   ];
 
   window.DETAILING_MANAGER_VERSION = VERSION;
@@ -26,9 +27,8 @@
     nodes.forEach((node) => {
       const before = node.nodeValue || "";
       const after = before
-        .replace(/v3\.7\s*β\s*1/g, VERSION)
-        .replace(/v3\.7\s*beta\s*1/gi, VERSION)
-        .replace(/v3\.7\s*Beta\s*1/g, VERSION);
+        .replace(/v3\.7\s*β\s*[12]/g, VERSION)
+        .replace(/v3\.7\s*beta\s*[12]/gi, VERSION);
       if (after !== before) node.nodeValue = after;
     });
   }
@@ -61,7 +61,7 @@
         <div>
           <div style="font-size:12px;font-weight:800;letter-spacing:.08em;color:#78a9ff">UPDATE</div>
           <div style="font-size:23px;font-weight:900;margin-top:5px">Detailing Manager ${VERSION}</div>
-          <div style="font-size:14px;opacity:.72;margin-top:4px">LINE通知連携アップデート</div>
+          <div style="font-size:14px;opacity:.72;margin-top:4px">車検管理アップデート</div>
         </div>
         <button id="dmReleaseCloseX" type="button" aria-label="閉じる" style="border:0;background:transparent;color:#fff;font-size:26px;line-height:1;cursor:pointer;padding:2px 5px">×</button>
       </div>
