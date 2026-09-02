@@ -216,7 +216,10 @@
     if (!saveJson("cars", updatedCars)) return;
 
     const expiryInput = document.getElementById(FIELD_ID);
-    if (expiryInput) expiryInput.value = nextExpiry;
+    if (expiryInput) {
+      expiryInput.value = nextExpiry;
+      expiryInput.dispatchEvent(new Event("change", { bubbles: true }));
+    }
     closeCompletionPanel();
     renderHistory();
     await syncNotifications(updatedCars);
