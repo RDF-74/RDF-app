@@ -25,6 +25,7 @@ window.DETAILING_MANAGER_PUSH_SERVER = "";
 
   if (document.readyState === "loading") {
     document.write('<script src="./line-notifications.js" data-dm-line-notifications></script>');
+    document.write('<script src="./line-official-link.js" data-dm-line-official-link></script>');
     return;
   }
 
@@ -33,4 +34,12 @@ window.DETAILING_MANAGER_PUSH_SERVER = "";
   script.dataset.dmLineNotifications = "1";
   script.async = false;
   document.head.appendChild(script);
+
+  if (!document.querySelector('script[data-dm-line-official-link]')) {
+    const officialLinkScript = document.createElement("script");
+    officialLinkScript.src = "./line-official-link.js";
+    officialLinkScript.dataset.dmLineOfficialLink = "1";
+    officialLinkScript.async = false;
+    document.head.appendChild(officialLinkScript);
+  }
 })();
