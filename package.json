@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "build": "node scripts/generate-supabase-config.mjs && node scripts/bundle-supabase-client.mjs"
+    "build": "node scripts/generate-supabase-config.mjs && node scripts/bundle-supabase-client.mjs && node scripts/build-manager-page.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.115.0"
