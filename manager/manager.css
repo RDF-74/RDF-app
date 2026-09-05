@@ -88,14 +88,3 @@ input[type="password"] {
   min-width:0;
 }
 
-.form-card,
-.service-timing-correction {
-  overflow-x:clip;
-}
-
-@supports not (overflow:clip) {
-  .form-card,
-  .service-timing-correction {
-    overflow-x:hidden;
-  }
-}
