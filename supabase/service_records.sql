@@ -180,3 +180,72 @@ create policy "Active manager users can update service records"
         and role in ('admin', 'staff')
     )
   );
+
+
+-- Phase 4: 施工開始・完了・実績
+alter table public.service_records
+  add column if not exists actual_started_at timestamptz,
+  add column if not exists actual_completed_at timestamptz,
+  add column if not exists actual_service_minutes integer,
+  add column if not exists actual_total integer,
+  add column if not exists service_notes text;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'service_records_actual_values_check'
+      and conrelid = 'public.service_records'::regclass
+  ) then
+    alter table public.service_records
+      add constraint service_records_actual_values_check
+      check (
+        (actual_service_minutes is null or actual_service_minutes >= 0)
+        and (actual_total is null or actual_total >= 0)
+        and (
+          actual_completed_at is null
+          or actual_started_at is null
+          or actual_completed_at >= actual_started_at
+        )
+      );
+  end if;
+end $$;
+
+create or replace function public.set_service_record_actual_timing()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.status = 'in_progress'
+     and old.status is distinct from 'in_progress'
+     and new.actual_started_at is null then
+    new.actual_started_at = now();
+  end if;
+
+  if new.status = 'completed'
+     and old.status is distinct from 'completed' then
+    if new.actual_started_at is null then
+      new.actual_started_at = coalesce(old.actual_started_at, now());
+    end if;
+    if new.actual_completed_at is null then
+      new.actual_completed_at = now();
+    end if;
+    if new.actual_started_at is not null and new.actual_completed_at is not null then
+      new.actual_service_minutes = greatest(
+        0,
+        round(extract(epoch from (new.actual_completed_at - new.actual_started_at)) / 60.0)::integer
+      );
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists service_records_set_actual_timing on public.service_records;
+create trigger service_records_set_actual_timing
+before update on public.service_records
+for each row execute function public.set_service_record_actual_timing();
+
+revoke all on function public.set_service_record_actual_timing() from public, anon, authenticated;

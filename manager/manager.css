@@ -33,3 +33,10 @@ button,input,select,textarea { font:inherit; } button { cursor:pointer; border:0
 .time-summary { display:flex; justify-content:space-between; gap:10px; margin-top:12px; padding:12px 13px; border:1px solid #294256; border-radius:15px; background:#0b141c; font-size:13px; }
 .time-summary strong { display:block; margin-top:3px; color:var(--text); font-size:16px; }
 .service-create-button { margin-top:10px; }
+
+.service-action-button { margin:14px 0 6px; }
+.service-status-note { margin:10px 0 4px; }
+.service-actual-summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:12px 0 16px; }
+.service-actual-summary > div { padding:11px 12px; border:1px solid #294256; border-radius:14px; background:#0b141c; }
+.service-actual-summary span { display:block; color:var(--muted); font-size:11px; }
+.service-actual-summary strong { display:block; margin-top:4px; font-size:16px; }

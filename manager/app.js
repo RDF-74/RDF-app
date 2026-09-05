@@ -488,13 +488,22 @@ const setServiceContent = (content) => {
   const target = document.getElementById("managerContent");
   if (target) target.innerHTML = content;
 };
+const formatActualTime = (value) => value
+  ? new Date(value).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })
+  : "未記録";
+const serviceTimeDifference = (record) => {
+  if (record.actual_service_minutes == null || record.planned_service_minutes == null) return "";
+  const diff = Number(record.actual_service_minutes) - Number(record.planned_service_minutes);
+  if (diff === 0) return "予定どおり";
+  return `${diff > 0 ? "+" : "−"}${Math.abs(diff)}分`;
+};
 
 async function renderServiceList() {
   const token = ++serviceViewToken;
-  const { data, error } = await supabase.from("service_records").select("id, reservation_id, customer_name, vehicle_manufacturer, vehicle_model, course_code, service_date, planned_start_time, planned_slot_minutes, planned_total, status").eq("is_active", true).order("service_date", { ascending: true }).order("planned_start_time", { ascending: true });
+  const { data, error } = await supabase.from("service_records").select("id, reservation_id, customer_name, vehicle_manufacturer, vehicle_model, course_code, service_date, planned_start_time, planned_slot_minutes, planned_total, actual_total, status").eq("is_active", true).order("service_date", { ascending: true }).order("planned_start_time", { ascending: true });
   if (token !== serviceViewToken || activeTab !== "施工") return;
   if (error) return setServiceContent('<div class="card"><p class="error">施工記録を読み込めませんでした。</p></div>');
-  const rows = data.length ? data.map((record) => `<button class="reservation-row" type="button" data-service-record-id="${record.id}"><span><strong>${escapeHtml(reservationDate(record.service_date))} ${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</strong><small>${escapeHtml(record.customer_name)} ・ ${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</small><small>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}${record.planned_total != null ? ` ・ ${escapeHtml(yen(record.planned_total))}` : ""}</small></span><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></button>`).join("") : '<div class="empty-state">まだ施工記録がありません。予約から施工記録を作成できます。</div>';
+  const rows = data.length ? data.map((record) => `<button class="reservation-row" type="button" data-service-record-id="${record.id}"><span><strong>${escapeHtml(reservationDate(record.service_date))} ${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</strong><small>${escapeHtml(record.customer_name)} ・ ${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</small><small>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}${(record.actual_total ?? record.planned_total) != null ? ` ・ ${escapeHtml(yen(record.actual_total ?? record.planned_total))}` : ""}</small></span><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></button>`).join("") : '<div class="empty-state">まだ施工記録がありません。予約から施工記録を作成できます。</div>';
   setServiceContent(`<div class="customer-list">${rows}</div>`);
   document.querySelectorAll("[data-service-record-id]").forEach((button) => button.addEventListener("click", () => renderServiceDetail(button.dataset.serviceRecordId)));
 }
@@ -514,8 +523,68 @@ async function renderServiceDetail(recordId) {
     const master = reservationDiscounts.find((discount) => discount.code === item.code);
     return `${master?.label || item.code}（−${yen(item.amount)}）`;
   }).join("、") || "なし";
+  const actualTotalValue = record.actual_total ?? record.planned_total ?? "";
+  const actionMarkup = record.status === "planned"
+    ? '<button class="primary service-action-button" type="button" id="startServiceButton">施工開始</button>'
+    : record.status === "in_progress"
+      ? '<button class="primary service-action-button" type="button" id="completeServiceButton">施工完了</button>'
+      : "";
+  const actualTimeMarkup = record.actual_started_at || record.actual_completed_at || record.actual_service_minutes != null
+    ? `<div class="service-actual-summary"><div><span>開始</span><strong>${escapeHtml(formatActualTime(record.actual_started_at))}</strong></div><div><span>完了</span><strong>${escapeHtml(formatActualTime(record.actual_completed_at))}</strong></div><div><span>実施工</span><strong>${record.actual_service_minutes != null ? `${escapeHtml(record.actual_service_minutes)}分` : "計測中"}</strong></div>${record.actual_service_minutes != null ? `<div><span>予定との差</span><strong>${escapeHtml(serviceTimeDifference(record))}</strong></div>` : ""}</div>`
+    : '<p class="muted service-status-note">施工開始を押すと実際の開始時刻を記録します。</p>';
 
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div><dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>準備</dt><dd>${escapeHtml(record.planned_prep_minutes ?? 0)}分</dd><dt>施工</dt><dd>${escapeHtml(record.planned_service_minutes ?? 0)}分</dd><dt>片付け</dt><dd>${escapeHtml(record.planned_cleanup_minutes ?? 0)}分</dd><dt>予約枠</dt><dd>${escapeHtml(record.planned_slot_minutes ?? 0)}分</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd><dt>割引</dt><dd>${escapeHtml(discountText)}</dd><dt>予定料金</dt><dd>${record.planned_total != null ? escapeHtml(yen(record.planned_total)) : "未設定"}</dd><dt>予約備考</dt><dd>${escapeHtml(record.reservation_notes || "未登録")}</dd></dl></div><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>準備</dt><dd>${escapeHtml(record.planned_prep_minutes ?? 0)}分</dd><dt>施工</dt><dd>${escapeHtml(record.planned_service_minutes ?? 0)}分</dd><dt>片付け</dt><dd>${escapeHtml(record.planned_cleanup_minutes ?? 0)}分</dd><dt>予約枠</dt><dd>${escapeHtml(record.planned_slot_minutes ?? 0)}分</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd><dt>割引</dt><dd>${escapeHtml(discountText)}</dd><dt>予定料金</dt><dd>${record.planned_total != null ? escapeHtml(yen(record.planned_total)) : "未設定"}</dd><dt>予約備考</dt><dd>${escapeHtml(record.reservation_notes || "未登録")}</dd></dl></div><form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><p class="muted">予定料金を初期値にしています。変更があった場合だけ修正してください。</p><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+
+  document.getElementById("startServiceButton")?.addEventListener("click", async (event) => {
+    if (!confirm("施工を開始しますか？現在時刻を開始時刻として記録します。")) return;
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "開始中…";
+    const { error } = await supabase.from("service_records").update({ status: "in_progress" }).eq("id", recordId).eq("status", "planned");
+    if (error) {
+      button.disabled = false;
+      button.textContent = "施工開始";
+      return alert(saveErrorMessage(error));
+    }
+    await renderServiceDetail(recordId);
+  });
+
+  document.getElementById("completeServiceButton")?.addEventListener("click", async (event) => {
+    if (!confirm("施工を完了しますか？現在時刻を完了時刻として記録します。")) return;
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "完了処理中…";
+    const { error } = await supabase.from("service_records").update({ status: "completed" }).eq("id", recordId).eq("status", "in_progress");
+    if (error) {
+      button.disabled = false;
+      button.textContent = "施工完了";
+      return alert(saveErrorMessage(error));
+    }
+    await renderServiceDetail(recordId);
+  });
+
+  document.getElementById("serviceActualForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector("button[type=submit]");
+    const fields = Object.fromEntries(new FormData(form));
+    button.disabled = true;
+    button.textContent = "保存中…";
+    const values = {
+      actual_total: fields.actual_total === "" ? null : Math.max(0, Number(fields.actual_total)),
+      service_notes: emptyToNull(fields.service_notes),
+    };
+    const { error } = await supabase.from("service_records").update(values).eq("id", recordId);
+    if (error) {
+      button.disabled = false;
+      button.textContent = "実績を保存";
+      const message = document.getElementById("serviceActualError");
+      message.textContent = saveErrorMessage(error);
+      return message.classList.remove("hidden");
+    }
+    await renderServiceDetail(recordId);
+  });
+
   document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
 }
 
@@ -559,6 +628,7 @@ async function createServiceRecordFromReservation(reservationId, button) {
       discount_total: reservation.discount_total || 0,
       calculated_total: reservation.calculated_total,
       planned_total: reservation.final_total,
+      actual_total: reservation.final_total,
       reservation_notes: reservation.notes,
       status: "planned",
     };
