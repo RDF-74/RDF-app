@@ -14,12 +14,89 @@ function renderLogin(message = "", initializing = false) {
 
 function renderManager() {
   const name = escapeHtml(profile?.display_name || "管理者");
-  const content = activeTab === "ホーム" ? `<div class="card"><p class="welcome">${name}さん</p><h2>RE:CORDARE Manager</h2><p class="muted">Phase 1の管理画面基盤です。業務機能は今後追加されます。</p><a class="return-link" href="/">← Detailing Managerへ戻る</a></div>` : `<div class="card placeholder"><h2>${activeTab}</h2><p class="muted">この機能は準備中です。</p></div>`;
+  const content = activeTab === "ホーム" ? `<div class="card"><p class="welcome">${name}さん</p><h2>RE:CORDARE Manager</h2><p class="muted">Phase 1の管理画面基盤です。業務機能は今後追加されます。</p><a class="return-link" href="/">← Detailing Managerへ戻る</a></div>` : `<div id="managerContent">${activeTab === "顧客" ? '<div class="card placeholder"><p class="muted">顧客を読み込んでいます…</p></div>' : `<div class="card placeholder"><h2>${activeTab}</h2><p class="muted">この機能は準備中です。</p></div>`}</div>`;
   app.innerHTML = `<section class="screen"><header class="topbar"><div><div class="brand">RE:CORDARE Manager</div><h1>${activeTab}</h1></div><button class="icon-button" type="button" aria-label="設定" id="settingsButton">⚙</button></header>${content}</section><nav class="manager-nav" aria-label="管理メニュー">${tabs.map((tab) => `<button type="button" data-tab="${tab}" class="${tab === activeTab ? "active" : ""}">${tab}</button>`).join("")}</nav><div class="settings-panel hidden" id="settingsPanel"><div class="settings-box"><h2>設定</h2><p class="muted">管理者：${name}</p><button class="secondary" type="button" id="signOutButton">ログアウト</button><button class="secondary" type="button" id="closeSettingsButton" style="margin-top:10px">閉じる</button></div></div>`;
   document.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click", () => { activeTab = button.dataset.tab; renderManager(); }));
   document.getElementById("settingsButton").addEventListener("click", () => document.getElementById("settingsPanel").classList.remove("hidden"));
   document.getElementById("closeSettingsButton").addEventListener("click", () => document.getElementById("settingsPanel").classList.add("hidden"));
   document.getElementById("signOutButton").addEventListener("click", async () => { await supabase.auth.signOut(); profile = null; renderLogin(); });
+  if (activeTab === "顧客") renderCustomerList();
+}
+
+const contactMethods = { line: "LINE", phone: "電話", other: "その他" };
+const valueOf = (value) => escapeHtml(value || "");
+const errorMessage = "保存できませんでした。入力内容と権限を確認してください。";
+
+function setCustomerContent(content) {
+  const target = document.getElementById("managerContent");
+  if (target) target.innerHTML = content;
+}
+
+async function renderCustomerList() {
+  const { data, error } = await supabase.from("customers").select("id, name, phone, line_display_name, contact_method, updated_at").eq("is_active", true).order("name");
+  if (activeTab !== "顧客") return;
+  if (error) return setCustomerContent(`<div class="card"><p class="error">顧客一覧を読み込めませんでした。</p></div>`);
+  const rows = data.length ? data.map((customer) => `<button class="customer-row" type="button" data-customer-id="${customer.id}"><span><strong>${escapeHtml(customer.name)}</strong><small>${escapeHtml(customer.line_display_name || customer.phone || contactMethods[customer.contact_method])}</small></span><span aria-hidden="true">›</span></button>`).join("") : '<div class="empty-state">まだ顧客が登録されていません。</div>';
+  setCustomerContent(`<button class="primary add-button" type="button" id="newCustomerButton">＋ 顧客を登録</button><div class="customer-list">${rows}</div>`);
+  document.getElementById("newCustomerButton").addEventListener("click", () => renderCustomerForm());
+  document.querySelectorAll("[data-customer-id]").forEach((button) => button.addEventListener("click", () => renderCustomerDetail(button.dataset.customerId)));
+}
+
+function renderCustomerForm(customer = null) {
+  const isEdit = Boolean(customer);
+  setCustomerContent(`<form class="card form-card" id="customerForm"><h2>${isEdit ? "顧客情報を編集" : "新規顧客登録"}</h2><label for="customerName">顧客名</label><input id="customerName" name="name" required value="${valueOf(customer?.name)}" autocomplete="name" /><label for="customerPhone">電話番号</label><input id="customerPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${valueOf(customer?.phone)}" /><label for="customerLine">LINE表示名</label><input id="customerLine" name="line_display_name" value="${valueOf(customer?.line_display_name)}" /><label for="contactMethod">主な連絡手段</label><select id="contactMethod" name="contact_method">${Object.entries(contactMethods).map(([value, label]) => `<option value="${value}" ${customer?.contact_method === value || (!customer && value === "line") ? "selected" : ""}>${label}</option>`).join("")}</select><label for="customerNotes">備考</label><textarea id="customerNotes" name="notes" rows="4">${valueOf(customer?.notes)}</textarea><p class="error hidden" id="customerFormError"></p><button class="primary" type="submit">${isEdit ? "保存" : "登録して車両を追加"}</button><button class="text-button" type="button" id="cancelCustomerButton">キャンセル</button></form>`);
+  document.getElementById("cancelCustomerButton").addEventListener("click", () => isEdit ? renderCustomerDetail(customer.id) : renderCustomerList());
+  document.getElementById("customerForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector("button[type=submit]");
+    const values = Object.fromEntries(new FormData(form));
+    button.disabled = true;
+    const request = isEdit ? supabase.from("customers").update(values).eq("id", customer.id).select().single() : supabase.from("customers").insert(values).select().single();
+    const { data, error } = await request;
+    if (error) { button.disabled = false; document.getElementById("customerFormError").textContent = errorMessage; document.getElementById("customerFormError").classList.remove("hidden"); return; }
+    renderCustomerDetail(data.id);
+  });
+}
+
+async function renderCustomerDetail(customerId) {
+  setCustomerContent('<div class="card placeholder"><p class="muted">顧客を読み込んでいます…</p></div>');
+  const [{ data: customer, error: customerError }, { data: vehicles, error: vehicleError }] = await Promise.all([
+    supabase.from("customers").select("*").eq("id", customerId).maybeSingle(),
+    supabase.from("customer_vehicles").select("*").eq("customer_id", customerId).eq("is_active", true).order("created_at")
+  ]);
+  if (customerError || vehicleError || !customer) return setCustomerContent(`<div class="card"><p class="error">顧客情報を読み込めませんでした。</p><button class="secondary" type="button" id="backToCustomers">一覧へ戻る</button></div>`);
+  const vehicleRows = vehicles.length ? vehicles.map((vehicle) => `<div class="vehicle-row"><div><strong>${escapeHtml(vehicle.manufacturer)} ${escapeHtml(vehicle.model)}</strong><small>${escapeHtml(vehicle.color)}${vehicle.plate_last4 ? ` ・ ${escapeHtml(vehicle.plate_last4)}` : ""}${vehicle.notes ? ` ・ ${escapeHtml(vehicle.notes)}` : ""}</small></div><button class="archive-button" type="button" data-archive-vehicle="${vehicle.id}">無効化</button></div>`).join("") : '<div class="empty-state">車両はまだ登録されていません。</div>';
+  setCustomerContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(customer.name)}</h2><p class="muted">${escapeHtml(contactMethods[customer.contact_method])}</p></div><button class="secondary compact-button" type="button" id="editCustomerButton">編集</button></div><dl><dt>電話番号</dt><dd>${escapeHtml(customer.phone || "未登録")}</dd><dt>LINE表示名</dt><dd>${escapeHtml(customer.line_display_name || "未登録")}</dd><dt>備考</dt><dd>${escapeHtml(customer.notes || "未登録")}</dd></dl><button class="text-button danger-text" type="button" id="archiveCustomerButton">この顧客を無効化</button></div><section class="card"><div class="detail-heading"><h2>車両</h2><button class="secondary compact-button" type="button" id="addVehicleButton">＋ 追加</button></div><div class="vehicle-list">${vehicleRows}</div><div id="vehicleFormArea"></div></section><button class="text-button" type="button" id="backToCustomers">← 顧客一覧へ戻る</button>`);
+  document.getElementById("editCustomerButton").addEventListener("click", () => renderCustomerForm(customer));
+  document.getElementById("backToCustomers").addEventListener("click", renderCustomerList);
+  document.getElementById("addVehicleButton").addEventListener("click", () => renderVehicleForm(customerId));
+  document.getElementById("archiveCustomerButton").addEventListener("click", async () => {
+    const { error } = await supabase.from("customers").update({ is_active: false }).eq("id", customerId);
+    if (error) return alert(errorMessage);
+    renderCustomerList();
+  });
+  document.querySelectorAll("[data-archive-vehicle]").forEach((button) => button.addEventListener("click", async () => {
+    const { error } = await supabase.from("customer_vehicles").update({ is_active: false }).eq("id", button.dataset.archiveVehicle);
+    if (error) return alert(errorMessage);
+    renderCustomerDetail(customerId);
+  }));
+}
+
+function renderVehicleForm(customerId) {
+  const target = document.getElementById("vehicleFormArea");
+  target.innerHTML = `<form class="vehicle-form" id="vehicleForm"><label for="manufacturer">メーカー</label><input id="manufacturer" name="manufacturer" required /><label for="model">車種</label><input id="model" name="model" required /><label for="color">色</label><input id="color" name="color" required /><label for="plateLast4">ナンバー下4桁</label><input id="plateLast4" name="plate_last4" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" /><label for="vehicleNotes">備考</label><textarea id="vehicleNotes" name="notes" rows="3"></textarea><p class="error hidden" id="vehicleFormError"></p><button class="primary" type="submit">車両を登録</button><button class="text-button" type="button" id="cancelVehicleButton">キャンセル</button></form>`;
+  document.getElementById("cancelVehicleButton").addEventListener("click", () => { target.innerHTML = ""; });
+  document.getElementById("vehicleForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector("button[type=submit]");
+    const values = { ...Object.fromEntries(new FormData(form)), customer_id: customerId };
+    button.disabled = true;
+    const { error } = await supabase.from("customer_vehicles").insert(values);
+    if (error) { button.disabled = false; document.getElementById("vehicleFormError").textContent = errorMessage; document.getElementById("vehicleFormError").classList.remove("hidden"); return; }
+    renderCustomerDetail(customerId);
+  });
 }
 
 async function getActiveProfile(user) {
