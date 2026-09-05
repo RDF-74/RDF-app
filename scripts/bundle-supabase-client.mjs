@@ -3,7 +3,8 @@ import { build } from "esbuild";
 await build({
   entryPoints: ["scripts/supabase-browser-entry.mjs"],
   bundle: true,
-  format: "esm",
+  format: "iife",
+  globalName: "RECORDARE_SUPABASE_VENDOR",
   platform: "browser",
   target: ["es2020"],
   minify: true,

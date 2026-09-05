@@ -1,6 +1,5 @@
-import { createSupabaseClient, isSupabaseConfigured } from "./supabase-client.js";
-
 const app = document.getElementById("app");
+const { createSupabaseClient, isSupabaseConfigured } = window.RECORDARE_SUPABASE;
 const tabs = ["ホーム", "顧客", "予約", "施工", "フォロー"];
 let supabase = null;
 let profile = null;
