@@ -45,3 +45,57 @@ button,input,select,textarea { font:inherit; } button { cursor:pointer; border:0
 .service-timing-correction h3 { margin:0 0 8px; font-size:14px; }
 .service-timing-correction label { margin-top:8px; }
 .service-timing-correction .secondary { margin-top:10px; min-height:44px; }
+
+/* iPhone / Safari: form controls must stay inside cards */
+.screen,
+#managerContent,
+.card,
+.form-card,
+.detail-card,
+.service-timing-correction,
+.time-planning-group,
+.price-summary {
+  min-width:0;
+  max-width:100%;
+}
+
+input,
+select,
+textarea {
+  display:block;
+  min-width:0;
+  max-width:100%;
+  inline-size:100%;
+  max-inline-size:100%;
+}
+
+input[type="date"],
+input[type="time"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="email"],
+input[type="password"] {
+  min-inline-size:0;
+  max-inline-size:100%;
+}
+
+.time-grid > label,
+.pricing-choice,
+.pricing-choice-main,
+.pricing-choice-main > span,
+.detail-heading > * {
+  min-width:0;
+}
+
+.form-card,
+.service-timing-correction {
+  overflow-x:clip;
+}
+
+@supports not (overflow:clip) {
+  .form-card,
+  .service-timing-correction {
+    overflow-x:hidden;
+  }
+}
