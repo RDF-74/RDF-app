@@ -26,6 +26,11 @@ function renderManager() {
 const contactMethods = { line: "LINE", phone: "電話", other: "その他" };
 const valueOf = (value) => escapeHtml(value || "");
 const errorMessage = "保存できませんでした。入力内容と権限を確認してください。";
+const emptyToNull = (value) => {
+  const normalized = String(value || "").trim();
+  return normalized || null;
+};
+const saveErrorMessage = (error) => error?.message ? `${errorMessage}（${error.message}）` : errorMessage;
 
 function setCustomerContent(content) {
   const target = document.getElementById("managerContent");
@@ -50,12 +55,28 @@ function renderCustomerForm(customer = null) {
     event.preventDefault();
     const form = event.currentTarget;
     const button = form.querySelector("button[type=submit]");
-    const values = Object.fromEntries(new FormData(form));
+    const fields = Object.fromEntries(new FormData(form));
+    const values = {
+      name: fields.name.trim(),
+      phone: emptyToNull(fields.phone),
+      line_display_name: emptyToNull(fields.line_display_name),
+      contact_method: fields.contact_method,
+      notes: emptyToNull(fields.notes),
+    };
     button.disabled = true;
-    const request = isEdit ? supabase.from("customers").update(values).eq("id", customer.id).select().single() : supabase.from("customers").insert(values).select().single();
-    const { data, error } = await request;
-    if (error) { button.disabled = false; document.getElementById("customerFormError").textContent = errorMessage; document.getElementById("customerFormError").classList.remove("hidden"); return; }
-    renderCustomerDetail(data.id);
+    button.textContent = "保存中…";
+    try {
+      const request = isEdit ? supabase.from("customers").update(values).eq("id", customer.id).select("id").single() : supabase.from("customers").insert(values).select("id").single();
+      const { data, error } = await request;
+      if (error || !data?.id) throw error || new Error("保存結果を確認できませんでした。");
+      await renderCustomerDetail(data.id);
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = isEdit ? "保存" : "登録して車両を追加";
+      const message = document.getElementById("customerFormError");
+      message.textContent = saveErrorMessage(error);
+      message.classList.remove("hidden");
+    }
   });
 }
 
@@ -91,11 +112,28 @@ function renderVehicleForm(customerId) {
     event.preventDefault();
     const form = event.currentTarget;
     const button = form.querySelector("button[type=submit]");
-    const values = { ...Object.fromEntries(new FormData(form)), customer_id: customerId };
+    const fields = Object.fromEntries(new FormData(form));
+    const values = {
+      customer_id: customerId,
+      manufacturer: fields.manufacturer.trim(),
+      model: fields.model.trim(),
+      color: fields.color.trim(),
+      plate_last4: emptyToNull(fields.plate_last4),
+      notes: emptyToNull(fields.notes),
+    };
     button.disabled = true;
-    const { error } = await supabase.from("customer_vehicles").insert(values);
-    if (error) { button.disabled = false; document.getElementById("vehicleFormError").textContent = errorMessage; document.getElementById("vehicleFormError").classList.remove("hidden"); return; }
-    renderCustomerDetail(customerId);
+    button.textContent = "保存中…";
+    try {
+      const { data, error } = await supabase.from("customer_vehicles").insert(values).select("id, customer_id").single();
+      if (error || !data?.id || data.customer_id !== customerId) throw error || new Error("保存結果を確認できませんでした。");
+      await renderCustomerDetail(customerId);
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "車両を登録";
+      const message = document.getElementById("vehicleFormError");
+      message.textContent = saveErrorMessage(error);
+      message.classList.remove("hidden");
+    }
   });
 }
 
