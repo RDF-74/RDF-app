@@ -1,4 +1,4 @@
-const CACHE = "detailing-v3.7-beta.5-inspection-documents-ocr-r3-nav";
+const CACHE = "detailing-v3.7-beta.5-inspection-documents-ocr-r3-nav-recordare-phase1-r1";
 const ASSETS = [
   "./",
   "./index.html",
