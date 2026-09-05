@@ -15,6 +15,11 @@ const ASSETS = [
   "./inspection-documents.js",
   "./home-dashboard.js",
   "./release-update.js",
+  "./manager/index.html",
+  "./manager/manager.css",
+  "./manager/supabase-config.js",
+  "./manager/supabase-client.js",
+  "./manager/app.js",
   "./icon-192.png",
   "./icon-512.png",
 ];
@@ -45,10 +50,20 @@ self.addEventListener("fetch", (e) => {
       fetch(e.request, { cache: "no-store" })
         .then((r) => {
           const x = r.clone();
-          caches.open(CACHE).then((c) => c.put("./index.html", x));
+          const path = new URL(e.request.url).pathname;
+          const cacheKey =
+            path === "/manager" || path.startsWith("/manager/")
+              ? "./manager/index.html"
+              : "./index.html";
+          caches.open(CACHE).then((c) => c.put(cacheKey, x));
           return r;
         })
-        .catch(() => caches.match("./index.html")),
+        .catch(() => {
+          const path = new URL(e.request.url).pathname;
+          return path === "/manager" || path.startsWith("/manager/")
+            ? caches.match("./manager/index.html")
+            : caches.match("./index.html");
+        }),
     );
     return;
   }

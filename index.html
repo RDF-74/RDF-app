@@ -967,6 +967,27 @@
         color: #9fc7e3;
         font-weight: 500;
       }
+      .manager-entry {
+        width: 100%;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        margin-top: 12px;
+        padding: 15px 16px;
+        border: 1px solid #315f82;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #102c42, #0c1924);
+        color: #eff8ff;
+        text-align: left;
+        text-decoration: none;
+      }
+      .manager-entry small {
+        display: block;
+        margin-top: 3px;
+        color: #9fc7e3;
+        font-weight: 500;
+      }
       .guide-head {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
@@ -1762,6 +1783,12 @@
           <button class="primary" onclick="go('history')">＋ 洗車を記録</button
           ><button class="greenbtn" onclick="go('dilution')">希釈計算</button>
         </div>
+        <a class="manager-entry" href="/manager">
+          <span
+            ><b>RE:CORDARE Manager</b
+            ><small>業務用管理画面を開く</small></span
+          ><span aria-hidden="true">›</span>
+        </a>
         <button class="guide-entry" type="button" onclick="openGuide()">
           <img
             data-bundled-image="assets/guide-water-spots.webp"
