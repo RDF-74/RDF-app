@@ -80,6 +80,15 @@ input[type="password"] {
   max-inline-size:100%;
 }
 
+/* iOS 26 WebKit: date/time inputs miscalculate 100% width when horizontal padding is applied */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="week"] {
+  padding-inline:0;
+}
+
 .time-grid > label,
 .pricing-choice,
 .pricing-choice-main,
