@@ -25,3 +25,11 @@ button,input,select,textarea { font:inherit; } button { cursor:pointer; border:0
 .price-line strong { font-variant-numeric:tabular-nums; }
 .price-calculated { margin-top:6px; padding-top:12px; border-top:1px solid var(--line); font-size:16px; }
 .price-summary > label { margin-top:14px; }
+
+.time-planning-group { margin-top:18px; padding-top:14px; border-top:1px solid var(--line); }
+.time-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.time-grid label { margin:0; color:var(--muted); font-size:12px; }
+.time-grid input { margin-top:6px; text-align:center; }
+.time-summary { display:flex; justify-content:space-between; gap:10px; margin-top:12px; padding:12px 13px; border:1px solid #294256; border-radius:15px; background:#0b141c; font-size:13px; }
+.time-summary strong { display:block; margin-top:3px; color:var(--text); font-size:16px; }
+.service-create-button { margin-top:10px; }

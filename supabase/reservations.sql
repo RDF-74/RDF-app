@@ -164,3 +164,36 @@ begin
       );
   end if;
 end $$;
+
+
+-- Phase 3: 準備・施工・片付け・予約枠
+alter table public.reservations
+  add column if not exists planned_prep_minutes integer,
+  add column if not exists planned_service_minutes integer,
+  add column if not exists planned_cleanup_minutes integer,
+  add column if not exists planned_slot_minutes integer;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'reservations_planned_minutes_check'
+      and conrelid = 'public.reservations'::regclass
+  ) then
+    alter table public.reservations
+      add constraint reservations_planned_minutes_check
+      check (
+        (planned_prep_minutes is null or planned_prep_minutes >= 0)
+        and (planned_service_minutes is null or planned_service_minutes >= 0)
+        and (planned_cleanup_minutes is null or planned_cleanup_minutes >= 0)
+        and (planned_slot_minutes is null or planned_slot_minutes >= 0)
+        and (
+          planned_slot_minutes is null
+          or planned_prep_minutes is null
+          or planned_service_minutes is null
+          or planned_cleanup_minutes is null
+          or planned_slot_minutes = planned_prep_minutes + planned_service_minutes + planned_cleanup_minutes
+        )
+      );
+  end if;
+end $$;
