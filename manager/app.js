@@ -497,6 +497,12 @@ const serviceTimeDifference = (record) => {
   if (diff === 0) return "予定どおり";
   return `${diff > 0 ? "+" : "−"}${Math.abs(diff)}分`;
 };
+const timestampLocalDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
+const localTimeToIso = (date, time) => new Date(`${date}T${time}:00`).toISOString();
 
 async function renderServiceList() {
   const token = ++serviceViewToken;
@@ -524,16 +530,28 @@ async function renderServiceDetail(recordId) {
     return `${master?.label || item.code}（−${yen(item.amount)}）`;
   }).join("、") || "なし";
   const actualTotalValue = record.actual_total ?? record.planned_total ?? "";
+
   const actionMarkup = record.status === "planned"
     ? '<button class="primary service-action-button" type="button" id="startServiceButton">施工開始</button>'
     : record.status === "in_progress"
       ? '<button class="primary service-action-button" type="button" id="completeServiceButton">施工完了</button>'
       : "";
+
   const actualTimeMarkup = record.actual_started_at || record.actual_completed_at || record.actual_service_minutes != null
     ? `<div class="service-actual-summary"><div><span>開始</span><strong>${escapeHtml(formatActualTime(record.actual_started_at))}</strong></div><div><span>完了</span><strong>${escapeHtml(formatActualTime(record.actual_completed_at))}</strong></div><div><span>実施工</span><strong>${record.actual_service_minutes != null ? `${escapeHtml(record.actual_service_minutes)}分` : "計測中"}</strong></div>${record.actual_service_minutes != null ? `<div><span>予定との差</span><strong>${escapeHtml(serviceTimeDifference(record))}</strong></div>` : ""}</div>`
     : '<p class="muted service-status-note">施工開始を押すと実際の開始時刻を記録します。</p>';
 
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>準備</dt><dd>${escapeHtml(record.planned_prep_minutes ?? 0)}分</dd><dt>施工</dt><dd>${escapeHtml(record.planned_service_minutes ?? 0)}分</dd><dt>片付け</dt><dd>${escapeHtml(record.planned_cleanup_minutes ?? 0)}分</dd><dt>予約枠</dt><dd>${escapeHtml(record.planned_slot_minutes ?? 0)}分</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd><dt>割引</dt><dd>${escapeHtml(discountText)}</dd><dt>予定料金</dt><dd>${record.planned_total != null ? escapeHtml(yen(record.planned_total)) : "未設定"}</dd><dt>予約備考</dt><dd>${escapeHtml(record.reservation_notes || "未登録")}</dd></dl></div><form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><p class="muted">予定料金を初期値にしています。変更があった場合だけ修正してください。</p><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  const timingCorrectionMarkup = record.status === "in_progress" || record.status === "completed"
+    ? `<form class="service-timing-correction" id="serviceTimingForm"><h3>時刻を修正</h3><label for="serviceActualStartTime">開始時刻</label><input id="serviceActualStartTime" name="actual_start_time" type="time" required value="${escapeHtml(record.actual_started_at ? formatActualTime(record.actual_started_at) : "")}" />${record.status === "completed" ? `<label for="serviceActualCompleteTime">完了時刻</label><input id="serviceActualCompleteTime" name="actual_complete_time" type="time" required value="${escapeHtml(record.actual_completed_at ? formatActualTime(record.actual_completed_at) : "")}" />` : ""}<button class="secondary" type="submit">時刻を保存</button></form>`
+    : "";
+
+  const resetMarkup = record.status === "in_progress"
+    ? '<button class="text-button danger-text" type="button" id="resetServiceToPlanned">施工開始を取り消して予定に戻す</button>'
+    : record.status === "completed"
+      ? '<button class="text-button danger-text" type="button" id="reopenServiceButton">完了を取り消して施工中に戻す</button>'
+      : "";
+
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>準備</dt><dd>${escapeHtml(record.planned_prep_minutes ?? 0)}分</dd><dt>施工</dt><dd>${escapeHtml(record.planned_service_minutes ?? 0)}分</dd><dt>片付け</dt><dd>${escapeHtml(record.planned_cleanup_minutes ?? 0)}分</dd><dt>予約枠</dt><dd>${escapeHtml(record.planned_slot_minutes ?? 0)}分</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd><dt>割引</dt><dd>${escapeHtml(discountText)}</dd><dt>予定料金</dt><dd>${record.planned_total != null ? escapeHtml(yen(record.planned_total)) : "未設定"}</dd><dt>予約備考</dt><dd>${escapeHtml(record.reservation_notes || "未登録")}</dd></dl></div><form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><p class="muted">予定料金を初期値にしています。変更があった場合だけ修正してください。</p><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
 
   document.getElementById("startServiceButton")?.addEventListener("click", async (event) => {
     if (!confirm("施工を開始しますか？現在時刻を開始時刻として記録します。")) return;
@@ -550,7 +568,7 @@ async function renderServiceDetail(recordId) {
   });
 
   document.getElementById("completeServiceButton")?.addEventListener("click", async (event) => {
-    if (!confirm("施工を完了しますか？現在時刻を完了時刻として記録します。")) return;
+    if (!confirm("施工を完了しますか？現在時刻を完了時刻として記録します。予約も「完了」になります。")) return;
     const button = event.currentTarget;
     button.disabled = true;
     button.textContent = "完了処理中…";
@@ -560,6 +578,58 @@ async function renderServiceDetail(recordId) {
       button.textContent = "施工完了";
       return alert(saveErrorMessage(error));
     }
+    await renderServiceDetail(recordId);
+  });
+
+  document.getElementById("serviceTimingForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector("button[type=submit]");
+    const fields = Object.fromEntries(new FormData(form));
+    const startDate = timestampLocalDate(record.actual_started_at);
+    const completedDate = timestampLocalDate(record.actual_completed_at);
+    const startIso = localTimeToIso(startDate, fields.actual_start_time);
+    const values = { actual_started_at: startIso };
+
+    if (record.status === "completed") {
+      const completeIso = localTimeToIso(completedDate, fields.actual_complete_time);
+      if (new Date(completeIso) < new Date(startIso)) {
+        return alert("完了時刻は開始時刻より後にしてください。");
+      }
+      values.actual_completed_at = completeIso;
+    }
+
+    button.disabled = true;
+    button.textContent = "保存中…";
+    const { error } = await supabase.from("service_records").update(values).eq("id", recordId);
+    if (error) {
+      button.disabled = false;
+      button.textContent = "時刻を保存";
+      return alert(saveErrorMessage(error));
+    }
+    await renderServiceDetail(recordId);
+  });
+
+  document.getElementById("resetServiceToPlanned")?.addEventListener("click", async () => {
+    if (!confirm("施工開始を取り消して「予定」に戻しますか？開始時刻は消去されます。")) return;
+    const { error } = await supabase.from("service_records").update({
+      status: "planned",
+      actual_started_at: null,
+      actual_completed_at: null,
+      actual_service_minutes: null,
+    }).eq("id", recordId).eq("status", "in_progress");
+    if (error) return alert(saveErrorMessage(error));
+    await renderServiceDetail(recordId);
+  });
+
+  document.getElementById("reopenServiceButton")?.addEventListener("click", async () => {
+    if (!confirm("完了を取り消して「施工中」に戻しますか？完了時刻と実施工時間は消去され、予約は「確定」に戻ります。")) return;
+    const { error } = await supabase.from("service_records").update({
+      status: "in_progress",
+      actual_completed_at: null,
+      actual_service_minutes: null,
+    }).eq("id", recordId).eq("status", "completed");
+    if (error) return alert(saveErrorMessage(error));
     await renderServiceDetail(recordId);
   });
 

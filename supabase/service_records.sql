@@ -249,3 +249,66 @@ before update on public.service_records
 for each row execute function public.set_service_record_actual_timing();
 
 revoke all on function public.set_service_record_actual_timing() from public, anon, authenticated;
+
+
+-- Phase 5: 誤操作修正と予約ステータス連動
+create or replace function public.set_service_record_actual_timing()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.status = 'in_progress'
+     and old.status is distinct from 'in_progress'
+     and new.actual_started_at is null then
+    new.actual_started_at = now();
+  end if;
+
+  if new.status = 'completed' then
+    if new.actual_started_at is null then
+      new.actual_started_at = coalesce(old.actual_started_at, now());
+    end if;
+    if new.actual_completed_at is null then
+      new.actual_completed_at = now();
+    end if;
+    if new.actual_started_at is not null and new.actual_completed_at is not null then
+      new.actual_service_minutes = greatest(
+        0,
+        round(extract(epoch from (new.actual_completed_at - new.actual_started_at)) / 60.0)::integer
+      );
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function public.sync_reservation_status_from_service()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.status = 'completed' and old.status is distinct from 'completed' then
+    update public.reservations
+      set status = 'completed'
+    where id = new.reservation_id
+      and status <> 'cancelled';
+  elsif old.status = 'completed' and new.status <> 'completed' then
+    update public.reservations
+      set status = 'confirmed'
+    where id = new.reservation_id
+      and status = 'completed';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists service_records_sync_reservation_status on public.service_records;
+create trigger service_records_sync_reservation_status
+after update of status on public.service_records
+for each row execute function public.sync_reservation_status_from_service();
+
+revoke all on function public.set_service_record_actual_timing() from public, anon, authenticated;
+revoke all on function public.sync_reservation_status_from_service() from public, anon, authenticated;

@@ -40,3 +40,8 @@ button,input,select,textarea { font:inherit; } button { cursor:pointer; border:0
 .service-actual-summary > div { padding:11px 12px; border:1px solid #294256; border-radius:14px; background:#0b141c; }
 .service-actual-summary span { display:block; color:var(--muted); font-size:11px; }
 .service-actual-summary strong { display:block; margin-top:4px; font-size:16px; }
+
+.service-timing-correction { margin:14px 0 6px; padding:13px; border:1px solid var(--line); border-radius:16px; background:#0d151d; }
+.service-timing-correction h3 { margin:0 0 8px; font-size:14px; }
+.service-timing-correction label { margin-top:8px; }
+.service-timing-correction .secondary { margin-top:10px; min-height:44px; }
