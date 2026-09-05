@@ -82,7 +82,7 @@ function renderCustomerForm(customer = null) {
   });
 }
 
-async function renderCustomerDetail(customerId) {
+async function renderCustomerDetail(customerId, returnToReservation = null) {
   setCustomerContent('<div class="card placeholder"><p class="muted">顧客を読み込んでいます…</p></div>');
   const [{ data: customer, error: customerError }, { data: vehicles, error: vehicleError }] = await Promise.all([
     supabase.from("customers").select("*").eq("id", customerId).maybeSingle(),
@@ -90,9 +90,9 @@ async function renderCustomerDetail(customerId) {
   ]);
   if (customerError || vehicleError || !customer) return setCustomerContent(`<div class="card"><p class="error">顧客情報を読み込めませんでした。</p><button class="secondary" type="button" id="backToCustomers">一覧へ戻る</button></div>`);
   const vehicleRows = vehicles.length ? vehicles.map((vehicle) => `<div class="vehicle-row"><div><strong>${escapeHtml(vehicle.manufacturer)} ${escapeHtml(vehicle.model)}</strong><small>${escapeHtml(vehicle.color)}${vehicle.plate_last4 ? ` ・ ${escapeHtml(vehicle.plate_last4)}` : ""}${vehicle.notes ? ` ・ ${escapeHtml(vehicle.notes)}` : ""}</small></div><button class="archive-button" type="button" data-archive-vehicle="${vehicle.id}">無効化</button></div>`).join("") : '<div class="empty-state">車両はまだ登録されていません。</div>';
-  setCustomerContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(customer.name)}</h2><p class="muted">${escapeHtml(contactMethods[customer.contact_method])}</p></div><button class="secondary compact-button" type="button" id="editCustomerButton">編集</button></div><dl><dt>電話番号</dt><dd>${escapeHtml(customer.phone || "未登録")}</dd><dt>LINE表示名</dt><dd>${escapeHtml(customer.line_display_name || "未登録")}</dd><dt>備考</dt><dd>${escapeHtml(customer.notes || "未登録")}</dd></dl><button class="text-button danger-text" type="button" id="archiveCustomerButton">この顧客を無効化</button></div><section class="card"><div class="detail-heading"><h2>車両</h2><button class="secondary compact-button" type="button" id="addVehicleButton">＋ 追加</button></div><div class="vehicle-list">${vehicleRows}</div><div id="vehicleFormArea"></div></section><button class="text-button" type="button" id="backToCustomers">← 顧客一覧へ戻る</button>`);
+  setCustomerContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(customer.name)}</h2><p class="muted">${escapeHtml(contactMethods[customer.contact_method])}</p></div><button class="secondary compact-button" type="button" id="editCustomerButton">編集</button></div><dl><dt>電話番号</dt><dd>${escapeHtml(customer.phone || "未登録")}</dd><dt>LINE表示名</dt><dd>${escapeHtml(customer.line_display_name || "未登録")}</dd><dt>備考</dt><dd>${escapeHtml(customer.notes || "未登録")}</dd></dl><button class="text-button danger-text" type="button" id="archiveCustomerButton">この顧客を無効化</button></div><section class="card"><div class="detail-heading"><h2>車両</h2><button class="secondary compact-button" type="button" id="addVehicleButton">＋ 追加</button></div><div class="vehicle-list">${vehicleRows}</div><div id="vehicleFormArea"></div></section><button class="text-button" type="button" id="backToCustomers">${returnToReservation ? "← 予約へ戻る" : "← 顧客一覧へ戻る"}</button>`);
   document.getElementById("editCustomerButton").addEventListener("click", () => renderCustomerForm(customer));
-  document.getElementById("backToCustomers").addEventListener("click", renderCustomerList);
+  document.getElementById("backToCustomers").addEventListener("click", returnToReservation || renderCustomerList);
   document.getElementById("addVehicleButton").addEventListener("click", () => renderVehicleForm(customerId));
   document.getElementById("archiveCustomerButton").addEventListener("click", async () => {
     const { error } = await supabase.from("customers").update({ is_active: false }).eq("id", customerId);
@@ -208,7 +208,7 @@ async function renderReservationForm(reservation = null) {
   };
   search.addEventListener("input", () => { customerId.value = ""; viewCustomer.classList.add("hidden"); loadReservationVehicles(""); showCustomers(search.value); });
   search.addEventListener("focus", () => showCustomers(search.value));
-  viewCustomer.addEventListener("click", () => renderCustomerDetail(customerId.value));
+  viewCustomer.addEventListener("click", () => renderCustomerDetail(customerId.value, () => renderReservationForm(reservation)));
   document.getElementById("cancelReservationButton").addEventListener("click", renderReservationList);
   if (reservation?.customer_id) await loadReservationVehicles(reservation.customer_id, reservation.vehicle_id);
   document.getElementById("reservationForm").addEventListener("submit", async (event) => {
