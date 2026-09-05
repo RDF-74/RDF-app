@@ -66,3 +66,101 @@ create policy "Active manager users can update reservations"
         and role in ('admin', 'staff')
     )
   );
+
+-- Phase 2: 車両区分・料金・オプション・割引・出張料
+alter table public.customer_vehicles
+  add column if not exists size_class text;
+
+alter table public.reservations
+  add column if not exists vehicle_size_class text,
+  add column if not exists selected_options jsonb not null default '[]'::jsonb,
+  add column if not exists selected_discounts jsonb not null default '[]'::jsonb,
+  add column if not exists travel_zone text,
+  add column if not exists base_price integer,
+  add column if not exists options_total integer not null default 0,
+  add column if not exists travel_fee integer not null default 0,
+  add column if not exists discount_total integer not null default 0,
+  add column if not exists calculated_total integer,
+  add column if not exists final_total integer;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'customer_vehicles_size_class_check'
+      and conrelid = 'public.customer_vehicles'::regclass
+  ) then
+    alter table public.customer_vehicles
+      add constraint customer_vehicles_size_class_check
+      check (
+        size_class is null or size_class in (
+          'kei_compact','sedan_wagon','suv','minivan','large_hiace'
+        )
+      );
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'reservations_vehicle_size_class_check'
+      and conrelid = 'public.reservations'::regclass
+  ) then
+    alter table public.reservations
+      add constraint reservations_vehicle_size_class_check
+      check (
+        vehicle_size_class is null or vehicle_size_class in (
+          'kei_compact','sedan_wagon','suv','minivan','large_hiace'
+        )
+      );
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'reservations_travel_zone_check'
+      and conrelid = 'public.reservations'::regclass
+  ) then
+    alter table public.reservations
+      add constraint reservations_travel_zone_check
+      check (
+        travel_zone is null or travel_zone in (
+          'within_10','km10_20','km20_30','over_30'
+        )
+      );
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'reservations_selected_options_array_check'
+      and conrelid = 'public.reservations'::regclass
+  ) then
+    alter table public.reservations
+      add constraint reservations_selected_options_array_check
+      check (jsonb_typeof(selected_options) = 'array');
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'reservations_selected_discounts_array_check'
+      and conrelid = 'public.reservations'::regclass
+  ) then
+    alter table public.reservations
+      add constraint reservations_selected_discounts_array_check
+      check (jsonb_typeof(selected_discounts) = 'array');
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'reservations_price_values_check'
+      and conrelid = 'public.reservations'::regclass
+  ) then
+    alter table public.reservations
+      add constraint reservations_price_values_check
+      check (
+        (base_price is null or base_price >= 0)
+        and options_total >= 0
+        and travel_fee >= 0
+        and discount_total >= 0
+        and (calculated_total is null or calculated_total >= 0)
+        and (final_total is null or final_total >= 0)
+      );
+  end if;
+end $$;

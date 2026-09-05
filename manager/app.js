@@ -141,18 +141,58 @@ function renderVehicleForm(customerId) {
 
 const reservationCourses = { rinseless: "リンスレス", maintenance: "メンテナンス", standard: "スタンダード", reset_coat: "リセット＆コート" };
 const reservationStatuses = { tentative: "仮予約", confirmed: "確定", completed: "完了", cancelled: "キャンセル" };
+const reservationSizeClasses = {
+  kei_compact: "軽・コンパクト",
+  sedan_wagon: "セダン・ワゴン",
+  suv: "SUV",
+  minivan: "ミニバン",
+  large_hiace: "大型・ハイエース",
+};
+const reservationCoursePrices = {
+  kei_compact: { rinseless: 5000, maintenance: 4000, standard: 5500, reset_coat: 20000 },
+  sedan_wagon: { rinseless: 5500, maintenance: 4500, standard: 6000, reset_coat: 23000 },
+  suv: { rinseless: 6000, maintenance: 5000, standard: 6500, reset_coat: 25000 },
+  minivan: { rinseless: 6500, maintenance: 5500, standard: 7000, reset_coat: 28000 },
+  large_hiace: { rinseless: 7500, maintenance: 6000, standard: 8000, reset_coat: 32000 },
+};
+const reservationOptions = [
+  { code: "front_glass_oil_repellent", label: "フロントガラス 油膜除去＋撥水", amount: 1000, starting: true },
+  { code: "front_glass_scale", label: "フロントガラス ウロコ除去＋油膜除去＋撥水", amount: 2000, starting: true },
+  { code: "all_glass_oil_repellent", label: "全面ガラス 油膜除去＋撥水", amount: 3000, starting: true },
+  { code: "all_glass_scale", label: "全面ガラス ウロコ除去＋油膜除去＋撥水", amount: 0, consult: true },
+  { code: "body_iron_removal", label: "ボディ鉄粉除去", amount: 2000, starting: true },
+  { code: "wheel_scale_light", label: "ホイール スケール除去 軽度4本", amount: 2000, starting: true },
+  { code: "wheel_scale_heavy", label: "ホイール スケール除去 重度4本", amount: 4000, starting: true },
+  { code: "unpainted_resin_partial", label: "未塗装樹脂コーティング 部分施工", amount: 2000, starting: true },
+  { code: "unpainted_resin_wide", label: "未塗装樹脂コーティング 広範囲", amount: 4000, starting: true },
+];
+const reservationDiscounts = [
+  { code: "maintenance_30", label: "30日以内メンテナンス", amount: 1000, capped: true },
+  { code: "maintenance_31_45", label: "31〜45日以内メンテナンス", amount: 500, capped: true },
+  { code: "same_address_second", label: "同一住所2台目", amount: 500, capped: false },
+  { code: "referral", label: "紹介割", amount: 500, capped: true },
+  { code: "referrer_reward", label: "紹介者割", amount: 500, capped: true },
+];
+const reservationTravelZones = {
+  within_10: { label: "10km以内", fee: 0 },
+  km10_20: { label: "10〜20km", fee: 500 },
+  km20_30: { label: "20〜30km", fee: 1000 },
+  over_30: { label: "30km以上（要相談）", fee: 0 },
+};
 let reservationFilter = "upcoming";
 
 const reservationDate = (value) => value ? String(value).slice(0, 10) : "";
 const reservationTime = (value) => value ? String(value).slice(0, 5) : "";
 const reservationVehicleName = (vehicle) => vehicle ? `${vehicle.manufacturer} ${vehicle.model}` : "車両未設定";
+const yen = (value) => `¥${Number(value || 0).toLocaleString("ja-JP")}`;
+const jsonArray = (value) => Array.isArray(value) ? value : [];
 const setReservationContent = (content) => {
   const target = document.getElementById("managerContent");
   if (target) target.innerHTML = content;
 };
 
 async function renderReservationList() {
-  const { data, error } = await supabase.from("reservations").select("id, customer_id, vehicle_id, course_code, reservation_date, start_time, status, notes, customers(name), customer_vehicles(manufacturer, model, color)").eq("is_active", true).order("reservation_date", { ascending: true }).order("start_time", { ascending: true });
+  const { data, error } = await supabase.from("reservations").select("id, customer_id, vehicle_id, course_code, reservation_date, start_time, status, notes, vehicle_size_class, selected_options, selected_discounts, travel_zone, base_price, options_total, travel_fee, discount_total, calculated_total, final_total, customers(name), customer_vehicles(manufacturer, model, color, size_class)").eq("is_active", true).order("reservation_date", { ascending: true }).order("start_time", { ascending: true });
   if (activeTab !== "予約") return;
   if (error) return setReservationContent('<div class="card"><p class="error">予約一覧を読み込めませんでした。</p></div>');
   const today = new Date().toLocaleDateString("en-CA");
@@ -162,69 +202,203 @@ async function renderReservationList() {
     if (reservationFilter === "active") return reservation.status !== "cancelled";
     return true;
   });
-  const rows = filtered.length ? filtered.map((reservation) => `<button class="reservation-row" type="button" data-reservation-id="${reservation.id}"><span><strong>${escapeHtml(reservationDate(reservation.reservation_date))} ${escapeHtml(reservationTime(reservation.start_time))}</strong><small>${escapeHtml(reservation.customers?.name || "顧客未設定")} ・ ${escapeHtml(reservationVehicleName(reservation.customer_vehicles))}</small><small>${escapeHtml(reservationCourses[reservation.course_code] || reservation.course_code)}</small></span><span class="reservation-status">${escapeHtml(reservationStatuses[reservation.status] || reservation.status)}</span></button>`).join("") : '<div class="empty-state">該当する予約はありません。</div>';
+  const rows = filtered.length ? filtered.map((reservation) => `<button class="reservation-row" type="button" data-reservation-id="${reservation.id}"><span><strong>${escapeHtml(reservationDate(reservation.reservation_date))} ${escapeHtml(reservationTime(reservation.start_time))}</strong><small>${escapeHtml(reservation.customers?.name || "顧客未設定")} ・ ${escapeHtml(reservationVehicleName(reservation.customer_vehicles))}</small><small>${escapeHtml(reservationCourses[reservation.course_code] || reservation.course_code)}${reservation.final_total != null ? ` ・ ${escapeHtml(yen(reservation.final_total))}` : ""}</small></span><span class="reservation-status">${escapeHtml(reservationStatuses[reservation.status] || reservation.status)}</span></button>`).join("") : '<div class="empty-state">該当する予約はありません。</div>';
   setReservationContent(`<button class="primary add-button" type="button" id="newReservationButton">＋ 予約を登録</button><div class="reservation-filters">${[["today", "今日"], ["upcoming", "今後"], ["all", "すべて"], ["active", "キャンセル除外"]].map(([value, label]) => `<button class="filter-button ${reservationFilter === value ? "active" : ""}" type="button" data-reservation-filter="${value}">${label}</button>`).join("")}</div><div class="customer-list">${rows}</div>`);
   document.getElementById("newReservationButton").addEventListener("click", () => renderReservationForm());
   document.querySelectorAll("[data-reservation-filter]").forEach((button) => button.addEventListener("click", () => { reservationFilter = button.dataset.reservationFilter; renderReservationList(); }));
   document.querySelectorAll("[data-reservation-id]").forEach((button) => button.addEventListener("click", () => renderReservationForm(data.find((reservation) => reservation.id === button.dataset.reservationId))));
 }
 
-async function loadReservationVehicles(customerId, selectedVehicleId = "") {
+async function loadReservationVehicles(customerId, selectedVehicleId = "", onReady = null) {
   const select = document.getElementById("reservationVehicle");
   if (!select) return;
-  if (!customerId) { select.innerHTML = '<option value="">先に顧客を選択してください</option>'; select.disabled = true; return; }
+  if (!customerId) {
+    select.innerHTML = '<option value="">先に顧客を選択してください</option>';
+    select.disabled = true;
+    onReady?.([], "");
+    return;
+  }
   select.disabled = true;
   select.innerHTML = '<option value="">車両を読み込んでいます…</option>';
-  const { data, error } = await supabase.from("customer_vehicles").select("id, manufacturer, model, color").eq("customer_id", customerId).eq("is_active", true).order("created_at");
-  if (error || !data.length) { select.innerHTML = '<option value="">有効な車両がありません</option>'; return; }
+  const { data, error } = await supabase.from("customer_vehicles").select("id, manufacturer, model, color, size_class").eq("customer_id", customerId).eq("is_active", true).order("created_at");
+  if (error || !data.length) {
+    select.innerHTML = '<option value="">有効な車両がありません</option>';
+    onReady?.([], "");
+    return;
+  }
   const autoSelected = selectedVehicleId || (data.length === 1 ? data[0].id : "");
   select.innerHTML = `<option value="">車両を選択</option>${data.map((vehicle) => `<option value="${vehicle.id}" ${vehicle.id === autoSelected ? "selected" : ""}>${escapeHtml(reservationVehicleName(vehicle))}（${escapeHtml(vehicle.color)}）</option>`).join("")}`;
   select.disabled = false;
+  onReady?.(data, autoSelected);
 }
 
 async function renderReservationForm(reservation = null) {
   const isEdit = Boolean(reservation);
   const { data: customers, error } = await supabase.from("customers").select("id, name, phone, line_display_name").eq("is_active", true).order("name");
   if (error) return setReservationContent('<div class="card"><p class="error">顧客を読み込めませんでした。</p></div>');
+
   const selectedCustomer = customers.find((customer) => customer.id === reservation?.customer_id);
   const initialCustomerName = selectedCustomer?.name || "";
-  setReservationContent(`<form class="card form-card" id="reservationForm"><h2>${isEdit ? "予約を編集" : "新規予約"}</h2><label for="reservationCustomerSearch">顧客</label><input id="reservationCustomerSearch" type="search" placeholder="顧客名で検索" autocomplete="off" value="${valueOf(initialCustomerName)}" required /><input id="reservationCustomerId" type="hidden" value="${valueOf(reservation?.customer_id)}" /><div class="picker-results" id="reservationCustomerResults"></div><button class="text-button ${reservation?.customer_id ? "" : "hidden"}" type="button" id="viewReservationCustomer">顧客詳細を見る</button><label for="reservationVehicle">車両</label><select id="reservationVehicle" name="vehicle_id" required disabled><option value="">先に顧客を選択してください</option></select><label for="reservationCourse">コース</label><select id="reservationCourse" name="course_code" required>${Object.entries(reservationCourses).map(([value, label]) => `<option value="${value}" ${reservation?.course_code === value ? "selected" : ""}>${label}</option>`).join("")}</select><label for="reservationDate">施工日</label><input id="reservationDate" name="reservation_date" type="date" required value="${valueOf(reservationDate(reservation?.reservation_date) || new Date().toLocaleDateString("en-CA"))}" /><label for="reservationTime">開始時間</label><input id="reservationTime" name="start_time" type="time" required value="${valueOf(reservationTime(reservation?.start_time))}" /><label for="reservationStatus">予約状態</label><select id="reservationStatus" name="status" required>${Object.entries(reservationStatuses).map(([value, label]) => `<option value="${value}" ${reservation?.status === value || (!reservation && value === "confirmed") ? "selected" : ""}>${label}</option>`).join("")}</select><label for="reservationNotes">備考</label><textarea id="reservationNotes" name="notes" rows="3">${valueOf(reservation?.notes)}</textarea><p class="error hidden" id="reservationFormError"></p><button class="primary" type="submit">${isEdit ? "変更を保存" : "予約を登録"}</button><button class="text-button" type="button" id="cancelReservationButton">予約一覧へ戻る</button></form>`);
+  const selectedOptions = new Map(jsonArray(reservation?.selected_options).map((item) => [item.code, Number(item.amount || 0)]));
+  const selectedDiscounts = new Set(jsonArray(reservation?.selected_discounts).map((item) => item.code));
+  const initialTravelZone = isEdit ? (reservation?.travel_zone || "") : "within_10";
+
+  const optionMarkup = reservationOptions.map((option) => {
+    const checked = selectedOptions.has(option.code);
+    const amount = checked ? selectedOptions.get(option.code) : option.amount;
+    const priceLabel = option.consult ? "要相談" : `${yen(option.amount)}${option.starting ? "〜" : ""}`;
+    return `<div class="pricing-choice"><label class="pricing-choice-main"><input type="checkbox" data-option-code="${option.code}" ${checked ? "checked" : ""} /><span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(priceLabel)}</small></span></label><div class="pricing-amount ${checked ? "" : "hidden"}" data-option-amount-wrap="${option.code}"><span>金額</span><input type="number" inputmode="numeric" min="0" step="100" value="${Number(amount || 0)}" data-option-amount="${option.code}" /></div></div>`;
+  }).join("");
+
+  const discountMarkup = reservationDiscounts.map((discount) => `<label class="pricing-choice pricing-choice-main"><input type="checkbox" data-discount-code="${discount.code}" ${selectedDiscounts.has(discount.code) ? "checked" : ""} /><span><strong>${escapeHtml(discount.label)}</strong><small>−${escapeHtml(yen(discount.amount))}${discount.capped ? "（通常割引）" : "（別枠）"}</small></span></label>`).join("");
+
+  setReservationContent(`<form class="card form-card" id="reservationForm"><h2>${isEdit ? "予約を編集" : "新規予約"}</h2><label for="reservationCustomerSearch">顧客</label><input id="reservationCustomerSearch" type="search" placeholder="顧客名で検索" autocomplete="off" value="${valueOf(initialCustomerName)}" required /><input id="reservationCustomerId" type="hidden" value="${valueOf(reservation?.customer_id)}" /><div class="picker-results" id="reservationCustomerResults"></div><button class="text-button ${reservation?.customer_id ? "" : "hidden"}" type="button" id="viewReservationCustomer">顧客詳細を見る</button><label for="reservationVehicle">車両</label><select id="reservationVehicle" name="vehicle_id" required disabled><option value="">先に顧客を選択してください</option></select><label for="reservationSizeClass">車両区分</label><select id="reservationSizeClass" name="vehicle_size_class" required><option value="">車両区分を選択</option>${Object.entries(reservationSizeClasses).map(([value, label]) => `<option value="${value}" ${reservation?.vehicle_size_class === value ? "selected" : ""}>${label}</option>`).join("")}</select><p class="muted">一度選んだ車両区分は車両情報にも保存し、次回から自動入力します。</p><label for="reservationCourse">コース</label><select id="reservationCourse" name="course_code" required>${Object.entries(reservationCourses).map(([value, label]) => `<option value="${value}" ${reservation?.course_code === value ? "selected" : ""}>${label}</option>`).join("")}</select><div class="pricing-group"><div class="pricing-group-title">オプション</div>${optionMarkup}</div><div class="pricing-group"><div class="pricing-group-title">割引</div><p class="muted">通常割引は合計最大¥1,000。同一住所2台目割は別枠です。</p>${discountMarkup}</div><label for="reservationTravelZone">出張距離</label><select id="reservationTravelZone" name="travel_zone" required><option value="">出張距離を選択</option>${Object.entries(reservationTravelZones).map(([value, item]) => `<option value="${value}" ${initialTravelZone === value ? "selected" : ""}>${escapeHtml(item.label)}${item.fee ? `（+${escapeHtml(yen(item.fee))}）` : ""}</option>`).join("")}</select><div class="price-summary"><div class="price-line"><span>基本料金</span><strong id="priceBase">¥0</strong></div><div class="price-line"><span>オプション</span><strong id="priceOptions">¥0</strong></div><div class="price-line"><span>出張料</span><strong id="priceTravel">¥0</strong></div><div class="price-line"><span>割引</span><strong id="priceDiscount">−¥0</strong></div><div class="price-line price-calculated"><span>自動計算</span><strong id="priceCalculated">¥0</strong></div><label for="reservationFinalTotal">予定合計（手動調整可）</label><input id="reservationFinalTotal" name="final_total" type="number" inputmode="numeric" min="0" step="100" value="${reservation?.final_total ?? ""}" required /><p class="muted">「〜」料金・要相談メニューは実車確認後に予定合計を調整できます。</p></div><label for="reservationDate">施工日</label><input id="reservationDate" name="reservation_date" type="date" required value="${valueOf(reservationDate(reservation?.reservation_date) || new Date().toLocaleDateString("en-CA"))}" /><label for="reservationTime">開始時間</label><input id="reservationTime" name="start_time" type="time" required value="${valueOf(reservationTime(reservation?.start_time))}" /><label for="reservationStatus">予約状態</label><select id="reservationStatus" name="status" required>${Object.entries(reservationStatuses).map(([value, label]) => `<option value="${value}" ${reservation?.status === value || (!reservation && value === "confirmed") ? "selected" : ""}>${label}</option>`).join("")}</select><label for="reservationNotes">備考</label><textarea id="reservationNotes" name="notes" rows="3">${valueOf(reservation?.notes)}</textarea><p class="error hidden" id="reservationFormError"></p><button class="primary" type="submit">${isEdit ? "変更を保存" : "予約を登録"}</button><button class="text-button" type="button" id="cancelReservationButton">予約一覧へ戻る</button></form>`);
+
   const search = document.getElementById("reservationCustomerSearch");
   const customerId = document.getElementById("reservationCustomerId");
   const results = document.getElementById("reservationCustomerResults");
   const viewCustomer = document.getElementById("viewReservationCustomer");
+  const vehicleSelect = document.getElementById("reservationVehicle");
+  const sizeSelect = document.getElementById("reservationSizeClass");
+  const courseSelect = document.getElementById("reservationCourse");
+  const travelSelect = document.getElementById("reservationTravelZone");
+  const finalTotal = document.getElementById("reservationFinalTotal");
+  let vehicleRecords = [];
+
+  const selectedOptionRows = () => reservationOptions.filter((option) => document.querySelector(`[data-option-code="${option.code}"]`)?.checked).map((option) => ({
+    code: option.code,
+    amount: Math.max(0, Number(document.querySelector(`[data-option-amount="${option.code}"]`)?.value || 0)),
+  }));
+
+  const selectedDiscountRows = () => reservationDiscounts.filter((discount) => document.querySelector(`[data-discount-code="${discount.code}"]`)?.checked).map((discount) => ({
+    code: discount.code,
+    amount: discount.amount,
+  }));
+
+  const pricingValues = () => {
+    const sizeClass = sizeSelect.value;
+    const courseCode = courseSelect.value;
+    const basePrice = Number(reservationCoursePrices[sizeClass]?.[courseCode] || 0);
+    const options = selectedOptionRows();
+    const optionsTotal = options.reduce((sum, item) => sum + item.amount, 0);
+    const discounts = selectedDiscountRows();
+    const normalDiscount = discounts.filter((item) => reservationDiscounts.find((discount) => discount.code === item.code)?.capped).reduce((sum, item) => sum + item.amount, 0);
+    const separateDiscount = discounts.filter((item) => !reservationDiscounts.find((discount) => discount.code === item.code)?.capped).reduce((sum, item) => sum + item.amount, 0);
+    const discountTotal = Math.min(normalDiscount, 1000) + separateDiscount;
+    const travelFee = Number(reservationTravelZones[travelSelect.value]?.fee || 0);
+    const calculatedTotal = Math.max(0, basePrice + optionsTotal + travelFee - discountTotal);
+    return { basePrice, options, optionsTotal, discounts, discountTotal, travelFee, calculatedTotal };
+  };
+
+  const updatePricing = (preserveFinal = false) => {
+    const values = pricingValues();
+    document.getElementById("priceBase").textContent = yen(values.basePrice);
+    document.getElementById("priceOptions").textContent = `+${yen(values.optionsTotal)}`;
+    document.getElementById("priceTravel").textContent = `+${yen(values.travelFee)}`;
+    document.getElementById("priceDiscount").textContent = `−${yen(values.discountTotal)}`;
+    document.getElementById("priceCalculated").textContent = yen(values.calculatedTotal);
+    if (!preserveFinal || finalTotal.value === "") finalTotal.value = values.calculatedTotal;
+  };
+
+  const syncSizeFromVehicle = (vehicleId, preserveReservationSize = false) => {
+    const vehicle = vehicleRecords.find((item) => item.id === vehicleId);
+    if (!vehicle) {
+      if (!preserveReservationSize) sizeSelect.value = "";
+      updatePricing();
+      return;
+    }
+    if (preserveReservationSize && reservation?.vehicle_size_class) sizeSelect.value = reservation.vehicle_size_class;
+    else sizeSelect.value = vehicle.size_class || "";
+    updatePricing();
+  };
+
+  const setVehicles = (records, selectedId, preserveReservationSize = false) => {
+    vehicleRecords = records;
+    syncSizeFromVehicle(selectedId, preserveReservationSize);
+  };
+
   const showCustomers = (query = "") => {
     const normalized = query.trim().toLowerCase();
     const matches = customers.filter((customer) => customer.name.toLowerCase().includes(normalized) || String(customer.line_display_name || "").toLowerCase().includes(normalized)).slice(0, 8);
     results.innerHTML = matches.map((customer) => `<button class="picker-option" type="button" data-reservation-customer="${customer.id}"><strong>${escapeHtml(customer.name)}</strong><small>${escapeHtml(customer.line_display_name || customer.phone || "")}</small></button>`).join("");
-    document.querySelectorAll("[data-reservation-customer]").forEach((button) => button.addEventListener("click", () => {
+    document.querySelectorAll("[data-reservation-customer]").forEach((button) => button.addEventListener("click", async () => {
       const customer = customers.find((item) => item.id === button.dataset.reservationCustomer);
       customerId.value = customer.id;
       search.value = customer.name;
       results.innerHTML = "";
       viewCustomer.classList.remove("hidden");
-      loadReservationVehicles(customer.id);
+      await loadReservationVehicles(customer.id, "", (records, selectedId) => setVehicles(records, selectedId));
     }));
   };
-  search.addEventListener("input", () => { customerId.value = ""; viewCustomer.classList.add("hidden"); loadReservationVehicles(""); showCustomers(search.value); });
+
+  search.addEventListener("input", () => {
+    customerId.value = "";
+    viewCustomer.classList.add("hidden");
+    loadReservationVehicles("", "", (records, selectedId) => setVehicles(records, selectedId));
+    showCustomers(search.value);
+  });
   search.addEventListener("focus", () => showCustomers(search.value));
+  vehicleSelect.addEventListener("change", () => syncSizeFromVehicle(vehicleSelect.value));
+  sizeSelect.addEventListener("change", () => updatePricing());
+  courseSelect.addEventListener("change", () => updatePricing());
+  travelSelect.addEventListener("change", () => updatePricing());
+  document.querySelectorAll("[data-option-code]").forEach((checkbox) => checkbox.addEventListener("change", () => {
+    const wrap = document.querySelector(`[data-option-amount-wrap="${checkbox.dataset.optionCode}"]`);
+    wrap?.classList.toggle("hidden", !checkbox.checked);
+    updatePricing();
+  }));
+  document.querySelectorAll("[data-option-amount]").forEach((input) => input.addEventListener("input", () => updatePricing()));
+  document.querySelectorAll("[data-discount-code]").forEach((checkbox) => checkbox.addEventListener("change", () => updatePricing()));
+
   viewCustomer.addEventListener("click", () => renderCustomerDetail(customerId.value, () => renderReservationForm(reservation)));
   document.getElementById("cancelReservationButton").addEventListener("click", renderReservationList);
-  if (reservation?.customer_id) await loadReservationVehicles(reservation.customer_id, reservation.vehicle_id);
+
+  if (reservation?.customer_id) {
+    await loadReservationVehicles(reservation.customer_id, reservation.vehicle_id, (records, selectedId) => setVehicles(records, selectedId, true));
+  }
+  updatePricing(Boolean(reservation?.final_total != null));
+
   document.getElementById("reservationForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     const button = form.querySelector("button[type=submit]");
     const fields = Object.fromEntries(new FormData(form));
-    if (!customerId.value || !fields.vehicle_id) {
+    if (!customerId.value || !fields.vehicle_id || !fields.vehicle_size_class || !fields.travel_zone) {
       const message = document.getElementById("reservationFormError");
-      message.textContent = "顧客と車両を選択してください。";
+      message.textContent = "顧客・車両・車両区分・出張距離を選択してください。";
       return message.classList.remove("hidden");
     }
-    const values = { customer_id: customerId.value, vehicle_id: fields.vehicle_id, course_code: fields.course_code, reservation_date: fields.reservation_date, start_time: fields.start_time, status: fields.status, notes: emptyToNull(fields.notes) };
+
+    const price = pricingValues();
+    const finalPrice = Math.max(0, Number(fields.final_total || 0));
+    const values = {
+      customer_id: customerId.value,
+      vehicle_id: fields.vehicle_id,
+      course_code: fields.course_code,
+      reservation_date: fields.reservation_date,
+      start_time: fields.start_time,
+      status: fields.status,
+      notes: emptyToNull(fields.notes),
+      vehicle_size_class: fields.vehicle_size_class,
+      selected_options: price.options,
+      selected_discounts: price.discounts,
+      travel_zone: fields.travel_zone,
+      base_price: price.basePrice,
+      options_total: price.optionsTotal,
+      travel_fee: price.travelFee,
+      discount_total: price.discountTotal,
+      calculated_total: price.calculatedTotal,
+      final_total: finalPrice,
+    };
+
     button.disabled = true;
     button.textContent = "保存中…";
     try {
+      const currentVehicle = vehicleRecords.find((vehicle) => vehicle.id === fields.vehicle_id);
+      if (currentVehicle?.size_class !== fields.vehicle_size_class) {
+        const { error: vehicleError } = await supabase.from("customer_vehicles").update({ size_class: fields.vehicle_size_class }).eq("id", fields.vehicle_id).eq("customer_id", customerId.value);
+        if (vehicleError) throw vehicleError;
+      }
       const request = isEdit ? supabase.from("reservations").update(values).eq("id", reservation.id).select("id").single() : supabase.from("reservations").insert(values).select("id").single();
       const { data, error } = await request;
       if (error || !data?.id) throw error || new Error("保存結果を確認できませんでした。");
