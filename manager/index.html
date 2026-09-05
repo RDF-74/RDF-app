@@ -20,6 +20,7 @@ button,input,select,textarea { font:inherit; } button { cursor:pointer; border:0
   </head>
   <body>
     <main id="app" aria-live="polite"></main>
+    <script>window.RECORDARE_MANAGER_BUILD = { sha: "60e0f43" };</script>
     <script>// Generated at Vercel build time. Do not add service_role or other secrets here.
 window.RECORDARE_SUPABASE_CONFIG = {
   "url": "",
@@ -75,6 +76,7 @@ ${v}`}var R=class extends Error{constructor({message:e,code:r,cause:s,name:n}){v
     <script>const app = document.getElementById("app");
 const { createSupabaseClient, isSupabaseConfigured } = window.RECORDARE_SUPABASE;
 const tabs = ["ホーム", "顧客", "予約", "施工", "フォロー"];
+const buildSha = window.RECORDARE_MANAGER_BUILD?.sha || "unknown";
 let supabase = null;
 let profile = null;
 let activeTab = "ホーム";
@@ -89,7 +91,7 @@ function renderLogin(message = "", initializing = false) {
 function renderManager() {
   const name = escapeHtml(profile?.display_name || "管理者");
   const content = activeTab === "ホーム" ? `<div class="card"><p class="welcome">${name}さん</p><h2>RE:CORDARE Manager</h2><p class="muted">Phase 1の管理画面基盤です。業務機能は今後追加されます。</p><a class="return-link" href="/">← Detailing Managerへ戻る</a></div>` : `<div id="managerContent">${activeTab === "顧客" ? '<div class="card placeholder"><p class="muted">顧客を読み込んでいます…</p></div>' : `<div class="card placeholder"><h2>${activeTab}</h2><p class="muted">この機能は準備中です。</p></div>`}</div>`;
-  app.innerHTML = `<section class="screen"><header class="topbar"><div><div class="brand">RE:CORDARE Manager</div><h1>${activeTab}</h1></div><button class="icon-button" type="button" aria-label="設定" id="settingsButton">⚙</button></header>${content}</section><nav class="manager-nav" aria-label="管理メニュー">${tabs.map((tab) => `<button type="button" data-tab="${tab}" class="${tab === activeTab ? "active" : ""}">${tab}</button>`).join("")}</nav><div class="settings-panel hidden" id="settingsPanel"><div class="settings-box"><h2>設定</h2><p class="muted">管理者：${name}</p><button class="secondary" type="button" id="signOutButton">ログアウト</button><button class="secondary" type="button" id="closeSettingsButton" style="margin-top:10px">閉じる</button></div></div>`;
+  app.innerHTML = `<section class="screen"><header class="topbar"><div><div class="brand">RE:CORDARE Manager</div><h1>${activeTab}</h1></div><button class="icon-button" type="button" aria-label="設定" id="settingsButton">⚙</button></header>${content}</section><nav class="manager-nav" aria-label="管理メニュー">${tabs.map((tab) => `<button type="button" data-tab="${tab}" class="${tab === activeTab ? "active" : ""}">${tab}</button>`).join("")}</nav><div class="settings-panel hidden" id="settingsPanel"><div class="settings-box"><h2>設定</h2><p class="muted">管理者：${name}</p><p class="muted">Build: ${escapeHtml(buildSha)}</p><button class="secondary" type="button" id="signOutButton">ログアウト</button><button class="secondary" type="button" id="closeSettingsButton" style="margin-top:10px">閉じる</button></div></div>`;
   document.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click", () => { activeTab = button.dataset.tab; renderManager(); }));
   document.getElementById("settingsButton").addEventListener("click", () => document.getElementById("settingsPanel").classList.remove("hidden"));
   document.getElementById("closeSettingsButton").addEventListener("click", () => document.getElementById("settingsPanel").classList.add("hidden"));
