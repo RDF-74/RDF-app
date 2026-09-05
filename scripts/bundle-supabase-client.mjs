@@ -6,5 +6,7 @@ await build({
   format: "esm",
   platform: "browser",
   target: ["es2020"],
+  minify: true,
+  legalComments: "none",
   outfile: "manager/supabase-vendor.js",
 });
