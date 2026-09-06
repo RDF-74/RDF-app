@@ -91,7 +91,7 @@ async function renderCustomerDetail(customerId, returnToReservation = null) {
     supabase.from("service_records").select("id, vehicle_id, service_date, course_code, selected_options, actual_service_minutes, actual_total_minutes, status").eq("customer_id", customerId).order("service_date", { ascending: false }).limit(30)
   ]);
   if (customerError || vehicleError || !customer) return setCustomerContent(`<div class="card"><p class="error">顧客情報を読み込めませんでした。</p><button class="secondary" type="button" id="backToCustomers">一覧へ戻る</button></div>`);
-  const vehicleRows = vehicles.length ? vehicles.map((vehicle) => `<div class="vehicle-row"><div><strong>${escapeHtml(vehicle.manufacturer)} ${escapeHtml(vehicle.model)}</strong><small>${escapeHtml(vehicle.color)}${vehicle.plate_last4 ? ` ・ ${escapeHtml(vehicle.plate_last4)}` : ""}${vehicle.notes ? ` ・ ${escapeHtml(vehicle.notes)}` : ""}</small></div><button class="archive-button" type="button" data-archive-vehicle="${vehicle.id}">無効化</button></div>`).join("") : '<div class="empty-state">車両はまだ登録されていません。</div>';
+  const vehicleRows = vehicles.length ? vehicles.map((vehicle) => `<div class="vehicle-row" data-vehicle-id="${vehicle.id}" role="button" tabindex="0"><div><strong>${escapeHtml(vehicle.manufacturer)} ${escapeHtml(vehicle.model)}</strong><small>${escapeHtml(vehicle.color)}${vehicle.plate_last4 ? ` ・ ${escapeHtml(vehicle.plate_last4)}` : ""}${vehicle.notes ? ` ・ ${escapeHtml(vehicle.notes)}` : ""}</small></div><button class="archive-button" type="button" data-archive-vehicle="${vehicle.id}">無効化</button></div>`).join("") : '<div class="empty-state">車両はまだ登録されていません。</div>';
   const historyRows = (history || []).map((item) => `<button class="service-history-row" type="button" data-history-record="${item.id}"><strong>${escapeHtml(reservationDate(item.service_date))} ・ ${escapeHtml(reservationCourses[item.course_code] || item.course_code)}</strong><small>${escapeHtml(jsonArray(item.selected_options).map((option) => reservationOptions.find((master) => master.code === option.code)?.label || option.code).join("、") || "OPなし")} ・ 実施工 ${item.actual_service_minutes ?? "--"}分 ・ 総拘束 ${item.actual_total_minutes ?? "--"}分 ・ ${escapeHtml(serviceStatuses[item.status] || item.status)}</small></button>`).join("") || '<p class="muted">施工履歴はまだありません。</p>';
   setCustomerContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(customer.name)}</h2><p class="muted">${escapeHtml(contactMethods[customer.contact_method])}</p></div><button class="secondary compact-button" type="button" id="editCustomerButton">編集</button></div><dl><dt>電話番号</dt><dd>${escapeHtml(customer.phone || "未登録")}</dd><dt>LINE表示名</dt><dd>${escapeHtml(customer.line_display_name || "未登録")}</dd><dt>備考</dt><dd>${escapeHtml(customer.notes || "未登録")}</dd></dl><button class="text-button danger-text" type="button" id="archiveCustomerButton">この顧客を無効化</button></div><section class="card"><div class="detail-heading"><h2>車両</h2><button class="secondary compact-button" type="button" id="addVehicleButton">＋ 追加</button></div><div class="vehicle-list">${vehicleRows}</div><div id="vehicleFormArea"></div></section><section class="card"><h2>施工履歴</h2><div class="service-history-list">${historyRows}</div></section><button class="text-button" type="button" id="backToCustomers">${returnToReservation ? "← 予約へ戻る" : "← 顧客一覧へ戻る"}</button>`);
   document.getElementById("editCustomerButton").addEventListener("click", () => renderCustomerForm(customer));
@@ -107,7 +107,25 @@ async function renderCustomerDetail(customerId, returnToReservation = null) {
     if (error) return alert(errorMessage);
     renderCustomerDetail(customerId);
   }));
+  document.querySelectorAll("[data-vehicle-id]").forEach((row) => {
+    const openVehicle = () => renderVehicleDetail(customerId, row.dataset.vehicleId);
+    row.addEventListener("click", (event) => { if (!event.target.closest("[data-archive-vehicle]")) openVehicle(); });
+    row.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openVehicle(); } });
+  });
   document.querySelectorAll("[data-history-record]").forEach((button) => button.addEventListener("click", () => { activeTab = "施工"; renderManager(); renderServiceDetail(button.dataset.historyRecord); }));
+}
+
+async function renderVehicleDetail(customerId, vehicleId) {
+  setCustomerContent('<div class="card placeholder"><p class="muted">車両を読み込んでいます…</p></div>');
+  const [{ data: vehicle, error: vehicleError }, { data: history, error: historyError }] = await Promise.all([
+    supabase.from("customer_vehicles").select("*").eq("id", vehicleId).eq("customer_id", customerId).maybeSingle(),
+    supabase.from("service_records").select("id, service_date, course_code, selected_options, actual_service_minutes, actual_total_minutes, status").eq("vehicle_id", vehicleId).order("service_date", { ascending: false }).limit(30),
+  ]);
+  if (vehicleError || historyError || !vehicle) return setCustomerContent('<div class="card"><p class="error">車両を読み込めませんでした。</p></div>');
+  const historyRows = history.length ? history.map((item) => `<button class="service-history-row" type="button" data-vehicle-history-record="${item.id}"><strong>${escapeHtml(reservationDate(item.service_date))} ・ ${escapeHtml(reservationCourses[item.course_code] || item.course_code)}</strong><small>実施工 ${item.actual_service_minutes ?? "--"}分 ・ 総拘束 ${item.actual_total_minutes ?? "--"}分 ・ ${escapeHtml(serviceStatuses[item.status] || item.status)}</small></button>`).join("") : '<p class="muted">施工履歴はまだありません。</p>';
+  setCustomerContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(vehicle.manufacturer)} ${escapeHtml(vehicle.model)}</h2><p class="muted">${escapeHtml(vehicle.color)}${vehicle.plate_last4 ? ` ・ ${escapeHtml(vehicle.plate_last4)}` : ""}</p></div></div><dl><dt>車両区分</dt><dd>${escapeHtml(reservationSizeClasses[vehicle.size_class] || "未設定")}</dd><dt>備考</dt><dd>${escapeHtml(vehicle.notes || "未登録")}</dd></dl></div><section class="card"><h2>施工履歴</h2><div class="service-history-list">${historyRows}</div></section><button class="text-button" type="button" id="backToCustomerDetail">← 顧客詳細へ戻る</button>`);
+  document.getElementById("backToCustomerDetail").addEventListener("click", () => renderCustomerDetail(customerId));
+  document.querySelectorAll("[data-vehicle-history-record]").forEach((button) => button.addEventListener("click", () => { activeTab = "施工"; renderManager(); renderServiceDetail(button.dataset.vehicleHistoryRecord); }));
 }
 
 function renderVehicleForm(customerId) {
