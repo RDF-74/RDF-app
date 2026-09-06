@@ -312,3 +312,46 @@ for each row execute function public.sync_reservation_status_from_service();
 
 revoke all on function public.set_service_record_actual_timing() from public, anon, authenticated;
 revoke all on function public.sync_reservation_status_from_service() from public, anon, authenticated;
+
+-- Phase 6: 工程スナップショット・施工前状態・将来のセッション対応
+alter table public.service_records add column if not exists coating_state text check (coating_state in ('good','partial','none','unknown'));
+alter table public.service_records add column if not exists actual_total_minutes integer check (actual_total_minutes is null or actual_total_minutes >= 0);
+create table if not exists public.service_sessions (
+  id uuid primary key default gen_random_uuid(), service_record_id uuid not null references public.service_records(id) on delete cascade,
+  started_at timestamptz not null, ended_at timestamptz, status text not null default 'active' check (status in ('active','interrupted','completed')), created_at timestamptz not null default now()
+);
+create table if not exists public.service_steps (
+  id uuid primary key default gen_random_uuid(), service_record_id uuid not null references public.service_records(id) on delete cascade,
+  step_key text not null, step_name text not null, order_group integer not null, sequence_no integer not null, timed boolean not null default true, skippable boolean not null default true,
+  started_at timestamptz, ended_at timestamptz, skipped_reason text, snapshot jsonb not null default '{}'::jsonb, created_at timestamptz not null default now(), unique(service_record_id, sequence_no)
+);
+create table if not exists public.service_pauses (
+  id uuid primary key default gen_random_uuid(), service_record_id uuid not null references public.service_records(id) on delete cascade, started_at timestamptz not null, ended_at timestamptz, created_at timestamptz not null default now()
+);
+create table if not exists public.service_condition_tags (
+  id uuid primary key default gen_random_uuid(), service_record_id uuid not null references public.service_records(id) on delete cascade, tag_key text not null, details jsonb not null default '{}'::jsonb, created_at timestamptz not null default now(), unique(service_record_id, tag_key)
+);
+create table if not exists public.service_additions (
+  id uuid primary key default gen_random_uuid(), service_record_id uuid not null references public.service_records(id) on delete cascade, addition_type text not null, name text not null, amount integer, estimated_minutes integer, snapshot jsonb not null default '{}'::jsonb, created_at timestamptz not null default now()
+);
+create table if not exists public.service_proposals (
+  id uuid primary key default gen_random_uuid(), service_record_id uuid not null references public.service_records(id) on delete cascade, title text not null, priority text, status text not null default 'unproposed' check (status in ('unproposed','proposed','adopted','declined','resolved')), created_at timestamptz not null default now()
+);
+create index if not exists service_steps_record_sequence_idx on public.service_steps(service_record_id, sequence_no);
+create index if not exists service_sessions_record_started_idx on public.service_sessions(service_record_id, started_at);
+create index if not exists service_condition_tags_record_idx on public.service_condition_tags(service_record_id);
+create index if not exists service_proposals_record_status_idx on public.service_proposals(service_record_id, status);
+alter table public.service_sessions enable row level security;
+alter table public.service_steps enable row level security;
+alter table public.service_pauses enable row level security;
+alter table public.service_condition_tags enable row level security;
+alter table public.service_additions enable row level security;
+alter table public.service_proposals enable row level security;
+revoke all on table public.service_sessions, public.service_steps, public.service_pauses, public.service_condition_tags, public.service_additions, public.service_proposals from anon, authenticated;
+grant select, insert, update on table public.service_sessions, public.service_steps, public.service_pauses, public.service_condition_tags, public.service_additions, public.service_proposals to authenticated;
+create policy "Active manager users manage service sessions" on public.service_sessions for all to authenticated using (exists (select 1 from public.manager_profiles where id = (select auth.uid()) and is_active and role in ('admin','staff'))) with check (exists (select 1 from public.manager_profiles where id = (select auth.uid()) and is_active and role in ('admin','staff')));
+create policy "Active manager users manage service steps" on public.service_steps for all to authenticated using (exists (select 1 from public.manager_profiles where id = (select auth.uid()) and is_active and role in ('admin','staff'))) with check (exists (select 1 from public.manager_profiles where id = (select auth.uid()) and is_active and role in ('admin','staff')));
+create policy "Active manager users manage service pauses" on public.service_pauses for all to authenticated using (exists (select 1 from public.manager_profiles where id = (select auth.uid()) and is_active and role in ('admin','staff'))) with check (exists (select 1 from public.manager_profiles where id = (select auth.uid()) and is_active and role in ('admin','staff')));
+create policy "Active manager users manage service condition tags" on public.service_condition_tags for all to authenticated using (exists (select 1 from public.manager_profiles where id = (select auth.uid()) and is_active and role in ('admin','staff'))) with check (exists (select 1 from public.manager_profiles where id = (select auth.uid()) and is_active and role in ('admin','staff')));
+create policy "Active manager users manage service additions" on public.service_additions for all to authenticated using (exists (select 1 from public.manager_profiles where id = (select auth.uid()) and is_active and role in ('admin','staff'))) with check (exists (select 1 from public.manager_profiles where id = (select auth.uid()) and is_active and role in ('admin','staff')));
+create policy "Active manager users manage service proposals" on public.service_proposals for all to authenticated using (exists (select 1 from public.manager_profiles where id = (select auth.uid()) and is_active and role in ('admin','staff'))) with check (exists (select 1 from public.manager_profiles where id = (select auth.uid()) and is_active and role in ('admin','staff')));

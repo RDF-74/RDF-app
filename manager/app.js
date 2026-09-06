@@ -85,13 +85,15 @@ function renderCustomerForm(customer = null) {
 
 async function renderCustomerDetail(customerId, returnToReservation = null) {
   setCustomerContent('<div class="card placeholder"><p class="muted">顧客を読み込んでいます…</p></div>');
-  const [{ data: customer, error: customerError }, { data: vehicles, error: vehicleError }] = await Promise.all([
+  const [{ data: customer, error: customerError }, { data: vehicles, error: vehicleError }, { data: history }] = await Promise.all([
     supabase.from("customers").select("*").eq("id", customerId).maybeSingle(),
-    supabase.from("customer_vehicles").select("*").eq("customer_id", customerId).eq("is_active", true).order("created_at")
+    supabase.from("customer_vehicles").select("*").eq("customer_id", customerId).eq("is_active", true).order("created_at"),
+    supabase.from("service_records").select("id, vehicle_id, service_date, course_code, selected_options, actual_service_minutes, actual_total_minutes, status").eq("customer_id", customerId).order("service_date", { ascending: false }).limit(30)
   ]);
   if (customerError || vehicleError || !customer) return setCustomerContent(`<div class="card"><p class="error">顧客情報を読み込めませんでした。</p><button class="secondary" type="button" id="backToCustomers">一覧へ戻る</button></div>`);
   const vehicleRows = vehicles.length ? vehicles.map((vehicle) => `<div class="vehicle-row"><div><strong>${escapeHtml(vehicle.manufacturer)} ${escapeHtml(vehicle.model)}</strong><small>${escapeHtml(vehicle.color)}${vehicle.plate_last4 ? ` ・ ${escapeHtml(vehicle.plate_last4)}` : ""}${vehicle.notes ? ` ・ ${escapeHtml(vehicle.notes)}` : ""}</small></div><button class="archive-button" type="button" data-archive-vehicle="${vehicle.id}">無効化</button></div>`).join("") : '<div class="empty-state">車両はまだ登録されていません。</div>';
-  setCustomerContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(customer.name)}</h2><p class="muted">${escapeHtml(contactMethods[customer.contact_method])}</p></div><button class="secondary compact-button" type="button" id="editCustomerButton">編集</button></div><dl><dt>電話番号</dt><dd>${escapeHtml(customer.phone || "未登録")}</dd><dt>LINE表示名</dt><dd>${escapeHtml(customer.line_display_name || "未登録")}</dd><dt>備考</dt><dd>${escapeHtml(customer.notes || "未登録")}</dd></dl><button class="text-button danger-text" type="button" id="archiveCustomerButton">この顧客を無効化</button></div><section class="card"><div class="detail-heading"><h2>車両</h2><button class="secondary compact-button" type="button" id="addVehicleButton">＋ 追加</button></div><div class="vehicle-list">${vehicleRows}</div><div id="vehicleFormArea"></div></section><button class="text-button" type="button" id="backToCustomers">${returnToReservation ? "← 予約へ戻る" : "← 顧客一覧へ戻る"}</button>`);
+  const historyRows = (history || []).map((item) => `<button class="service-history-row" type="button" data-history-record="${item.id}"><strong>${escapeHtml(reservationDate(item.service_date))} ・ ${escapeHtml(reservationCourses[item.course_code] || item.course_code)}</strong><small>${escapeHtml(jsonArray(item.selected_options).map((option) => reservationOptions.find((master) => master.code === option.code)?.label || option.code).join("、") || "OPなし")} ・ 実施工 ${item.actual_service_minutes ?? "--"}分 ・ 総拘束 ${item.actual_total_minutes ?? "--"}分 ・ ${escapeHtml(serviceStatuses[item.status] || item.status)}</small></button>`).join("") || '<p class="muted">施工履歴はまだありません。</p>';
+  setCustomerContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(customer.name)}</h2><p class="muted">${escapeHtml(contactMethods[customer.contact_method])}</p></div><button class="secondary compact-button" type="button" id="editCustomerButton">編集</button></div><dl><dt>電話番号</dt><dd>${escapeHtml(customer.phone || "未登録")}</dd><dt>LINE表示名</dt><dd>${escapeHtml(customer.line_display_name || "未登録")}</dd><dt>備考</dt><dd>${escapeHtml(customer.notes || "未登録")}</dd></dl><button class="text-button danger-text" type="button" id="archiveCustomerButton">この顧客を無効化</button></div><section class="card"><div class="detail-heading"><h2>車両</h2><button class="secondary compact-button" type="button" id="addVehicleButton">＋ 追加</button></div><div class="vehicle-list">${vehicleRows}</div><div id="vehicleFormArea"></div></section><section class="card"><h2>施工履歴</h2><div class="service-history-list">${historyRows}</div></section><button class="text-button" type="button" id="backToCustomers">${returnToReservation ? "← 予約へ戻る" : "← 顧客一覧へ戻る"}</button>`);
   document.getElementById("editCustomerButton").addEventListener("click", () => renderCustomerForm(customer));
   document.getElementById("backToCustomers").addEventListener("click", returnToReservation || renderCustomerList);
   document.getElementById("addVehicleButton").addEventListener("click", () => renderVehicleForm(customerId));
@@ -105,6 +107,7 @@ async function renderCustomerDetail(customerId, returnToReservation = null) {
     if (error) return alert(errorMessage);
     renderCustomerDetail(customerId);
   }));
+  document.querySelectorAll("[data-history-record]").forEach((button) => button.addEventListener("click", () => { activeTab = "施工"; renderManager(); renderServiceDetail(button.dataset.historyRecord); }));
 }
 
 function renderVehicleForm(customerId) {
@@ -503,6 +506,31 @@ const timestampLocalDate = (value) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 };
 const localTimeToIso = (date, time) => new Date(`${date}T${time}:00`).toISOString();
+const serviceStepMaster = [
+  [100, "施工前確認"], [200, "タイヤ・ホイール"], [300, "鉄粉除去"], [400, "アルカリプレウォッシュ"], [500, "細部コンタクト"], [600, "よく流す"], [700, "細部酸性コンタクト"], [800, "未塗装樹脂洗浄"], [900, "全体スケール除去"], [1000, "全体中性コンタクト"], [1100, "拭き上げ"], [1200, "下地クリーナー"], [1300, "脱脂"], [1400, "コーティング"], [1500, "最終確認・仕上げ"],
+].map(([orderGroup, name]) => ({ step_key: `step_${orderGroup}`, name, order_group: orderGroup, timed: true, skippable: orderGroup !== 100 && orderGroup !== 1500, rinseless: "prohibited" }));
+const serviceOptionSteps = {
+  body_iron_removal: [{ step_key: "step_300", name: "鉄粉除去", order_group: 300 }],
+  wheel_scale_light: [{ step_key: "wheel_scale", name: "ホイール スケール除去", order_group: 250 }],
+  wheel_scale_heavy: [{ step_key: "wheel_scale", name: "ホイール スケール除去", order_group: 250 }],
+  unpainted_resin_partial: [{ step_key: "step_800", name: "未塗装樹脂洗浄", order_group: 800 }, { step_key: "resin_coat", name: "未塗装樹脂コーティング", order_group: 1410 }],
+  unpainted_resin_wide: [{ step_key: "step_800", name: "未塗装樹脂洗浄", order_group: 800 }, { step_key: "resin_coat", name: "未塗装樹脂コーティング", order_group: 1410 }],
+  front_glass_oil_repellent: [{ step_key: "glass_oil", name: "フロントガラス 油膜除去＋撥水", order_group: 1415 }],
+  front_glass_scale: [{ step_key: "glass_scale", name: "フロントガラス ウロコ除去＋油膜除去＋撥水", order_group: 1415 }],
+  all_glass_oil_repellent: [{ step_key: "glass_oil", name: "全面ガラス 油膜除去＋撥水", order_group: 1415 }],
+  all_glass_scale: [{ step_key: "glass_scale", name: "全面ガラス ウロコ除去＋油膜除去＋撥水", order_group: 1415 }],
+};
+const buildServiceSteps = (courseCode, selectedOptions) => {
+  const base = courseCode === "rinseless"
+    ? [{ ...serviceStepMaster[0], rinseless: "allowed" }, { ...serviceStepMaster[1], rinseless: "allowed" }, { step_key: "rinseless_wash_dry", name: "リンスレス洗浄＋拭き上げ", order_group: 1100, timed: true, skippable: false, rinseless: "allowed" }, { ...serviceStepMaster[14], rinseless: "allowed" }]
+    : courseCode === "reset_coat" ? serviceStepMaster
+      : serviceStepMaster.filter((step) => [100, 200, 400, 600, 1100, 1500].includes(step.order_group));
+  const byKey = new Map(base.map((step) => [step.step_key, { ...step }]));
+  jsonArray(selectedOptions).forEach((option) => (serviceOptionSteps[option.code] || []).forEach((step) => { if (courseCode !== "reset_coat" || !byKey.has(step.step_key)) byKey.set(step.step_key, { ...step, timed: true, skippable: true, rinseless: courseCode === "rinseless" ? "conditional" : "allowed" }); }));
+  return [...byKey.values()].sort((a, b) => a.order_group - b.order_group || a.name.localeCompare(b.name, "ja"));
+};
+const conditionTagLabels = ["水ジミ・スケール", "鉄粉多め", "虫汚れ多め", "傷あり", "未塗装樹脂白化", "ガラス油膜あり", "ガラスウロコあり", "ホイール汚れ強め"];
+const conditionFields = (tag) => tag === "水ジミ・スケール" ? '<select name="scale_level"><option value="light">軽度</option><option value="heavy">重度</option><option value="paint_impact">塗装影響あり</option></select>' : tag === "ガラス油膜あり" || tag === "ガラスウロコあり" ? '<label><input type="checkbox" name="area" value="front"> フロント</label><label><input type="checkbox" name="area" value="side"> サイド</label><label><input type="checkbox" name="area" value="rear"> リア</label>' : tag === "ホイール汚れ強め" ? '<select name="wheel_count"><option value="1">1本</option><option value="2">2本</option><option value="3">3本</option><option value="4">4本</option></select>' : '';
 
 async function renderServiceList() {
   const token = ++serviceViewToken;
@@ -520,6 +548,7 @@ async function renderServiceDetail(recordId) {
   const { data: record, error } = await supabase.from("service_records").select("*").eq("id", recordId).maybeSingle();
   if (token !== serviceViewToken || activeTab !== "施工") return;
   if (error || !record) return setServiceContent('<div class="card"><p class="error">施工記録を読み込めませんでした。</p><button class="secondary" type="button" id="backToServiceList">施工一覧へ戻る</button></div>');
+  const { data: savedConditions } = await supabase.from("service_condition_tags").select("tag_key, details").eq("service_record_id", recordId);
 
   const optionText = jsonArray(record.selected_options).map((item) => {
     const master = reservationOptions.find((option) => option.code === item.code);
@@ -550,8 +579,10 @@ async function renderServiceDetail(recordId) {
     : record.status === "completed"
       ? '<button class="text-button danger-text" type="button" id="reopenServiceButton">完了を取り消して施工中に戻す</button>'
       : "";
+  const conditionMap = new Map((savedConditions || []).map((item) => [item.tag_key, item.details || {}]));
+  const conditionMarkup = `<form class="card form-card" id="serviceConditionForm"><h2>施工前状態</h2><label for="coatingState">既存コーティング状態</label><select id="coatingState" name="coating_state"><option value="unknown" ${record.coating_state === "unknown" ? "selected" : ""}>未確認</option><option value="good" ${record.coating_state === "good" ? "selected" : ""}>良好に残存</option><option value="partial" ${record.coating_state === "partial" ? "selected" : ""}>部分的に残存</option><option value="none" ${record.coating_state === "none" ? "selected" : ""}>残存なし</option></select><div class="condition-tags">${conditionTagLabels.map((tag) => `<div class="condition-tag"><label><input type="checkbox" name="condition_tag" value="${tag}" ${conditionMap.has(tag) ? "checked" : ""}> ${tag}</label><div class="condition-extra ${conditionMap.has(tag) ? "" : "hidden"}" data-condition-extra="${tag}">${conditionFields(tag)}</div></div>`).join("")}</div><button class="secondary" type="submit">施工前状態を保存</button></form>`;
 
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>準備</dt><dd>${escapeHtml(record.planned_prep_minutes ?? 0)}分</dd><dt>施工</dt><dd>${escapeHtml(record.planned_service_minutes ?? 0)}分</dd><dt>片付け</dt><dd>${escapeHtml(record.planned_cleanup_minutes ?? 0)}分</dd><dt>予約枠</dt><dd>${escapeHtml(record.planned_slot_minutes ?? 0)}分</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd><dt>割引</dt><dd>${escapeHtml(discountText)}</dd><dt>予定料金</dt><dd>${record.planned_total != null ? escapeHtml(yen(record.planned_total)) : "未設定"}</dd><dt>予約備考</dt><dd>${escapeHtml(record.reservation_notes || "未登録")}</dd></dl></div><form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><p class="muted">予定料金を初期値にしています。変更があった場合だけ修正してください。</p><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl></div>${conditionMarkup}<form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
 
   document.getElementById("startServiceButton")?.addEventListener("click", async (event) => {
     if (!confirm("施工を開始しますか？現在時刻を開始時刻として記録します。")) return;
@@ -633,6 +664,27 @@ async function renderServiceDetail(recordId) {
     await renderServiceDetail(recordId);
   });
 
+  document.querySelectorAll("input[name=condition_tag]").forEach((input) => input.addEventListener("change", () => {
+    document.querySelector(`[data-condition-extra="${input.value}"]`)?.classList.toggle("hidden", !input.checked);
+  }));
+  document.getElementById("serviceConditionForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const selected = [...form.querySelectorAll("input[name=condition_tag]:checked")];
+    const { error: recordError } = await supabase.from("service_records").update({ coating_state: form.coating_state.value }).eq("id", recordId);
+    if (recordError) return alert(saveErrorMessage(recordError));
+    const values = selected.map((input) => {
+      const area = [...input.closest(".condition-tag").querySelectorAll("input[name=area]:checked")].map((item) => item.value);
+      const details = { scale_level: input.closest(".condition-tag").querySelector("[name=scale_level]")?.value || null, areas: area, wheel_count: input.closest(".condition-tag").querySelector("[name=wheel_count]")?.value || null };
+      return { service_record_id: recordId, tag_key: input.value, details };
+    });
+    if (values.length) {
+      const { error: tagError } = await supabase.from("service_condition_tags").upsert(values, { onConflict: "service_record_id,tag_key" });
+      if (tagError) return alert(saveErrorMessage(tagError));
+    }
+    await renderServiceDetail(recordId);
+  });
+
   document.getElementById("serviceActualForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -705,6 +757,14 @@ async function createServiceRecordFromReservation(reservationId, button) {
 
     const { data, error: insertError } = await supabase.from("service_records").insert(values).select("id").single();
     if (insertError || !data?.id) throw insertError || new Error("施工記録を作成できませんでした。");
+    const steps = buildServiceSteps(reservation.course_code, reservation.selected_options).map((step, index) => ({
+      service_record_id: data.id, step_key: step.step_key, step_name: step.name, order_group: step.order_group,
+      sequence_no: index + 1, timed: step.timed, skippable: step.skippable, snapshot: { ...step, course_code: reservation.course_code, selected_options: jsonArray(reservation.selected_options) },
+    }));
+    if (steps.length) {
+      const { error: stepError } = await supabase.from("service_steps").insert(steps);
+      if (stepError) throw stepError;
+    }
     activeTab = "施工";
     renderManager();
     return renderServiceDetail(data.id);
