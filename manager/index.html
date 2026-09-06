@@ -110,7 +110,7 @@ input[type="week"] {
   </head>
   <body>
     <main id="app" aria-live="polite"></main>
-    <script>window.RECORDARE_MANAGER_BUILD = { sha: "da2430b" };</script>
+    <script>window.RECORDARE_MANAGER_BUILD = { sha: "80c9d33" };</script>
     <script>// Generated at Vercel build time. Do not add service_role or other secrets here.
 window.RECORDARE_SUPABASE_CONFIG = {
   "url": "",
@@ -762,17 +762,58 @@ const bindServiceConditionForm = (recordId, rerender) => {
   });
 };
 
+async function ensureActiveServiceStep(recordId, record, existingSteps) {
+  let steps = existingSteps;
+  if (!steps) {
+    const { data, error } = await supabase.from("service_steps").select("*").eq("service_record_id", recordId).order("sequence_no", { ascending: true });
+    if (error) return error;
+    steps = data;
+  }
+  if (!steps.length) {
+    const generated = buildServiceSteps(record.course_code, record.selected_options).map((step, index) => ({
+      service_record_id: recordId,
+      step_key: step.step_key,
+      step_name: step.name,
+      order_group: step.order_group,
+      sequence_no: index + 1,
+      timed: step.timed,
+      skippable: step.skippable,
+      snapshot: { ...step, course_code: record.course_code, selected_options: jsonArray(record.selected_options) },
+    }));
+    const { data, error } = await supabase.from("service_steps").insert(generated).select();
+    if (error) return error;
+    steps = data.sort((a, b) => a.sequence_no - b.sequence_no);
+  }
+  if (steps.some((step) => step.started_at && !step.ended_at)) return null;
+  const nextStep = steps.find((step) => !step.started_at && !step.ended_at);
+  if (!nextStep) return new Error("再開できる未実施工程が見つかりませんでした。");
+  const { data, error } = await supabase.from("service_steps").update({ started_at: new Date().toISOString() }).eq("id", nextStep.id).is("started_at", null).is("ended_at", null).select().maybeSingle();
+  if (error) return error;
+  if (!data) return new Error("工程の開始状態を保存できませんでした。");
+  return null;
+}
+
 async function startServiceTimer(recordId, button) {
   button.disabled = true;
   button.textContent = "開始中…";
+  const { data: record, error: recordError } = await supabase.from("service_records").select("course_code, selected_options").eq("id", recordId).maybeSingle();
+  if (recordError || !record) {
+    button.disabled = false;
+    button.textContent = "施工開始";
+    return alert(saveErrorMessage(recordError || new Error("施工記録を読み込めませんでした。")));
+  }
+  const stepError = await ensureActiveServiceStep(recordId, record);
+  if (stepError) {
+    button.disabled = false;
+    button.textContent = "施工開始";
+    return alert(saveErrorMessage(stepError));
+  }
   const { error } = await supabase.from("service_records").update({ status: "in_progress" }).eq("id", recordId).eq("status", "planned");
   if (error) {
     button.disabled = false;
     button.textContent = "施工開始";
     return alert(saveErrorMessage(error));
   }
-  const { error: stepError } = await supabase.from("service_steps").update({ started_at: new Date().toISOString() }).eq("service_record_id", recordId).eq("sequence_no", 1).is("started_at", null);
-  if (stepError) return alert(saveErrorMessage(stepError));
   await renderServiceTimer(recordId);
 }
 
@@ -797,7 +838,11 @@ async function renderServiceTimer(recordId) {
   if (recordError || stepsError || !record) return setServiceContent('<div class="card"><p class="error">工程を読み込めませんでした。</p></div>');
   if (record.status !== "in_progress") return renderServiceDetail(recordId);
   const activeStep = steps.find((step) => step.started_at && !step.ended_at);
-  if (!activeStep) return setServiceContent('<div class="card"><p class="error">開始中の工程が見つかりませんでした。</p></div>');
+  if (!activeStep) {
+    const recoveryError = await ensureActiveServiceStep(recordId, record, steps);
+    if (recoveryError) return setServiceContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(recoveryError))}</p></div>`);
+    return renderServiceTimer(recordId);
+  }
   const currentIndex = steps.findIndex((step) => step.id === activeStep.id);
   const nextStep = steps[currentIndex + 1];
   const isPreCheck = activeStep.step_key === "pre_check" || activeStep.sequence_no === 1;
