@@ -494,11 +494,49 @@ const setServiceContent = (content) => {
 const formatActualTime = (value) => value
   ? new Date(value).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })
   : "未記録";
-const serviceTimeDifference = (record) => {
-  if (record.actual_service_minutes == null || record.planned_service_minutes == null) return "";
-  const diff = Number(record.actual_service_minutes) - Number(record.planned_service_minutes);
+const plannedCourseMinutes = {
+  rinseless: { kei_compact: 45, sedan_wagon: 60, suv: 75, minivan: 75, large_hiace: 90 },
+  maintenance: { kei_compact: 90, sedan_wagon: 120, suv: 150, minivan: 150, large_hiace: 180 },
+  standard: { kei_compact: 90, sedan_wagon: 120, suv: 150, minivan: 150, large_hiace: 180 },
+};
+const plannedOptionMinutes = {
+  body_iron_removal: { kei_compact: 20, sedan_wagon: 30, suv: 40, minivan: 40, large_hiace: 45 },
+  front_glass_oil_repellent: { kei_compact: 30, sedan_wagon: 30, suv: 30, minivan: 30, large_hiace: 30 },
+  all_glass_oil_repellent: { kei_compact: 45, sedan_wagon: 60, suv: 60, minivan: 60, large_hiace: 75 },
+  all_glass_scale: { kei_compact: 60, sedan_wagon: 90, suv: 90, minivan: 90, large_hiace: 120 },
+  unpainted_resin_partial: { kei_compact: 30, sedan_wagon: 30, suv: 30, minivan: 30, large_hiace: 30 },
+  unpainted_resin_wide: { kei_compact: 60, sedan_wagon: 60, suv: 60, minivan: 60, large_hiace: 60 },
+  wheel_scale_heavy: { kei_compact: 240, sedan_wagon: 240, suv: 240, minivan: 240, large_hiace: 240 },
+};
+const plannedServiceTime = (record) => {
+  if (record.course_code === "reset_coat") return { minutes: null, reason: "終日枠", missingOptions: [] };
+  if (!record.vehicle_size_class || !plannedCourseMinutes[record.course_code]?.[record.vehicle_size_class]) return { minutes: null, reason: "車格未設定", missingOptions: [] };
+  const missingOptions = [];
+  let minutes = plannedCourseMinutes[record.course_code][record.vehicle_size_class];
+  jsonArray(record.selected_options).forEach((option) => {
+    const optionMinutes = plannedOptionMinutes[option.code]?.[record.vehicle_size_class];
+    if (optionMinutes == null) missingOptions.push(option.code);
+    else minutes += optionMinutes;
+  });
+  return missingOptions.length ? { minutes: null, reason: "OP時間未設定", missingOptions } : { minutes, reason: null, missingOptions: [] };
+};
+const serviceTimeDifference = (record, planned = plannedServiceTime(record)) => {
+  if (record.actual_service_minutes == null || planned.minutes == null) return "未計算";
+  const diff = Number(record.actual_service_minutes) - planned.minutes;
   if (diff === 0) return "予定どおり";
   return `${diff > 0 ? "+" : "−"}${Math.abs(diff)}分`;
+};
+const formatServiceMinutes = (minutes) => minutes == null ? "未計算" : `${minutes}分`;
+const pausedMilliseconds = (pauses, startedAt, endedAt) => (pauses || []).reduce((total, pause) => {
+  if (!pause.started_at || !pause.ended_at) return total;
+  const start = Math.max(new Date(startedAt).getTime(), new Date(pause.started_at).getTime());
+  const end = Math.min(new Date(endedAt).getTime(), new Date(pause.ended_at).getTime());
+  return total + Math.max(0, end - start);
+}, 0);
+const intervalMinutes = (startedAt, endedAt, pauses) => (!startedAt || !endedAt ? null : Math.max(0, Math.round((new Date(endedAt).getTime() - new Date(startedAt).getTime() - pausedMilliseconds(pauses, startedAt, endedAt)) / 60000)));
+const totalSessionMinutes = (sessions, pauses) => {
+  const completed = (sessions || []).filter((session) => session.started_at && session.ended_at);
+  return completed.length ? completed.reduce((total, session) => total + intervalMinutes(session.started_at, session.ended_at, pauses), 0) : null;
 };
 const timestampLocalDate = (value) => {
   if (!value) return "";
@@ -660,20 +698,98 @@ async function renderPreparationState(recordId, record, preparationSession) {
   document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
 }
 
+async function renderServiceActualReview(recordId, record, steps, sessions, pauses) {
+  clearServiceElapsed();
+  const firstStep = steps.find((step) => step.started_at);
+  const finalStep = [...steps].reverse().find((step) => step.ended_at);
+  const actualMinutes = intervalMinutes(firstStep?.started_at, finalStep?.ended_at, pauses);
+  const totalMinutes = totalSessionMinutes(sessions, pauses);
+  const planned = plannedServiceTime(record);
+  const plannedLabel = planned.minutes == null ? `予定時間算出不可 / ${planned.reason}` : `${planned.minutes}分`;
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工実績確認</span></div><dl><dt>施工終了</dt><dd>${escapeHtml(formatActualTime(finalStep?.ended_at))}</dd><dt>実施工時間</dt><dd>${escapeHtml(formatServiceMinutes(actualMinutes))}</dd><dt>総拘束時間</dt><dd>${escapeHtml(formatServiceMinutes(totalMinutes))}</dd><dt>予定施工時間</dt><dd>${escapeHtml(plannedLabel)}</dd><dt>予定との差</dt><dd>${escapeHtml(actualMinutes == null || planned.minutes == null ? "未計算" : serviceTimeDifference({ actual_service_minutes: actualMinutes }, planned))}</dd></dl></div><form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(record.actual_total ?? record.planned_total ?? "")}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="primary" type="submit">施工実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  document.getElementById("serviceActualForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector("button[type=submit]");
+    button.disabled = true;
+    button.textContent = "保存中…";
+    const values = {
+      status: "completed",
+      actual_started_at: firstStep?.started_at || null,
+      actual_completed_at: finalStep?.ended_at || null,
+      actual_total: form.actual_total.value === "" ? null : Math.max(0, Number(form.actual_total.value)),
+      actual_total_minutes: totalMinutes,
+      service_notes: emptyToNull(form.service_notes.value),
+    };
+    const { error } = await supabase.from("service_records").update(values).eq("id", recordId).eq("status", "in_progress");
+    if (error) {
+      button.disabled = false;
+      button.textContent = "施工実績を保存";
+      const message = document.getElementById("serviceActualError");
+      message.textContent = saveErrorMessage(error);
+      return message.classList.remove("hidden");
+    }
+    const { error: timeError } = await supabase.from("service_records").update({ actual_service_minutes: actualMinutes }).eq("id", recordId).eq("status", "completed");
+    if (timeError) return alert(saveErrorMessage(timeError));
+    await renderServiceDetail(recordId);
+  });
+  document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
+}
+
+async function renderCleanupState(recordId, record, steps, sessions, pauses) {
+  const finalStep = [...steps].reverse().find((step) => step.ended_at);
+  const activeSession = (sessions || []).find((session) => !session.ended_at);
+  if (!activeSession) return renderServiceActualReview(recordId, record, steps, sessions, pauses);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">片付け中</span></div><h2>片付け中</h2><dl><dt>施工終了</dt><dd>${escapeHtml(formatActualTime(finalStep?.ended_at))}</dd><dt>総拘束経過</dt><dd id="cleanupElapsed"></dd></dl><button class="primary service-action-button" type="button" id="completeCleanupButton">片付け完了</button></div><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  showServiceElapsed("cleanupElapsed", activeSession.started_at);
+  document.getElementById("completeCleanupButton").addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "保存中…";
+    const { error } = await supabase.from("service_sessions").update({ ended_at: new Date().toISOString(), status: "completed" }).eq("id", activeSession.id).is("ended_at", null);
+    if (error) return alert(saveErrorMessage(error));
+    await renderServiceTimer(recordId);
+  });
+  document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
+}
+
+async function renderServiceEndState(recordId, record, steps, sessions) {
+  const finalStep = [...steps].reverse().find((step) => step.ended_at);
+  const activeSession = (sessions || []).find((session) => !session.ended_at);
+  if (!activeSession) return;
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工中</span></div><h2>最終確認・仕上げ</h2><dl><dt>最終工程完了</dt><dd>${escapeHtml(formatActualTime(finalStep?.ended_at))}</dd></dl><button class="primary service-action-button" type="button" id="finishServiceButton">施工終了</button></div><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  document.getElementById("finishServiceButton").addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "保存中…";
+    const { error } = await supabase.from("service_sessions").update({ status: "interrupted" }).eq("id", activeSession.id).eq("status", "active").is("ended_at", null);
+    if (error) return alert(saveErrorMessage(error));
+    await renderServiceTimer(recordId);
+  });
+  document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
+}
+
 async function renderServiceTimer(recordId) {
   clearServiceElapsed();
   const token = ++serviceViewToken;
   setServiceContent('<div class="card placeholder"><p class="muted">工程を読み込んでいます…</p></div>');
-  const [{ data: record, error: recordError }, { data: steps, error: stepsError }, { data: savedConditions }] = await Promise.all([
+  const [{ data: record, error: recordError }, { data: steps, error: stepsError }, { data: savedConditions }, { data: sessions, error: sessionsError }, { data: pauses }] = await Promise.all([
     supabase.from("service_records").select("*").eq("id", recordId).maybeSingle(),
     supabase.from("service_steps").select("*").eq("service_record_id", recordId).order("sequence_no", { ascending: true }),
     supabase.from("service_condition_tags").select("tag_key, details").eq("service_record_id", recordId),
+    supabase.from("service_sessions").select("id, started_at, ended_at, status").eq("service_record_id", recordId).order("started_at", { ascending: true }),
+    supabase.from("service_pauses").select("started_at, ended_at").eq("service_record_id", recordId),
   ]);
   if (token !== serviceViewToken || activeTab !== "施工") return;
-  if (recordError || stepsError || !record) return setServiceContent('<div class="card"><p class="error">工程を読み込めませんでした。</p></div>');
+  if (recordError || stepsError || sessionsError || !record) return setServiceContent('<div class="card"><p class="error">工程を読み込めませんでした。</p></div>');
   if (record.status !== "in_progress") return renderServiceDetail(recordId);
   const activeStep = steps.find((step) => step.started_at && !step.ended_at);
   if (!activeStep) {
+    if (steps.length && steps.every((step) => step.ended_at)) {
+      const activeSession = (sessions || []).find((session) => !session.ended_at);
+      if (!activeSession) return renderServiceActualReview(recordId, record, steps, sessions, pauses);
+      return activeSession.status === "interrupted" ? renderCleanupState(recordId, record, steps, sessions, pauses) : renderServiceEndState(recordId, record, steps, sessions);
+    }
     const recoveryError = await ensureActiveServiceStep(recordId, record, steps);
     if (recoveryError) return setServiceContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(recoveryError))}</p></div>`);
     return renderServiceTimer(recordId);
@@ -695,9 +811,12 @@ async function renderServiceTimer(recordId) {
       if (startError) return alert(saveErrorMessage(startError));
       return renderServiceTimer(recordId);
     }
-    const { error: completeError } = await supabase.from("service_records").update({ status: "completed" }).eq("id", recordId).eq("status", "in_progress");
-    if (completeError) return alert(saveErrorMessage(completeError));
-    await renderServiceDetail(recordId);
+    const activeSession = (sessions || []).find((session) => !session.ended_at);
+    if (activeSession) {
+      const { error: sessionError } = await supabase.from("service_sessions").update({ status: "interrupted" }).eq("id", activeSession.id).eq("status", "active").is("ended_at", null);
+      if (sessionError) return alert(saveErrorMessage(sessionError));
+    }
+    await renderServiceTimer(recordId);
   });
   document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
 }
@@ -723,6 +842,7 @@ async function renderServiceDetail(recordId) {
     return `${master?.label || item.code}（−${yen(item.amount)}）`;
   }).join("、") || "なし";
   const actualTotalValue = record.actual_total ?? record.planned_total ?? "";
+  const planned = plannedServiceTime(record);
 
   const actionMarkup = record.status === "planned"
     ? preparationSession
@@ -733,7 +853,7 @@ async function renderServiceDetail(recordId) {
       : "";
 
   const actualTimeMarkup = record.actual_started_at || record.actual_completed_at || record.actual_service_minutes != null
-    ? `<div class="service-actual-summary"><div><span>開始</span><strong>${escapeHtml(formatActualTime(record.actual_started_at))}</strong></div><div><span>完了</span><strong>${escapeHtml(formatActualTime(record.actual_completed_at))}</strong></div><div><span>実施工</span><strong>${record.actual_service_minutes != null ? `${escapeHtml(record.actual_service_minutes)}分` : "計測中"}</strong></div>${record.actual_service_minutes != null ? `<div><span>予定との差</span><strong>${escapeHtml(serviceTimeDifference(record))}</strong></div>` : ""}</div>`
+    ? `<div class="service-actual-summary"><div><span>開始</span><strong>${escapeHtml(formatActualTime(record.actual_started_at))}</strong></div><div><span>完了</span><strong>${escapeHtml(formatActualTime(record.actual_completed_at))}</strong></div><div><span>実施工</span><strong>${record.actual_service_minutes != null ? `${escapeHtml(record.actual_service_minutes)}分` : "計測中"}</strong></div>${record.actual_service_minutes != null ? `<div><span>予定との差</span><strong>${escapeHtml(serviceTimeDifference(record, planned))}</strong></div>` : ""}</div>`
     : '<p class="muted service-status-note">施工開始を押すと実際の開始時刻を記録します。</p>';
 
   const timingCorrectionMarkup = record.status === "in_progress" || record.status === "completed"
