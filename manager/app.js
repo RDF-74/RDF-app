@@ -531,8 +531,33 @@ const buildServiceSteps = (courseCode, selectedOptions) => {
 };
 const conditionTagLabels = ["水ジミ・スケール", "鉄粉多め", "虫汚れ多め", "傷あり", "未塗装樹脂白化", "ガラス油膜あり", "ガラスウロコあり", "ホイール汚れ強め"];
 const conditionFields = (tag) => tag === "水ジミ・スケール" ? '<select name="scale_level"><option value="light">軽度</option><option value="heavy">重度</option><option value="paint_impact">塗装影響あり</option></select>' : tag === "ガラス油膜あり" || tag === "ガラスウロコあり" ? '<label><input type="checkbox" name="area" value="front"> フロント</label><label><input type="checkbox" name="area" value="side"> サイド</label><label><input type="checkbox" name="area" value="rear"> リア</label>' : tag === "ホイール汚れ強め" ? '<select name="wheel_count"><option value="1">1本</option><option value="2">2本</option><option value="3">3本</option><option value="4">4本</option></select>' : '';
+let serviceElapsedInterval = null;
+const clearServiceElapsed = () => {
+  if (serviceElapsedInterval) clearInterval(serviceElapsedInterval);
+  serviceElapsedInterval = null;
+};
+const formatServiceElapsed = (startedAt) => {
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+};
+const showServiceElapsed = (elementId, startedAt) => {
+  clearServiceElapsed();
+  const update = () => {
+    const element = document.getElementById(elementId);
+    if (element) element.textContent = formatServiceElapsed(startedAt);
+  };
+  update();
+  serviceElapsedInterval = setInterval(update, 1000);
+};
+const serviceConditionMarkup = (record, savedConditions) => {
+  const conditionMap = new Map((savedConditions || []).map((item) => [item.tag_key, item.details || {}]));
+  return `<form class="card form-card" id="serviceConditionForm"><h2>施工前状態</h2><label for="coatingState">既存コーティング状態</label><select id="coatingState" name="coating_state"><option value="unknown" ${record.coating_state === "unknown" ? "selected" : ""}>未確認</option><option value="good" ${record.coating_state === "good" ? "selected" : ""}>良好に残存</option><option value="partial" ${record.coating_state === "partial" ? "selected" : ""}>部分的に残存</option><option value="none" ${record.coating_state === "none" ? "selected" : ""}>残存なし</option></select><div class="condition-tags">${conditionTagLabels.map((tag) => `<div class="condition-tag"><label><input type="checkbox" name="condition_tag" value="${tag}" ${conditionMap.has(tag) ? "checked" : ""}> ${tag}</label><div class="condition-extra ${conditionMap.has(tag) ? "" : "hidden"}" data-condition-extra="${tag}">${conditionFields(tag)}</div></div>`).join("")}</div><button class="secondary" type="submit">施工前状態を保存</button></form>`;
+};
 
 async function renderServiceList() {
+  clearServiceElapsed();
   const token = ++serviceViewToken;
   const { data, error } = await supabase.from("service_records").select("id, reservation_id, customer_name, vehicle_manufacturer, vehicle_model, course_code, service_date, planned_start_time, planned_slot_minutes, planned_total, actual_total, status").eq("is_active", true).order("service_date", { ascending: true }).order("planned_start_time", { ascending: true });
   if (token !== serviceViewToken || activeTab !== "施工") return;
@@ -542,7 +567,98 @@ async function renderServiceList() {
   document.querySelectorAll("[data-service-record-id]").forEach((button) => button.addEventListener("click", () => renderServiceDetail(button.dataset.serviceRecordId)));
 }
 
+const bindServiceConditionForm = (recordId, rerender) => {
+  document.querySelectorAll("input[name=condition_tag]").forEach((input) => input.addEventListener("change", () => {
+    document.querySelector(`[data-condition-extra="${input.value}"]`)?.classList.toggle("hidden", !input.checked);
+  }));
+  document.getElementById("serviceConditionForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const selected = [...form.querySelectorAll("input[name=condition_tag]:checked")];
+    const { error: recordError } = await supabase.from("service_records").update({ coating_state: form.coating_state.value }).eq("id", recordId);
+    if (recordError) return alert(saveErrorMessage(recordError));
+    const values = selected.map((input) => {
+      const tag = input.closest(".condition-tag");
+      return {
+        service_record_id: recordId,
+        tag_key: input.value,
+        details: {
+          scale_level: tag.querySelector("[name=scale_level]")?.value || null,
+          areas: [...tag.querySelectorAll("input[name=area]:checked")].map((item) => item.value),
+          wheel_count: tag.querySelector("[name=wheel_count]")?.value || null,
+        },
+      };
+    });
+    if (values.length) {
+      const { error: tagError } = await supabase.from("service_condition_tags").upsert(values, { onConflict: "service_record_id,tag_key" });
+      if (tagError) return alert(saveErrorMessage(tagError));
+    }
+    await rerender(recordId);
+  });
+};
+
+async function startServiceTimer(recordId, button) {
+  button.disabled = true;
+  button.textContent = "開始中…";
+  const { error } = await supabase.from("service_records").update({ status: "in_progress" }).eq("id", recordId).eq("status", "planned");
+  if (error) {
+    button.disabled = false;
+    button.textContent = "施工開始";
+    return alert(saveErrorMessage(error));
+  }
+  const { error: stepError } = await supabase.from("service_steps").update({ started_at: new Date().toISOString() }).eq("service_record_id", recordId).eq("sequence_no", 1).is("started_at", null);
+  if (stepError) return alert(saveErrorMessage(stepError));
+  await renderServiceTimer(recordId);
+}
+
+async function renderPreparationState(recordId, record, preparationSession) {
+  const optionText = jsonArray(record.selected_options).map((item) => item.name || item.code).filter(Boolean).join("、") || "なし";
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">準備中</span></div><h2>準備中</h2><dl><dt>準備開始</dt><dd>${escapeHtml(formatActualTime(preparationSession.started_at))}</dd><dt>経過</dt><dd id="preparationElapsed"></dd><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl><button class="primary service-action-button" type="button" id="startServiceButton">施工開始</button></div><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  showServiceElapsed("preparationElapsed", preparationSession.started_at);
+  document.getElementById("startServiceButton").addEventListener("click", (event) => startServiceTimer(recordId, event.currentTarget));
+  document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
+}
+
+async function renderServiceTimer(recordId) {
+  clearServiceElapsed();
+  const token = ++serviceViewToken;
+  setServiceContent('<div class="card placeholder"><p class="muted">工程を読み込んでいます…</p></div>');
+  const [{ data: record, error: recordError }, { data: steps, error: stepsError }, { data: savedConditions }] = await Promise.all([
+    supabase.from("service_records").select("*").eq("id", recordId).maybeSingle(),
+    supabase.from("service_steps").select("*").eq("service_record_id", recordId).order("sequence_no", { ascending: true }),
+    supabase.from("service_condition_tags").select("tag_key, details").eq("service_record_id", recordId),
+  ]);
+  if (token !== serviceViewToken || activeTab !== "施工") return;
+  if (recordError || stepsError || !record) return setServiceContent('<div class="card"><p class="error">工程を読み込めませんでした。</p></div>');
+  if (record.status !== "in_progress") return renderServiceDetail(recordId);
+  const activeStep = steps.find((step) => step.started_at && !step.ended_at);
+  if (!activeStep) return setServiceContent('<div class="card"><p class="error">開始中の工程が見つかりませんでした。</p></div>');
+  const currentIndex = steps.findIndex((step) => step.id === activeStep.id);
+  const nextStep = steps[currentIndex + 1];
+  const isPreCheck = activeStep.step_key === "pre_check" || activeStep.sequence_no === 1;
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工中</span></div><h2>${escapeHtml(activeStep.step_name)}</h2><dl><dt>開始</dt><dd>${escapeHtml(formatActualTime(activeStep.started_at))}</dd><dt>経過</dt><dd id="serviceStepElapsed"></dd></dl></div>${isPreCheck ? serviceConditionMarkup(record, savedConditions) : ""}<button class="primary service-action-button" type="button" id="nextServiceStepButton">${nextStep ? "次の工程へ" : "施工終了"}</button><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  showServiceElapsed("serviceStepElapsed", activeStep.started_at);
+  if (isPreCheck) bindServiceConditionForm(recordId, renderServiceTimer);
+  document.getElementById("nextServiceStepButton").addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    const now = new Date().toISOString();
+    const { error: endError } = await supabase.from("service_steps").update({ ended_at: now }).eq("id", activeStep.id).is("ended_at", null);
+    if (endError) return alert(saveErrorMessage(endError));
+    if (nextStep) {
+      const { error: startError } = await supabase.from("service_steps").update({ started_at: now }).eq("id", nextStep.id).is("started_at", null);
+      if (startError) return alert(saveErrorMessage(startError));
+      return renderServiceTimer(recordId);
+    }
+    const { error: completeError } = await supabase.from("service_records").update({ status: "completed" }).eq("id", recordId).eq("status", "in_progress");
+    if (completeError) return alert(saveErrorMessage(completeError));
+    await renderServiceDetail(recordId);
+  });
+  document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
+}
+
 async function renderServiceDetail(recordId) {
+  clearServiceElapsed();
   const token = ++serviceViewToken;
   setServiceContent('<div class="card placeholder"><p class="muted">施工記録を読み込んでいます…</p></div>');
   const { data: record, error } = await supabase.from("service_records").select("*").eq("id", recordId).maybeSingle();
@@ -550,6 +666,8 @@ async function renderServiceDetail(recordId) {
   if (error || !record) return setServiceContent('<div class="card"><p class="error">施工記録を読み込めませんでした。</p><button class="secondary" type="button" id="backToServiceList">施工一覧へ戻る</button></div>');
   const { data: savedConditions } = await supabase.from("service_condition_tags").select("tag_key, details").eq("service_record_id", recordId);
   const { data: preparationSession } = await supabase.from("service_sessions").select("id, started_at").eq("service_record_id", recordId).eq("status", "active").is("ended_at", null).order("started_at", { ascending: false }).limit(1).maybeSingle();
+  if (record.status === "in_progress") return renderServiceTimer(recordId);
+  if (record.status === "planned" && preparationSession) return renderPreparationState(recordId, record, preparationSession);
 
   const optionText = jsonArray(record.selected_options).map((item) => {
     const master = reservationOptions.find((option) => option.code === item.code);
@@ -582,8 +700,7 @@ async function renderServiceDetail(recordId) {
     : record.status === "completed"
       ? '<button class="text-button danger-text" type="button" id="reopenServiceButton">完了を取り消して施工中に戻す</button>'
       : "";
-  const conditionMap = new Map((savedConditions || []).map((item) => [item.tag_key, item.details || {}]));
-  const conditionMarkup = `<form class="card form-card" id="serviceConditionForm"><h2>施工前状態</h2><label for="coatingState">既存コーティング状態</label><select id="coatingState" name="coating_state"><option value="unknown" ${record.coating_state === "unknown" ? "selected" : ""}>未確認</option><option value="good" ${record.coating_state === "good" ? "selected" : ""}>良好に残存</option><option value="partial" ${record.coating_state === "partial" ? "selected" : ""}>部分的に残存</option><option value="none" ${record.coating_state === "none" ? "selected" : ""}>残存なし</option></select><div class="condition-tags">${conditionTagLabels.map((tag) => `<div class="condition-tag"><label><input type="checkbox" name="condition_tag" value="${tag}" ${conditionMap.has(tag) ? "checked" : ""}> ${tag}</label><div class="condition-extra ${conditionMap.has(tag) ? "" : "hidden"}" data-condition-extra="${tag}">${conditionFields(tag)}</div></div>`).join("")}</div><button class="secondary" type="submit">施工前状態を保存</button></form>`;
+  const conditionMarkup = serviceConditionMarkup(record, savedConditions);
 
   setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl></div>${conditionMarkup}<form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
 
@@ -598,18 +715,7 @@ async function renderServiceDetail(recordId) {
 
   document.getElementById("startServiceButton")?.addEventListener("click", async (event) => {
     if (!confirm("施工を開始しますか？現在時刻を開始時刻として記録します。")) return;
-    const button = event.currentTarget;
-    button.disabled = true;
-    button.textContent = "開始中…";
-    const { error } = await supabase.from("service_records").update({ status: "in_progress" }).eq("id", recordId).eq("status", "planned");
-    if (error) {
-      button.disabled = false;
-      button.textContent = "施工開始";
-      return alert(saveErrorMessage(error));
-    }
-    const { error: stepError } = await supabase.from("service_steps").update({ started_at: new Date().toISOString() }).eq("service_record_id", recordId).eq("sequence_no", 1).is("started_at", null);
-    if (stepError) return alert(saveErrorMessage(stepError));
-    await renderServiceDetail(recordId);
+    await startServiceTimer(recordId, event.currentTarget);
   });
 
   document.getElementById("completeServiceButton")?.addEventListener("click", async (event) => {
@@ -678,26 +784,7 @@ async function renderServiceDetail(recordId) {
     await renderServiceDetail(recordId);
   });
 
-  document.querySelectorAll("input[name=condition_tag]").forEach((input) => input.addEventListener("change", () => {
-    document.querySelector(`[data-condition-extra="${input.value}"]`)?.classList.toggle("hidden", !input.checked);
-  }));
-  document.getElementById("serviceConditionForm").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const selected = [...form.querySelectorAll("input[name=condition_tag]:checked")];
-    const { error: recordError } = await supabase.from("service_records").update({ coating_state: form.coating_state.value }).eq("id", recordId);
-    if (recordError) return alert(saveErrorMessage(recordError));
-    const values = selected.map((input) => {
-      const area = [...input.closest(".condition-tag").querySelectorAll("input[name=area]:checked")].map((item) => item.value);
-      const details = { scale_level: input.closest(".condition-tag").querySelector("[name=scale_level]")?.value || null, areas: area, wheel_count: input.closest(".condition-tag").querySelector("[name=wheel_count]")?.value || null };
-      return { service_record_id: recordId, tag_key: input.value, details };
-    });
-    if (values.length) {
-      const { error: tagError } = await supabase.from("service_condition_tags").upsert(values, { onConflict: "service_record_id,tag_key" });
-      if (tagError) return alert(saveErrorMessage(tagError));
-    }
-    await renderServiceDetail(recordId);
-  });
+  bindServiceConditionForm(recordId, renderServiceDetail);
 
   document.getElementById("serviceActualForm").addEventListener("submit", async (event) => {
     event.preventDefault();
