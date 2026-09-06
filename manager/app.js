@@ -549,6 +549,7 @@ async function renderServiceDetail(recordId) {
   if (token !== serviceViewToken || activeTab !== "施工") return;
   if (error || !record) return setServiceContent('<div class="card"><p class="error">施工記録を読み込めませんでした。</p><button class="secondary" type="button" id="backToServiceList">施工一覧へ戻る</button></div>');
   const { data: savedConditions } = await supabase.from("service_condition_tags").select("tag_key, details").eq("service_record_id", recordId);
+  const { data: preparationSession } = await supabase.from("service_sessions").select("id, started_at").eq("service_record_id", recordId).eq("status", "active").is("ended_at", null).order("started_at", { ascending: false }).limit(1).maybeSingle();
 
   const optionText = jsonArray(record.selected_options).map((item) => {
     const master = reservationOptions.find((option) => option.code === item.code);
@@ -561,7 +562,9 @@ async function renderServiceDetail(recordId) {
   const actualTotalValue = record.actual_total ?? record.planned_total ?? "";
 
   const actionMarkup = record.status === "planned"
-    ? '<button class="primary service-action-button" type="button" id="startServiceButton">施工開始</button>'
+    ? preparationSession
+      ? '<button class="primary service-action-button" type="button" id="startServiceButton">施工開始</button>'
+      : '<button class="primary service-action-button" type="button" id="prepareServiceButton">準備開始</button>'
     : record.status === "in_progress"
       ? '<button class="primary service-action-button" type="button" id="completeServiceButton">施工完了</button>'
       : "";
@@ -584,6 +587,15 @@ async function renderServiceDetail(recordId) {
 
   setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl></div>${conditionMarkup}<form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
 
+  document.getElementById("prepareServiceButton")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "準備開始中…";
+    const { error: sessionError } = await supabase.from("service_sessions").insert({ service_record_id: recordId, started_at: new Date().toISOString(), status: "active" });
+    if (sessionError) { button.disabled = false; button.textContent = "準備開始"; return alert(saveErrorMessage(sessionError)); }
+    await renderServiceDetail(recordId);
+  });
+
   document.getElementById("startServiceButton")?.addEventListener("click", async (event) => {
     if (!confirm("施工を開始しますか？現在時刻を開始時刻として記録します。")) return;
     const button = event.currentTarget;
@@ -595,6 +607,8 @@ async function renderServiceDetail(recordId) {
       button.textContent = "施工開始";
       return alert(saveErrorMessage(error));
     }
+    const { error: stepError } = await supabase.from("service_steps").update({ started_at: new Date().toISOString() }).eq("service_record_id", recordId).eq("sequence_no", 1).is("started_at", null);
+    if (stepError) return alert(saveErrorMessage(stepError));
     await renderServiceDetail(recordId);
   });
 
