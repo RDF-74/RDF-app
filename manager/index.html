@@ -203,6 +203,13 @@ const saveErrorMessage = (error) => error?.message ? `${errorMessage}（${error.
 const chemicalCategories = ["プレウォッシュ","シャンプー / コンタクトウォッシュ","リンスレス","鉄粉除去","スケール / 酸性洗浄","下地処理","脱脂","コーティング / 保護剤","ガラス洗浄","ガラス油膜除去","ガラスウロコ除去","ガラス撥水","タイヤ・ホイール洗浄","タイヤ・ホイール保護","未塗装樹脂洗浄","未塗装樹脂保護","虫汚れ","ピッチ・タール","その他"];
 const chemicalAdjustmentReasons = { initial: "初期在庫登録", inventory: "棚卸修正", spill: "こぼれ・漏れ", discard: "廃棄", usage_missing: "使用量記録漏れ", other: "その他" };
 const chemicalUsageStatuses = { recorded: "使用量を記録", unrecorded: "使用したが量不明", unused: "未使用" };
+const chemicalUsageCostText = (usage) => {
+  if (!usage || usage.usage_status !== "recorded") return "原価対象外";
+  const knownCost = Math.round(Number(usage.known_cost_amount || 0));
+  if (usage.cost_status === "known") return `原価 ${yen(knownCost)}`;
+  if (usage.cost_status === "partial") return `原価 ${yen(knownCost)} + 価格不明分${Number(usage.unknown_cost_applied_amount || 0)}mL`;
+  return "原価 未計算（価格不明）";
+};
 const relatedChemicalCatalog = (chemical) => Array.isArray(chemical?.chemical_catalog_products) ? chemical.chemical_catalog_products[0] : chemical?.chemical_catalog_products;
 const recordareChemicalName = (chemical) => { const catalog = relatedChemicalCatalog(chemical); return [catalog?.manufacturer, catalog?.product_name].filter(Boolean).join(" ") || "名称なし"; };
 const normalizeChemicalName = (value) => String(value || "").toLowerCase().replace(/[\s\-_/・]/g, "");
@@ -1028,7 +1035,7 @@ const serviceChemicalUsageMarkup = (activeStep, usages, chemicals) => {
     return `<form class="service-timing-correction" data-service-chemical-form>
       <input type="hidden" name="chemical_id" value="${escapeHtml(usage.recordare_chemical_id)}" />
       <h3>${escapeHtml(recordareChemicalName(chemical))}</h3>
-      <p class="muted">現在在庫 ${escapeHtml(stock)}</p>
+      <p class="muted">現在在庫 ${escapeHtml(stock)} / ${escapeHtml(chemicalUsageCostText(usage))}</p>
       <label>記録状態<select name="usage_status">${serviceChemicalUsageStatusOptions(usage.usage_status)}</select></label>
       <label>実使用量mL<input name="actual_amount" type="number" inputmode="decimal" min="0.001" step="0.001" value="${escapeHtml(usage.actual_amount ?? "")}" /></label>
       <label>メモ<input name="notes" value="${escapeHtml(usage.notes || "")}" /></label>
@@ -1146,7 +1153,7 @@ async function renderServiceTimer(recordId) {
     supabase.from("service_condition_tags").select("tag_key, details").eq("service_record_id", recordId),
     supabase.from("service_sessions").select("id, started_at, ended_at, status").eq("service_record_id", recordId).order("started_at", { ascending: true }),
     supabase.from("service_pauses").select("started_at, ended_at").eq("service_record_id", recordId),
-    supabase.from("service_chemical_usages").select("id, service_step_id, recordare_chemical_id, usage_status, actual_amount, notes").eq("service_record_id", recordId),
+    supabase.from("service_chemical_usages").select("id, service_step_id, recordare_chemical_id, usage_status, actual_amount, known_cost_amount, cost_status, unknown_cost_applied_amount, notes").eq("service_record_id", recordId),
     supabase.from("recordare_chemicals").select("id, status, unit, current_stock, chemical_catalog_products(manufacturer, product_name)").order("created_at", { ascending: true }),
   ]);
   if (token !== serviceViewToken || activeTab !== "施工") return;
@@ -1208,7 +1215,7 @@ async function renderServiceDetail(recordId) {
   if (record.status === "completed") {
     const [{ data: completedChemicalUsages, error: completedChemicalUsagesError }, { data: completedSteps, error: completedStepsError }, { data: completedChemicals, error: completedChemicalsError }] = await Promise.all([
       supabase.from("service_chemical_usages")
-        .select("service_step_id, recordare_chemical_id, usage_status, actual_amount, notes, service_steps(step_name, sequence_no), recordare_chemicals(id, unit, current_stock, chemical_catalog_products(manufacturer, product_name))")
+        .select("service_step_id, recordare_chemical_id, usage_status, actual_amount, unit_cost_per_ml, known_cost_amount, cost_status, unknown_cost_applied_amount, notes, service_steps(step_name, sequence_no), recordare_chemicals(id, unit, current_stock, chemical_catalog_products(manufacturer, product_name))")
         .eq("service_record_id", recordId)
         .order("created_at", { ascending: true }),
       supabase.from("service_steps").select("id, step_key, step_name, sequence_no").eq("service_record_id", recordId).order("sequence_no", { ascending: true }),
@@ -1225,7 +1232,7 @@ async function renderServiceDetail(recordId) {
           <input type="hidden" name="step_id" value="${escapeHtml(usage.service_step_id)}" />
           <input type="hidden" name="chemical_id" value="${escapeHtml(usage.recordare_chemical_id)}" />
           <h3>${escapeHtml(step?.step_name || "工程不明")} / ${escapeHtml(recordareChemicalName(chemical))}</h3>
-          <p class="muted">現在在庫 ${escapeHtml(stock)}</p>
+          <p class="muted">現在在庫 ${escapeHtml(stock)} / ${escapeHtml(chemicalUsageCostText(usage))}</p>
           <label>記録状態<select name="usage_status">${serviceChemicalUsageStatusOptions(usage.usage_status)}</select></label>
           <label>実使用量mL<input name="actual_amount" type="number" inputmode="decimal" min="0.001" step="0.001" value="${escapeHtml(usage.actual_amount ?? "")}" /></label>
           <label>メモ<input name="notes" value="${escapeHtml(usage.notes || "")}" /></label>
@@ -1250,7 +1257,10 @@ async function renderServiceDetail(recordId) {
         <label>メモ<input name="notes" /></label>
         <button class="secondary" type="submit">追加して保存</button>
       </form>` : '<p class="muted">追加できる工程またはマイケミカルがありません。</p>';
-      serviceChemicalUsageDetailMarkup = `<section class="card"><h2>使用ケミカル</h2><p class="muted">施工完了後も使用量・状態・メモを修正できます。在庫は差分だけ自動調整されます。</p>${rows || '<p class="muted">まだ記録されていません。</p>'}${addForm}</section>`;
+      const knownCostTotal = (completedChemicalUsages || []).reduce((sum, usage) => sum + Number(usage.known_cost_amount || 0), 0);
+      const hasUnknownCost = (completedChemicalUsages || []).some((usage) => usage.usage_status === "recorded" && ["partial","unknown"].includes(usage.cost_status));
+      const totalCostText = `${yen(Math.round(knownCostTotal))}${hasUnknownCost ? " + 価格不明分あり" : ""}`;
+      serviceChemicalUsageDetailMarkup = `<section class="card"><h2>使用ケミカル</h2><p><strong>ケミカル原価合計 ${escapeHtml(totalCostText)}</strong></p><p class="muted">施工完了後も使用量・状態・メモを修正できます。在庫と原価は差分だけ自動調整されます。</p>${rows || '<p class="muted">まだ記録されていません。</p>'}${addForm}</section>`;
     }
   }
 
