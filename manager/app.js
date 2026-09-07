@@ -929,6 +929,48 @@ const bindServiceChemicalUsageForms = (recordId, activeStep) => {
   });
 };
 
+const bindCompletedServiceChemicalUsageForms = (recordId) => {
+  document.querySelectorAll("[data-completed-service-chemical-form]").forEach((form) => {
+    const status = form.elements.usage_status;
+    const amount = form.elements.actual_amount;
+    const syncAmount = () => {
+      const recorded = status.value === "recorded";
+      amount.disabled = !recorded;
+      amount.required = recorded;
+      if (!recorded) amount.value = "";
+    };
+    syncAmount();
+    status.addEventListener("change", syncAmount);
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = form.querySelector("button[type=submit]");
+      const stepId = form.elements.step_id.value;
+      const chemicalId = form.elements.chemical_id.value;
+      const usageStatus = status.value;
+      const actualAmount = usageStatus === "recorded" ? Number(amount.value) : null;
+      if (!stepId || !chemicalId) return alert("工程とケミカルを選択してください。");
+      if (usageStatus === "recorded" && !(actualAmount > 0)) return alert("実使用量を入力してください。");
+      button.disabled = true;
+      const originalText = button.textContent;
+      button.textContent = "保存中…";
+      const { error } = await supabase.rpc("save_service_chemical_usage", {
+        p_service_record_id: recordId,
+        p_service_step_id: stepId,
+        p_recordare_chemical_id: chemicalId,
+        p_usage_status: usageStatus,
+        p_actual_amount: actualAmount,
+        p_notes: emptyToNull(form.elements.notes.value),
+      });
+      if (error) {
+        button.disabled = false;
+        button.textContent = originalText;
+        return alert(saveErrorMessage(error));
+      }
+      await renderServiceDetail(recordId);
+    });
+  });
+};
+
 async function renderServiceTimer(recordId) {
   clearServiceElapsed();
   const token = ++serviceViewToken;
@@ -999,23 +1041,51 @@ async function renderServiceDetail(recordId) {
 
   let serviceChemicalUsageDetailMarkup = "";
   if (record.status === "completed") {
-    const { data: completedChemicalUsages, error: completedChemicalUsagesError } = await supabase
-      .from("service_chemical_usages")
-      .select("usage_status, actual_amount, notes, service_steps(step_name, sequence_no), recordare_chemicals(unit, chemical_catalog_products(manufacturer, product_name))")
-      .eq("service_record_id", recordId)
-      .order("created_at", { ascending: true });
-    if (completedChemicalUsagesError) {
+    const [{ data: completedChemicalUsages, error: completedChemicalUsagesError }, { data: completedSteps, error: completedStepsError }, { data: completedChemicals, error: completedChemicalsError }] = await Promise.all([
+      supabase.from("service_chemical_usages")
+        .select("service_step_id, recordare_chemical_id, usage_status, actual_amount, notes, service_steps(step_name, sequence_no), recordare_chemicals(id, unit, current_stock, chemical_catalog_products(manufacturer, product_name))")
+        .eq("service_record_id", recordId)
+        .order("created_at", { ascending: true }),
+      supabase.from("service_steps").select("id, step_key, step_name, sequence_no").eq("service_record_id", recordId).order("sequence_no", { ascending: true }),
+      supabase.from("recordare_chemicals").select("id, status, unit, current_stock, chemical_catalog_products(manufacturer, product_name)").eq("status", "active").order("created_at", { ascending: true }),
+    ]);
+    if (completedChemicalUsagesError || completedStepsError || completedChemicalsError) {
       serviceChemicalUsageDetailMarkup = '<section class="card"><h2>使用ケミカル</h2><p class="error">使用ケミカル履歴を読み込めませんでした。</p></section>';
     } else {
       const rows = (completedChemicalUsages || []).map((usage) => {
         const step = Array.isArray(usage.service_steps) ? usage.service_steps[0] : usage.service_steps;
         const chemical = Array.isArray(usage.recordare_chemicals) ? usage.recordare_chemicals[0] : usage.recordare_chemicals;
-        const unit = chemical?.unit || "mL";
-        const statusLabel = chemicalUsageStatuses[usage.usage_status] || usage.usage_status;
-        const amountText = usage.usage_status === "recorded" && usage.actual_amount != null ? ` ・ ${usage.actual_amount}${unit}` : "";
-        return `<p><strong>${escapeHtml(step?.step_name || "工程不明")}</strong> ・ ${escapeHtml(recordareChemicalName(chemical))} ・ ${escapeHtml(statusLabel)}${escapeHtml(amountText)}</p>`;
+        const stock = chemical?.current_stock == null ? "在庫未登録" : `${chemical.current_stock}${chemical.unit || "mL"}`;
+        return `<form class="service-timing-correction" data-completed-service-chemical-form>
+          <input type="hidden" name="step_id" value="${escapeHtml(usage.service_step_id)}" />
+          <input type="hidden" name="chemical_id" value="${escapeHtml(usage.recordare_chemical_id)}" />
+          <h3>${escapeHtml(step?.step_name || "工程不明")} / ${escapeHtml(recordareChemicalName(chemical))}</h3>
+          <p class="muted">現在在庫 ${escapeHtml(stock)}</p>
+          <label>記録状態<select name="usage_status">${serviceChemicalUsageStatusOptions(usage.usage_status)}</select></label>
+          <label>実使用量mL<input name="actual_amount" type="number" inputmode="decimal" min="0.001" step="0.001" value="${escapeHtml(usage.actual_amount ?? "")}" /></label>
+          <label>メモ<input name="notes" value="${escapeHtml(usage.notes || "")}" /></label>
+          <button class="secondary" type="submit">変更を保存</button>
+        </form>`;
       }).join("");
-      serviceChemicalUsageDetailMarkup = `<section class="card"><h2>使用ケミカル</h2>${rows || '<p class="muted">なし</p>'}</section>`;
+      const stepOptions = (completedSteps || [])
+        .filter((step) => step.step_key !== "pre_check")
+        .map((step) => `<option value="${escapeHtml(step.id)}">${escapeHtml(step.step_name)}</option>`)
+        .join("");
+      const chemicalOptions = (completedChemicals || [])
+        .map((chemical) => {
+          const stock = chemical.current_stock == null ? "在庫未登録" : `${chemical.current_stock}${chemical.unit || "mL"}`;
+          return `<option value="${escapeHtml(chemical.id)}">${escapeHtml(recordareChemicalName(chemical))}（${escapeHtml(stock)}）</option>`;
+        }).join("");
+      const addForm = stepOptions && chemicalOptions ? `<form class="service-timing-correction" data-completed-service-chemical-form>
+        <h3>ケミカルを追加</h3>
+        <label>工程<select name="step_id" required><option value="">選択してください</option>${stepOptions}</select></label>
+        <label>ケミカル<select name="chemical_id" required><option value="">選択してください</option>${chemicalOptions}</select></label>
+        <label>記録状態<select name="usage_status">${serviceChemicalUsageStatusOptions("recorded")}</select></label>
+        <label>実使用量mL<input name="actual_amount" type="number" inputmode="decimal" min="0.001" step="0.001" /></label>
+        <label>メモ<input name="notes" /></label>
+        <button class="secondary" type="submit">追加して保存</button>
+      </form>` : '<p class="muted">追加できる工程またはマイケミカルがありません。</p>';
+      serviceChemicalUsageDetailMarkup = `<section class="card"><h2>使用ケミカル</h2><p class="muted">施工完了後も使用量・状態・メモを修正できます。在庫は差分だけ自動調整されます。</p>${rows || '<p class="muted">まだ記録されていません。</p>'}${addForm}</section>`;
     }
   }
 
@@ -1054,6 +1124,7 @@ async function renderServiceDetail(recordId) {
   const conditionMarkup = serviceConditionMarkup(record, savedConditions);
 
   setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl></div>${conditionMarkup}${serviceChemicalUsageDetailMarkup}<form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  if (record.status === "completed") bindCompletedServiceChemicalUsageForms(recordId);
 
   document.getElementById("prepareServiceButton")?.addEventListener("click", async (event) => {
     const button = event.currentTarget;
