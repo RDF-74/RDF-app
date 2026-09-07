@@ -37,12 +37,19 @@ const emptyToNull = (value) => {
 const safeExternalUrl = (value) => {
   const normalized = String(value || "").trim();
   if (!normalized) return "";
+  const match = normalized.match(/https?:\/\/[^\s<>"'「」『』【】]+/i);
+  if (!match) return "";
+  const candidate = match[0].replace(/[。、「」『』【】）》〉]+$/g, "");
   try {
-    const url = new URL(normalized);
+    const url = new URL(candidate);
     return ["http:", "https:"].includes(url.protocol) ? url.href : "";
   } catch {
     return "";
   }
+};
+const normalizePurchaseUrlField = (input) => {
+  const normalized = safeExternalUrl(input?.value);
+  if (normalized) input.value = normalized;
 };
 const saveErrorMessage = (error) => error?.message ? `${errorMessage}（${error.message}）` : errorMessage;
 const chemicalCategories = ["プレウォッシュ","シャンプー / コンタクトウォッシュ","リンスレス","鉄粉除去","スケール / 酸性洗浄","下地処理","脱脂","コーティング / 保護剤","ガラス洗浄","ガラス油膜除去","ガラスウロコ除去","ガラス撥水","タイヤ・ホイール洗浄","タイヤ・ホイール保護","未塗装樹脂洗浄","未塗装樹脂保護","虫汚れ","ピッチ・タール","その他"];
@@ -516,7 +523,7 @@ async function renderChemicalDetail(id) {
       const suggestedPrice=source?.last_price ?? (latest?.amount==null?initialPrice:Number(latest.amount)/Math.max(1,Number(latest.quantity)));
       const store=source?.store_name ?? latest?.store ?? "";
       const url=source?.product_url ?? "";
-      return `<h3>${escapeHtml(capacity)}mL</h3><input type="hidden" name="capacity_${index}" value="${escapeHtml(capacity)}"><label>購入先名<input name="store_${index}" value="${escapeHtml(store)}"></label><label>商品ページURL<input name="url_${index}" type="url" inputmode="url" value="${escapeHtml(url)}"></label><label>1本あたり価格<input name="price_${index}" type="number" min="0" value="${suggestedPrice==null?"":escapeHtml(suggestedPrice)}"></label>`;
+      return `<h3>${escapeHtml(capacity)}mL</h3><input type="hidden" name="capacity_${index}" value="${escapeHtml(capacity)}"><label>購入先名<input name="store_${index}" value="${escapeHtml(store)}"></label><label>商品ページURL<input name="url_${index}" type="text" inputmode="url" autocapitalize="none" autocomplete="off" data-purchase-url value="${escapeHtml(url)}"></label><label>1本あたり価格<input name="price_${index}" type="number" min="0" value="${suggestedPrice==null?"":escapeHtml(suggestedPrice)}"></label>`;
     }).join("")}`;
     form("購入先設定",fields,async e=>{
       e.preventDefault();
@@ -552,6 +559,7 @@ async function renderChemicalDetail(id) {
       if(sourceOrderError)return alert(saveErrorMessage(sourceOrderError));
       renderChemicalDetail(id);
     });
+    document.querySelectorAll("[data-purchase-url]").forEach((input)=>input.addEventListener("blur",()=>normalizePurchaseUrlField(input)));
   };
   document.getElementById("backChemicals").onclick=renderChemicalList;
 }
