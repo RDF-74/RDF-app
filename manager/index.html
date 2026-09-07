@@ -241,6 +241,65 @@ async function renderChemicalList() {
   document.querySelectorAll("[data-chemical-id]").forEach((b) => b.addEventListener("click", () => renderChemicalDetail(b.dataset.chemicalId)));
 }
 
+const chemicalPurchaseCombination = (requiredAmount, packageOptions) => {
+  const required = Number(requiredAmount);
+  if (!(required > 0)) return null;
+  const packages = [...new Map(
+    (packageOptions || [])
+      .map((item) => ({
+        capacity: Number(item.capacity),
+        price: item.price == null ? null : Number(item.price),
+      }))
+      .filter((item) => item.capacity > 0)
+      .map((item) => [item.capacity, item])
+  ).values()].sort((a, b) => b.capacity - a.capacity);
+  if (!packages.length) return null;
+  const optimizeByCost = packages.every((item) => item.price != null);
+
+  let best = null;
+  let states = 0;
+  const maxStates = 5000;
+  const consider = (counts) => {
+    const items = packages.map((item, index) => ({ ...item, quantity: counts[index] || 0 })).filter((item) => item.quantity > 0);
+    const total = items.reduce((sum, item) => sum + item.capacity * item.quantity, 0);
+    if (total + 1e-9 < required) return;
+    const cost = optimizeByCost ? items.reduce((sum, item) => sum + item.price * item.quantity, 0) : null;
+    const units = items.reduce((sum, item) => sum + item.quantity, 0);
+    const excess = total - required;
+    const score = optimizeByCost ? [cost, excess, units] : [excess, units, total];
+    if (!best || score.some((value, index) => value < best.score[index] && score.slice(0, index).every((v, i) => v === best.score[i]))) {
+      best = { items, total, cost, score };
+    }
+  };
+  const counts = new Array(packages.length).fill(0);
+  const search = (index, total) => {
+    if (states++ > maxStates) return;
+    const item = packages[index];
+    if (index === packages.length - 1) {
+      const quantity = Math.max(0, Math.ceil((required - total) / item.capacity));
+      counts[index] = quantity;
+      consider(counts);
+      counts[index] = quantity + 1;
+      consider(counts);
+      counts[index] = 0;
+      return;
+    }
+    const maxQuantity = Math.max(1, Math.ceil(Math.max(0, required - total) / item.capacity) + 1);
+    for (let quantity = 0; quantity <= maxQuantity; quantity += 1) {
+      counts[index] = quantity;
+      search(index + 1, total + item.capacity * quantity);
+      if (states > maxStates) break;
+    }
+    counts[index] = 0;
+  };
+  search(0, 0);
+  if (best) return best;
+
+  const smallest = packages[packages.length - 1];
+  const quantity = Math.ceil(required / smallest.capacity);
+  return { items: [{ ...smallest, quantity }], total: smallest.capacity * quantity, cost: smallest.price == null ? null : smallest.price * quantity };
+};
+
 async function renderChemicalPlanner() {
   setCustomerContent('<div class="card placeholder"><p class="muted">在庫予測を計算しています…</p></div>');
   const todayDate = new Date();
@@ -249,14 +308,16 @@ async function renderChemicalPlanner() {
   const today = todayDate.toLocaleDateString("en-CA");
   const horizon = horizonDate.toLocaleDateString("en-CA");
 
-  const [{ data: chemicals, error: chemicalError }, { data: completedRecords, error: completedError }, { data: usages, error: usageError }, { data: reservations, error: reservationError }] = await Promise.all([
+  const [{ data: chemicals, error: chemicalError }, { data: completedRecords, error: completedError }, { data: usages, error: usageError }, { data: reservations, error: reservationError }, { data: purchases, error: purchaseError }, { data: initialStocks, error: initialStockError }] = await Promise.all([
     supabase.from("recordare_chemicals").select("id,status,unit,current_stock,reorder_threshold,target_stock,chemical_catalog_products(manufacturer,product_name)").eq("status", "active").order("created_at"),
     supabase.from("service_records").select("id,course_code").eq("status", "completed"),
     supabase.from("service_chemical_usages").select("service_record_id,recordare_chemical_id,usage_status,actual_amount"),
     supabase.from("reservations").select("course_code,reservation_date,status").eq("is_active", true).gte("reservation_date", today).lte("reservation_date", horizon).in("status", ["tentative","confirmed"]),
+    supabase.from("chemical_purchases").select("recordare_chemical_id,capacity,quantity,amount,purchased_on").order("purchased_on", { ascending: true }),
+    supabase.from("chemical_inventory_adjustments").select("recordare_chemical_id,new_stock,price_amount,reason").eq("reason", "initial"),
   ]);
-  if (chemicalError || completedError || usageError || reservationError) {
-    return setCustomerContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(chemicalError || completedError || usageError || reservationError))}</p><button class="text-button" id="backChemicals">← ケミカル一覧へ戻る</button></div>`);
+  if (chemicalError || completedError || usageError || reservationError || purchaseError || initialStockError) {
+    return setCustomerContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(chemicalError || completedError || usageError || reservationError || purchaseError || initialStockError))}</p><button class="text-button" id="backChemicals">← ケミカル一覧へ戻る</button></div>`);
   }
 
   const courseByRecord = new Map((completedRecords || []).map((record) => [record.id, record.course_code]));
@@ -280,6 +341,23 @@ async function renderChemicalPlanner() {
   (reservations || []).forEach((reservation) => futureCounts.set(reservation.course_code, (futureCounts.get(reservation.course_code) || 0) + 1));
   const futureReservationCount = (reservations || []).length;
 
+  const packageOptionsByChemical = new Map();
+  const addPackageOption = (chemicalId, capacity, price) => {
+    const numericCapacity = Number(capacity);
+    if (!(numericCapacity > 0)) return;
+    if (!packageOptionsByChemical.has(chemicalId)) packageOptionsByChemical.set(chemicalId, []);
+    packageOptionsByChemical.get(chemicalId).push({
+      capacity: numericCapacity,
+      price: price == null ? null : Number(price),
+    });
+  };
+  (initialStocks || []).forEach((item) => addPackageOption(item.recordare_chemical_id, item.new_stock, item.price_amount));
+  (purchases || []).forEach((item) => addPackageOption(
+    item.recordare_chemical_id,
+    item.capacity,
+    item.amount == null || !(Number(item.quantity) > 0) ? null : Number(item.amount) / Number(item.quantity)
+  ));
+
   const shopping = [];
   const rows = (chemicals || []).map((chemical) => {
     let forecast = 0;
@@ -295,21 +373,36 @@ async function renderChemicalPlanner() {
     const threshold = chemical.reorder_threshold == null ? null : Number(chemical.reorder_threshold);
     const target = chemical.target_stock == null ? null : Number(chemical.target_stock);
     const projected = current == null ? null : current - forecast;
-    const basis = target ?? threshold;
-    const buyAmount = current == null || basis == null ? null : Math.max(0, Math.ceil((forecast + basis - current) * 1000) / 1000);
     const alert = projected != null && threshold != null && projected <= threshold;
+    const requiredTopUp = alert && target != null ? Math.max(0, target - projected) : null;
+    const purchaseCombination = requiredTopUp > 0
+      ? chemicalPurchaseCombination(requiredTopUp, packageOptionsByChemical.get(chemical.id) || [])
+      : null;
+    const combinationText = purchaseCombination
+      ? purchaseCombination.items.map((item) => `${item.capacity}${chemical.unit || "mL"} × ${item.quantity}本`).join(" + ")
+      : "";
     const name = recordareChemicalName(chemical);
-    if (buyAmount != null && buyAmount > 0) shopping.push({ name, amount: buyAmount, unit: chemical.unit || "mL" });
+    if (alert && requiredTopUp > 0) {
+      shopping.push({ name, requiredTopUp, combinationText, unit: chemical.unit || "mL" });
+    }
     const forecastText = `${Math.round(forecast * 1000) / 1000}${chemical.unit || "mL"}`;
     const projectedText = projected == null ? "在庫未登録" : `${Math.round(projected * 1000) / 1000}${chemical.unit || "mL"}`;
     const settingText = threshold == null && target == null ? "在庫管理設定なし" : `アラート ${threshold == null ? "未設定" : threshold + (chemical.unit || "mL")} / 目標 ${target == null ? "未設定" : target + (chemical.unit || "mL")}`;
     const coverageText = futureReservationCount ? `${coveredReservations}/${futureReservationCount}件を実績から予測` : "今後30日の予約なし";
-    const buyText = buyAmount == null ? "購入目安は在庫管理設定後に表示" : buyAmount > 0 ? `購入目安 ${buyAmount}${chemical.unit || "mL"}` : "購入目安なし";
-    return `<section class="card"><h2>${escapeHtml(name)}</h2><p>現在在庫 ${current == null ? "未登録" : escapeHtml(current + (chemical.unit || "mL"))}</p><p>30日予測使用量 ${escapeHtml(forecastText)} / 予測後 ${escapeHtml(projectedText)}</p><p class="muted">${escapeHtml(settingText)} ・ ${escapeHtml(coverageText)}</p><p><strong>${alert ? "在庫アラート ・ " : ""}${escapeHtml(buyText)}</strong></p></section>`;
+    let buyText = "購入目安なし";
+    if (projected == null) buyText = "現在在庫を登録すると購入目安を計算できます";
+    else if (threshold == null) buyText = "在庫アラート未設定";
+    else if (alert && target == null) buyText = "在庫アラート ・ 目標在庫未設定";
+    else if (alert && requiredTopUp > 0 && purchaseCombination) buyText = `在庫アラート ・ 購入目安 ${combinationText}`;
+    else if (alert && requiredTopUp > 0) buyText = `在庫アラート ・ 必要補充量 ${Math.round(requiredTopUp * 1000) / 1000}${chemical.unit || "mL"}（購入容量の履歴なし）`;
+    return `<section class="card"><h2>${escapeHtml(name)}</h2><p>現在在庫 ${current == null ? "未登録" : escapeHtml(current + (chemical.unit || "mL"))}</p><p>30日予測使用量 ${escapeHtml(forecastText)} / 予測後 ${escapeHtml(projectedText)}</p><p class="muted">${escapeHtml(settingText)} ・ ${escapeHtml(coverageText)}</p><p><strong>${escapeHtml(buyText)}</strong></p></section>`;
   }).join("");
 
   const shoppingRows = shopping.length
-    ? shopping.map((item) => `<p><strong>${escapeHtml(item.name)}</strong> ・ ${escapeHtml(item.amount)}${escapeHtml(item.unit)} 以上</p>`).join("")
+    ? shopping.map((item) => item.combinationText
+      ? `<p><strong>${escapeHtml(item.name)}</strong> ・ ${escapeHtml(item.combinationText)}</p>`
+      : `<p><strong>${escapeHtml(item.name)}</strong> ・ 必要補充量 ${escapeHtml(Math.round(item.requiredTopUp * 1000) / 1000)}${escapeHtml(item.unit)}（購入容量の履歴なし）</p>`
+    ).join("")
     : '<p class="muted">現在の設定と予約予測では購入候補はありません。</p>';
 
   setCustomerContent(`<section class="card"><h2>30日 在庫予測</h2><p>対象予約 ${futureReservationCount}件</p><p class="muted">完了済み施工の実使用量をコース別に平均し、今後30日の予約件数へ当てはめた参考値です。実績が少ない間は低めに出る場合があります。</p></section><section class="card"><h2>買い物リスト</h2>${shoppingRows}</section>${rows || '<p class="muted">使用中のマイケミカルはありません。</p>'}<button class="text-button" id="backChemicals">← ケミカル一覧へ戻る</button>`);
