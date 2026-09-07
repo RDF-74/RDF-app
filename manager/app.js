@@ -135,6 +135,36 @@ const chemicalPurchaseCombination = (requiredAmount, packageOptions) => {
   return { items: [{ ...smallest, quantity }], total: smallest.capacity * quantity, cost: smallest.price == null ? null : smallest.price * quantity };
 };
 
+function renderChemicalReceiptForm(order, chemical) {
+  const unit = chemical?.unit || "mL";
+  const total = Number(order.capacity) * Number(order.quantity);
+  const name = recordareChemicalName(chemical);
+  const today = new Date().toLocaleDateString("en-CA");
+  setCustomerContent(`<form class="card form-card" id="chemicalReceiptForm"><h2>入荷・在庫反映</h2><p><strong>${escapeHtml(name)}</strong></p><p>${escapeHtml(order.capacity)}${escapeHtml(unit)} × ${escapeHtml(order.quantity)}本 ・ 合計 ${escapeHtml(total)}${escapeHtml(unit)}</p><p class="muted">入荷すると購入履歴へ保存し、在庫へ自動加算します。</p><label>入荷日<input name="date" type="date" value="${today}" required></label><label>支払金額（不明の場合は空欄）<input name="amount" type="number" min="0"></label><label>購入先<input name="store"></label><label>メモ<input name="notes"></label><button class="primary" type="submit">入荷して在庫反映</button><button class="text-button" type="button" id="cancelChemicalReceipt">戻る</button></form>`);
+  document.getElementById("cancelChemicalReceipt").addEventListener("click", renderChemicalPlanner);
+  document.getElementById("chemicalReceiptForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
+    button.textContent = "反映中…";
+    const amount = form.amount.value === "" ? null : Number(form.amount.value);
+    const { error } = await supabase.rpc("receive_chemical_purchase_order", {
+      p_order_id: order.id,
+      p_purchased_on: form.date.value,
+      p_amount: amount,
+      p_store: emptyToNull(form.store.value),
+      p_notes: emptyToNull(form.notes.value),
+    });
+    if (error) {
+      button.disabled = false;
+      button.textContent = "入荷して在庫反映";
+      return alert(saveErrorMessage(error));
+    }
+    await renderChemicalPlanner();
+  });
+}
+
 async function renderChemicalPlanner() {
   setCustomerContent('<div class="card placeholder"><p class="muted">在庫予測を計算しています…</p></div>');
   const todayDate = new Date();
@@ -143,16 +173,17 @@ async function renderChemicalPlanner() {
   const today = todayDate.toLocaleDateString("en-CA");
   const horizon = horizonDate.toLocaleDateString("en-CA");
 
-  const [{ data: chemicals, error: chemicalError }, { data: completedRecords, error: completedError }, { data: usages, error: usageError }, { data: reservations, error: reservationError }, { data: purchases, error: purchaseError }, { data: initialStocks, error: initialStockError }] = await Promise.all([
+  const [{ data: chemicals, error: chemicalError }, { data: completedRecords, error: completedError }, { data: usages, error: usageError }, { data: reservations, error: reservationError }, { data: purchases, error: purchaseError }, { data: initialStocks, error: initialStockError }, { data: purchaseOrders, error: purchaseOrderError }] = await Promise.all([
     supabase.from("recordare_chemicals").select("id,status,unit,current_stock,reorder_threshold,target_stock,chemical_catalog_products(manufacturer,product_name)").eq("status", "active").order("created_at"),
     supabase.from("service_records").select("id,course_code").eq("status", "completed"),
     supabase.from("service_chemical_usages").select("service_record_id,recordare_chemical_id,usage_status,actual_amount"),
     supabase.from("reservations").select("course_code,reservation_date,status").eq("is_active", true).gte("reservation_date", today).lte("reservation_date", horizon).in("status", ["tentative","confirmed"]),
     supabase.from("chemical_purchases").select("recordare_chemical_id,capacity,quantity,amount,purchased_on").order("purchased_on", { ascending: true }),
     supabase.from("chemical_inventory_adjustments").select("recordare_chemical_id,new_stock,price_amount,reason").eq("reason", "initial"),
+    supabase.from("chemical_purchase_orders").select("id,recordare_chemical_id,capacity,quantity,status,planned_on,ordered_at,created_at").in("status", ["planned","ordered"]).order("created_at", { ascending: true }),
   ]);
-  if (chemicalError || completedError || usageError || reservationError || purchaseError || initialStockError) {
-    return setCustomerContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(chemicalError || completedError || usageError || reservationError || purchaseError || initialStockError))}</p><button class="text-button" id="backChemicals">← ケミカル一覧へ戻る</button></div>`);
+  if (chemicalError || completedError || usageError || reservationError || purchaseError || initialStockError || purchaseOrderError) {
+    return setCustomerContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(chemicalError || completedError || usageError || reservationError || purchaseError || initialStockError || purchaseOrderError))}</p><button class="text-button" id="backChemicals">← ケミカル一覧へ戻る</button></div>`);
   }
 
   const courseByRecord = new Map((completedRecords || []).map((record) => [record.id, record.course_code]));
@@ -193,6 +224,15 @@ async function renderChemicalPlanner() {
     item.amount == null || !(Number(item.quantity) > 0) ? null : Number(item.amount) / Number(item.quantity)
   ));
 
+  const inboundByChemical = new Map();
+  const inboundStatusByChemical = new Map();
+  (purchaseOrders || []).forEach((order) => {
+    const amount = Number(order.capacity) * Number(order.quantity);
+    inboundByChemical.set(order.recordare_chemical_id, (inboundByChemical.get(order.recordare_chemical_id) || 0) + amount);
+    if (!inboundStatusByChemical.has(order.recordare_chemical_id)) inboundStatusByChemical.set(order.recordare_chemical_id, new Set());
+    inboundStatusByChemical.get(order.recordare_chemical_id).add(order.status);
+  });
+
   const shopping = [];
   const rows = (chemicals || []).map((chemical) => {
     let forecast = 0;
@@ -208,17 +248,21 @@ async function renderChemicalPlanner() {
     const threshold = chemical.reorder_threshold == null ? null : Number(chemical.reorder_threshold);
     const target = chemical.target_stock == null ? null : Number(chemical.target_stock);
     const projected = current == null ? null : current - forecast;
+    const inbound = inboundByChemical.get(chemical.id) || 0;
+    const projectedAfterInbound = projected == null ? null : projected + inbound;
     const alert = projected != null && threshold != null && projected <= threshold;
-    const requiredTopUp = alert && target != null ? Math.max(0, target - projected) : null;
+    const requiredTopUp = alert && target != null ? Math.max(0, target - projectedAfterInbound) : null;
     const purchaseCombination = requiredTopUp > 0
       ? chemicalPurchaseCombination(requiredTopUp, packageOptionsByChemical.get(chemical.id) || [])
       : null;
     const combinationText = purchaseCombination
       ? purchaseCombination.items.map((item) => `${item.capacity}${chemical.unit || "mL"} × ${item.quantity}本`).join(" + ")
       : "";
+    const activeStatuses = inboundStatusByChemical.get(chemical.id) || new Set();
+    const inboundStatusText = activeStatuses.has("ordered") ? "注文済み" : activeStatuses.has("planned") ? "購入予定" : "";
     const name = recordareChemicalName(chemical);
     if (alert && requiredTopUp > 0) {
-      shopping.push({ name, requiredTopUp, combinationText, unit: chemical.unit || "mL" });
+      shopping.push({ chemicalId: chemical.id, name, requiredTopUp, combinationText, combination: purchaseCombination, unit: chemical.unit || "mL" });
     }
     const forecastText = `${Math.round(forecast * 1000) / 1000}${chemical.unit || "mL"}`;
     const projectedText = projected == null ? "在庫未登録" : `${Math.round(projected * 1000) / 1000}${chemical.unit || "mL"}`;
@@ -228,19 +272,76 @@ async function renderChemicalPlanner() {
     if (projected == null) buyText = "現在在庫を登録すると購入目安を計算できます";
     else if (threshold == null) buyText = "在庫アラート未設定";
     else if (alert && target == null) buyText = "在庫アラート ・ 目標在庫未設定";
-    else if (alert && requiredTopUp > 0 && purchaseCombination) buyText = `在庫アラート ・ 購入目安 ${combinationText}`;
+    else if (alert && inbound > 0 && requiredTopUp === 0) buyText = `在庫アラート ・ ${inboundStatusText || "補充予定"} ${Math.round(inbound * 1000) / 1000}${chemical.unit || "mL"}`;
+    else if (alert && requiredTopUp > 0 && purchaseCombination) buyText = `在庫アラート ・ 追加購入目安 ${combinationText}`;
     else if (alert && requiredTopUp > 0) buyText = `在庫アラート ・ 必要補充量 ${Math.round(requiredTopUp * 1000) / 1000}${chemical.unit || "mL"}（購入容量の履歴なし）`;
-    return `<section class="card"><h2>${escapeHtml(name)}</h2><p>現在在庫 ${current == null ? "未登録" : escapeHtml(current + (chemical.unit || "mL"))}</p><p>30日予測使用量 ${escapeHtml(forecastText)} / 予測後 ${escapeHtml(projectedText)}</p><p class="muted">${escapeHtml(settingText)} ・ ${escapeHtml(coverageText)}</p><p><strong>${escapeHtml(buyText)}</strong></p></section>`;
+    return `<section class="card"><h2>${escapeHtml(name)}</h2><p>現在在庫 ${current == null ? "未登録" : escapeHtml(current + (chemical.unit || "mL"))}</p><p>30日予測使用量 ${escapeHtml(forecastText)} / 予測後 ${escapeHtml(projectedText)}</p>${inbound > 0 ? `<p>補充予定 ${escapeHtml(Math.round(inbound * 1000) / 1000)}${escapeHtml(chemical.unit || "mL")} / 入荷後予測 ${escapeHtml(Math.round(projectedAfterInbound * 1000) / 1000)}${escapeHtml(chemical.unit || "mL")}</p>` : ""}<p class="muted">${escapeHtml(settingText)} ・ ${escapeHtml(coverageText)}</p><p><strong>${escapeHtml(buyText)}</strong></p></section>`;
   }).join("");
 
   const shoppingRows = shopping.length
     ? shopping.map((item) => item.combinationText
-      ? `<p><strong>${escapeHtml(item.name)}</strong> ・ ${escapeHtml(item.combinationText)}</p>`
+      ? `<div><p><strong>${escapeHtml(item.name)}</strong> ・ ${escapeHtml(item.combinationText)}</p><button class="secondary" type="button" data-add-purchase-plan="${escapeHtml(item.chemicalId)}">購入予定に追加</button></div>`
       : `<p><strong>${escapeHtml(item.name)}</strong> ・ 必要補充量 ${escapeHtml(Math.round(item.requiredTopUp * 1000) / 1000)}${escapeHtml(item.unit)}（購入容量の履歴なし）</p>`
     ).join("")
     : '<p class="muted">現在の設定と予約予測では購入候補はありません。</p>';
 
-  setCustomerContent(`<section class="card"><h2>30日 在庫予測</h2><p>対象予約 ${futureReservationCount}件</p><p class="muted">完了済み施工の実使用量をコース別に平均し、今後30日の予約件数へ当てはめた参考値です。実績が少ない間は低めに出る場合があります。</p></section><section class="card"><h2>買い物リスト</h2>${shoppingRows}</section>${rows || '<p class="muted">使用中のマイケミカルはありません。</p>'}<button class="text-button" id="backChemicals">← ケミカル一覧へ戻る</button>`);
+  const chemicalById = new Map((chemicals || []).map((chemical) => [chemical.id, chemical]));
+  const purchaseOrderRows = (purchaseOrders || []).length
+    ? (purchaseOrders || []).map((order) => {
+        const chemical = chemicalById.get(order.recordare_chemical_id);
+        const unit = chemical?.unit || "mL";
+        const statusLabel = order.status === "ordered" ? "注文済み" : "購入予定";
+        const action = order.status === "ordered"
+          ? `<button class="secondary" type="button" data-receive-order="${escapeHtml(order.id)}">入荷・在庫反映</button>`
+          : `<button class="secondary" type="button" data-mark-ordered="${escapeHtml(order.id)}">注文済みにする</button>`;
+        return `<div><p><strong>${escapeHtml(recordareChemicalName(chemical))}</strong> ・ ${escapeHtml(order.capacity)}${escapeHtml(unit)} × ${escapeHtml(order.quantity)}本</p><p class="muted">${escapeHtml(statusLabel)}</p>${action}</div>`;
+      }).join("")
+    : '<p class="muted">購入予定・注文済みはありません。</p>';
+
+  setCustomerContent(`<section class="card"><h2>30日 在庫予測</h2><p>対象予約 ${futureReservationCount}件</p><p class="muted">完了済み施工の実使用量をコース別に平均し、今後30日の予約件数へ当てはめた参考値です。実績が少ない間は低めに出る場合があります。</p></section><section class="card"><h2>買い物リスト</h2>${shoppingRows}</section><section class="card"><h2>購入管理</h2><p class="muted">購入予定 → 注文済み → 入荷の順に管理します。</p>${purchaseOrderRows}</section>${rows || '<p class="muted">使用中のマイケミカルはありません。</p>'}<button class="text-button" id="backChemicals">← ケミカル一覧へ戻る</button>`);
+
+  document.querySelectorAll("[data-add-purchase-plan]").forEach((button) => button.addEventListener("click", async () => {
+    const item = shopping.find((candidate) => candidate.chemicalId === button.dataset.addPurchasePlan);
+    if (!item?.combination?.items?.length) return;
+    button.disabled = true;
+    button.textContent = "追加中…";
+    const rows = item.combination.items.map((part) => ({
+      recordare_chemical_id: item.chemicalId,
+      capacity: part.capacity,
+      quantity: part.quantity,
+      status: "planned",
+      planned_on: today,
+    }));
+    const { error } = await supabase.from("chemical_purchase_orders").insert(rows);
+    if (error) {
+      button.disabled = false;
+      button.textContent = "購入予定に追加";
+      return alert(saveErrorMessage(error));
+    }
+    await renderChemicalPlanner();
+  }));
+
+  document.querySelectorAll("[data-mark-ordered]").forEach((button) => button.addEventListener("click", async () => {
+    button.disabled = true;
+    button.textContent = "更新中…";
+    const { error } = await supabase.from("chemical_purchase_orders")
+      .update({ status: "ordered", ordered_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq("id", button.dataset.markOrdered)
+      .eq("status", "planned");
+    if (error) {
+      button.disabled = false;
+      button.textContent = "注文済みにする";
+      return alert(saveErrorMessage(error));
+    }
+    await renderChemicalPlanner();
+  }));
+
+  document.querySelectorAll("[data-receive-order]").forEach((button) => button.addEventListener("click", () => {
+    const order = (purchaseOrders || []).find((item) => item.id === button.dataset.receiveOrder);
+    if (!order) return;
+    renderChemicalReceiptForm(order, chemicalById.get(order.recordare_chemical_id));
+  }));
+
   document.getElementById("backChemicals").addEventListener("click", renderChemicalList);
 }
 
