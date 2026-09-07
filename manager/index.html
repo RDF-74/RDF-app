@@ -228,13 +228,92 @@ const detailingChemicalFields = (chemical) => ({
 
 async function renderChemicalList() {
   setCustomerContent('<div class="card placeholder"><p class="muted">ケミカルを読み込んでいます…</p></div>');
-  const { data, error } = await supabase.from("recordare_chemicals").select("id,status,unit,current_stock,chemical_catalog_products(manufacturer,product_name,category)").order("created_at", { ascending: false });
+  const { data, error } = await supabase.from("recordare_chemicals").select("id,status,unit,current_stock,reorder_threshold,target_stock,chemical_catalog_products(manufacturer,product_name,category)").order("created_at", { ascending: false });
   if (error) return setCustomerContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(error))}</p></div>`);
-  const rows = data.length ? data.map((item) => `<button class="customer-row" type="button" data-chemical-id="${item.id}"><span><strong>${escapeHtml(item.chemical_catalog_products.manufacturer)} ${escapeHtml(item.chemical_catalog_products.product_name)}</strong><small>${escapeHtml(item.chemical_catalog_products.category || "未分類")} ・ 在庫 ${item.current_stock == null ? "未登録" : `${escapeHtml(item.current_stock)}${escapeHtml(item.unit)}`} ・ ${item.status === "active" ? "使用中" : "休止"}</small></span><span>›</span></button>`).join("") : '<p class="muted">マイケミカルはまだありません。</p>';
-  setCustomerContent(`<button class="primary" type="button" id="addChemicalButton">＋ ケミカルを追加</button><div class="customer-list">${rows}</div><button class="text-button" type="button" id="backHome">← ホームへ戻る</button>`);
+  const rows = data.length ? data.map((item) => {
+    const alertText = item.current_stock != null && item.reorder_threshold != null && Number(item.current_stock) <= Number(item.reorder_threshold) ? " ・ 在庫少なめ" : "";
+    return `<button class="customer-row" type="button" data-chemical-id="${item.id}"><span><strong>${escapeHtml(item.chemical_catalog_products.manufacturer)} ${escapeHtml(item.chemical_catalog_products.product_name)}</strong><small>${escapeHtml(item.chemical_catalog_products.category || "未分類")} ・ 在庫 ${item.current_stock == null ? "未登録" : `${escapeHtml(item.current_stock)}${escapeHtml(item.unit)}`} ・ ${item.status === "active" ? "使用中" : "休止"}${alertText}</small></span><span>›</span></button>`;
+  }).join("") : '<p class="muted">マイケミカルはまだありません。</p>';
+  setCustomerContent(`<button class="primary" type="button" id="addChemicalButton">＋ ケミカルを追加</button><button class="secondary" type="button" id="chemicalPlannerButton">在庫予測・買い物リスト</button><div class="customer-list">${rows}</div><button class="text-button" type="button" id="backHome">← ホームへ戻る</button>`);
   document.getElementById("addChemicalButton").addEventListener("click", renderChemicalAdd);
+  document.getElementById("chemicalPlannerButton").addEventListener("click", renderChemicalPlanner);
   document.getElementById("backHome").addEventListener("click", renderManager);
   document.querySelectorAll("[data-chemical-id]").forEach((b) => b.addEventListener("click", () => renderChemicalDetail(b.dataset.chemicalId)));
+}
+
+async function renderChemicalPlanner() {
+  setCustomerContent('<div class="card placeholder"><p class="muted">在庫予測を計算しています…</p></div>');
+  const todayDate = new Date();
+  const horizonDate = new Date(todayDate);
+  horizonDate.setDate(horizonDate.getDate() + 30);
+  const today = todayDate.toLocaleDateString("en-CA");
+  const horizon = horizonDate.toLocaleDateString("en-CA");
+
+  const [{ data: chemicals, error: chemicalError }, { data: completedRecords, error: completedError }, { data: usages, error: usageError }, { data: reservations, error: reservationError }] = await Promise.all([
+    supabase.from("recordare_chemicals").select("id,status,unit,current_stock,reorder_threshold,target_stock,chemical_catalog_products(manufacturer,product_name)").eq("status", "active").order("created_at"),
+    supabase.from("service_records").select("id,course_code").eq("status", "completed"),
+    supabase.from("service_chemical_usages").select("service_record_id,recordare_chemical_id,usage_status,actual_amount"),
+    supabase.from("reservations").select("course_code,reservation_date,status").eq("is_active", true).gte("reservation_date", today).lte("reservation_date", horizon).in("status", ["tentative","confirmed"]),
+  ]);
+  if (chemicalError || completedError || usageError || reservationError) {
+    return setCustomerContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(chemicalError || completedError || usageError || reservationError))}</p><button class="text-button" id="backChemicals">← ケミカル一覧へ戻る</button></div>`);
+  }
+
+  const courseByRecord = new Map((completedRecords || []).map((record) => [record.id, record.course_code]));
+  const trackedRecordIds = new Set((usages || []).map((usage) => usage.service_record_id));
+  const completedCounts = new Map();
+  trackedRecordIds.forEach((recordId) => {
+    const course = courseByRecord.get(recordId);
+    if (course) completedCounts.set(course, (completedCounts.get(course) || 0) + 1);
+  });
+
+  const usageTotals = new Map();
+  (usages || []).forEach((usage) => {
+    if (usage.usage_status !== "recorded") return;
+    const course = courseByRecord.get(usage.service_record_id);
+    if (!course) return;
+    const key = `${usage.recordare_chemical_id}|${course}`;
+    usageTotals.set(key, (usageTotals.get(key) || 0) + Number(usage.actual_amount || 0));
+  });
+
+  const futureCounts = new Map();
+  (reservations || []).forEach((reservation) => futureCounts.set(reservation.course_code, (futureCounts.get(reservation.course_code) || 0) + 1));
+  const futureReservationCount = (reservations || []).length;
+
+  const shopping = [];
+  const rows = (chemicals || []).map((chemical) => {
+    let forecast = 0;
+    let coveredReservations = 0;
+    for (const [course, count] of futureCounts.entries()) {
+      const completedCount = completedCounts.get(course) || 0;
+      if (!completedCount) continue;
+      const average = (usageTotals.get(`${chemical.id}|${course}`) || 0) / completedCount;
+      forecast += average * count;
+      coveredReservations += count;
+    }
+    const current = chemical.current_stock == null ? null : Number(chemical.current_stock);
+    const threshold = chemical.reorder_threshold == null ? null : Number(chemical.reorder_threshold);
+    const target = chemical.target_stock == null ? null : Number(chemical.target_stock);
+    const projected = current == null ? null : current - forecast;
+    const basis = target ?? threshold;
+    const buyAmount = current == null || basis == null ? null : Math.max(0, Math.ceil((forecast + basis - current) * 1000) / 1000);
+    const alert = projected != null && threshold != null && projected <= threshold;
+    const name = recordareChemicalName(chemical);
+    if (buyAmount != null && buyAmount > 0) shopping.push({ name, amount: buyAmount, unit: chemical.unit || "mL" });
+    const forecastText = `${Math.round(forecast * 1000) / 1000}${chemical.unit || "mL"}`;
+    const projectedText = projected == null ? "在庫未登録" : `${Math.round(projected * 1000) / 1000}${chemical.unit || "mL"}`;
+    const settingText = threshold == null && target == null ? "在庫管理設定なし" : `アラート ${threshold == null ? "未設定" : threshold + (chemical.unit || "mL")} / 目標 ${target == null ? "未設定" : target + (chemical.unit || "mL")}`;
+    const coverageText = futureReservationCount ? `${coveredReservations}/${futureReservationCount}件を実績から予測` : "今後30日の予約なし";
+    const buyText = buyAmount == null ? "購入目安は在庫管理設定後に表示" : buyAmount > 0 ? `購入目安 ${buyAmount}${chemical.unit || "mL"}` : "購入目安なし";
+    return `<section class="card"><h2>${escapeHtml(name)}</h2><p>現在在庫 ${current == null ? "未登録" : escapeHtml(current + (chemical.unit || "mL"))}</p><p>30日予測使用量 ${escapeHtml(forecastText)} / 予測後 ${escapeHtml(projectedText)}</p><p class="muted">${escapeHtml(settingText)} ・ ${escapeHtml(coverageText)}</p><p><strong>${alert ? "在庫アラート ・ " : ""}${escapeHtml(buyText)}</strong></p></section>`;
+  }).join("");
+
+  const shoppingRows = shopping.length
+    ? shopping.map((item) => `<p><strong>${escapeHtml(item.name)}</strong> ・ ${escapeHtml(item.amount)}${escapeHtml(item.unit)} 以上</p>`).join("")
+    : '<p class="muted">現在の設定と予約予測では購入候補はありません。</p>';
+
+  setCustomerContent(`<section class="card"><h2>30日 在庫予測</h2><p>対象予約 ${futureReservationCount}件</p><p class="muted">完了済み施工の実使用量をコース別に平均し、今後30日の予約件数へ当てはめた参考値です。実績が少ない間は低めに出る場合があります。</p></section><section class="card"><h2>買い物リスト</h2>${shoppingRows}</section>${rows || '<p class="muted">使用中のマイケミカルはありません。</p>'}<button class="text-button" id="backChemicals">← ケミカル一覧へ戻る</button>`);
+  document.getElementById("backChemicals").addEventListener("click", renderChemicalList);
 }
 
 async function renderChemicalAdd() {
@@ -262,11 +341,14 @@ async function renderChemicalDetail(id) {
   const stockText=c.current_stock == null ? "未登録" : `${c.current_stock}${escapeHtml(c.unit)}`;
   const initialAdjustment=(adjustments||[]).find(x=>x.reason==="initial");
   const inventoryAdjustments=(adjustments||[]).filter(x=>x.reason!=="initial");
-  setCustomerContent(`<div class="card detail-card"><h2>${escapeHtml(c.chemical_catalog_products.manufacturer)} ${escapeHtml(c.chemical_catalog_products.product_name)}</h2><dl><dt>現在在庫</dt><dd>${stockText}</dd><dt>状態</dt><dd>${c.status==="active"?"使用中":"休止"}</dd></dl><button class="secondary" id="purchaseChemical">購入・補充</button>${initialAdjustment?"":'<button class="secondary" id="initialChemical">初期在庫を登録</button>'}<button class="secondary" id="adjustChemical">在庫を修正</button></div><section class="card"><h2>初期在庫登録</h2>${initialAdjustment?`<p>${initialAdjustment.adjusted_on} ・ ${initialAdjustment.new_stock}${escapeHtml(c.unit)}${initialAdjustment.price_amount==null?" ・ 価格未設定":` ・ ¥${initialAdjustment.price_amount}`}</p>`:"<p class=muted>未登録</p>"}</section><section class="card"><h2>購入履歴</h2>${(purchases||[]).map(x=>`<p>${x.purchased_on} ・ ${x.capacity}mL × ${x.quantity}本${x.amount==null?" ・ 価格未設定":` ・ ¥${x.amount}`}</p>`).join("")||"<p class=muted>なし</p>"}</section><section class="card"><h2>在庫修正履歴</h2>${inventoryAdjustments.map(x=>`<p>${x.adjusted_on} ・ ${escapeHtml(chemicalAdjustmentReasons[x.reason] || x.reason)} ・ ${x.previous_stock == null ? "未登録" : x.previous_stock}→${x.new_stock}${escapeHtml(c.unit)}</p>`).join("")||"<p class=muted>なし</p>"}</section><button class="text-button" id="backChemicals">← 一覧へ戻る</button>`);
+  setCustomerContent(`<div class="card detail-card"><h2>${escapeHtml(c.chemical_catalog_products.manufacturer)} ${escapeHtml(c.chemical_catalog_products.product_name)}</h2><dl><dt>現在在庫</dt><dd>${stockText}</dd><dt>状態</dt><dd>${c.status==="active"?"使用中":"休止"}</dd><dt>在庫アラート</dt><dd>${c.reorder_threshold == null ? "未設定" : `${c.reorder_threshold}${escapeHtml(c.unit)}以下`}</dd><dt>目標在庫</dt><dd>${c.target_stock == null ? "未設定" : `${c.target_stock}${escapeHtml(c.unit)}`}</dd></dl><button class="secondary" id="purchaseChemical">購入・補充</button>${initialAdjustment?"":'<button class="secondary" id="initialChemical">初期在庫を登録</button>'}<button class="secondary" id="adjustChemical">在庫を修正</button><button class="secondary" id="stockSettingsChemical">在庫管理設定</button></div><section class="card"><h2>初期在庫登録</h2>${initialAdjustment?`<p>${initialAdjustment.adjusted_on} ・ ${initialAdjustment.new_stock}${escapeHtml(c.unit)}${initialAdjustment.price_amount==null?" ・ 価格未設定":` ・ ¥${initialAdjustment.price_amount}`}</p>`:"<p class=muted>未登録</p>"}</section><section class="card"><h2>購入履歴</h2>${(purchases||[]).map(x=>`<p>${x.purchased_on} ・ ${x.capacity}mL × ${x.quantity}本${x.amount==null?" ・ 価格未設定":` ・ ¥${x.amount}`}</p>`).join("")||"<p class=muted>なし</p>"}</section><section class="card"><h2>在庫修正履歴</h2>${inventoryAdjustments.map(x=>`<p>${x.adjusted_on} ・ ${escapeHtml(chemicalAdjustmentReasons[x.reason] || x.reason)} ・ ${x.previous_stock == null ? "未登録" : x.previous_stock}→${x.new_stock}${escapeHtml(c.unit)}</p>`).join("")||"<p class=muted>なし</p>"}</section><button class="text-button" id="backChemicals">← 一覧へ戻る</button>`);
   const form=(title,fields,save)=>{setCustomerContent(`<form class="card form-card" id="inventoryForm"><h2>${title}</h2>${fields}<button class="primary">保存</button><button type="button" class="text-button" id="cancelInventory">戻る</button></form>`);document.getElementById("inventoryForm").addEventListener("submit",save);document.getElementById("cancelInventory").addEventListener("click",()=>renderChemicalDetail(id));};
   document.getElementById("purchaseChemical").onclick=()=>form("購入・補充",`<label>購入日<input name=date type=date value="${new Date().toLocaleDateString("en-CA")}"></label><label>購入容量mL<input name=capacity type=number min=0.001 step=0.001 required></label><label>本数<input name=quantity type=number min=1 value=1 required></label><label>支払金額<input name=amount type=number min=0></label><label>購入先<input name=store></label><label>メモ<input name=notes></label>`,async e=>{e.preventDefault();const f=e.currentTarget,total=+f.capacity.value*+f.quantity.value;const amount=f.amount.value===""?null:+f.amount.value;const {error}=await supabase.from("chemical_purchases").insert({recordare_chemical_id:id,purchased_on:f.date.value,capacity:+f.capacity.value,quantity:+f.quantity.value,amount,store:emptyToNull(f.store.value),notes:emptyToNull(f.notes.value),unit_price_per_ml:amount==null?null:amount/total});if(error)return alert(saveErrorMessage(error));const {error:updateError}=await supabase.from("recordare_chemicals").update({current_stock:(c.current_stock||0)+total,unknown_cost_stock:(c.unknown_cost_stock||0)+(amount==null?total:0)}).eq("id",id);if(updateError)return alert(saveErrorMessage(updateError));renderChemicalDetail(id);});
   const adjustment=(initial)=>form(initial?"初期在庫を登録":"在庫を修正",`<label>現在残量mL<input name=stock type=number min=0 required></label>${initial?'<label>購入価格（不明の場合は空欄）<input name=price type=number min=0></label>':''}<label>理由<select name=reason>${(initial?["initial"]:["inventory","spill","discard","usage_missing","other"]).map(x=>`<option value=${x}>${chemicalAdjustmentReasons[x] || x}</option>`).join("")}</select></label><label>メモ<input name=notes></label>`,async e=>{e.preventDefault();const f=e.currentTarget,next=+f.stock.value,price=initial&&f.price.value!==""?+f.price.value:null;const {error}=await supabase.from("chemical_inventory_adjustments").insert({recordare_chemical_id:id,previous_stock:c.current_stock,new_stock:next,reason:f.reason.value,notes:emptyToNull(f.notes.value),price_amount:price});if(error)return alert(saveErrorMessage(error));const {error:updateError}=await supabase.from("recordare_chemicals").update({current_stock:next,unknown_cost_stock:initial&&price==null?next:(c.unknown_cost_stock||0)}).eq("id",id);if(updateError)return alert(saveErrorMessage(updateError));renderChemicalDetail(id);});
-  document.getElementById("initialChemical")?.addEventListener("click",()=>adjustment(true));document.getElementById("adjustChemical").onclick=()=>adjustment(false);document.getElementById("backChemicals").onclick=renderChemicalList;
+  document.getElementById("initialChemical")?.addEventListener("click",()=>adjustment(true));
+  document.getElementById("adjustChemical").onclick=()=>adjustment(false);
+  document.getElementById("stockSettingsChemical").onclick=()=>form("在庫管理設定",`<p class="muted">アラート残量と、補充後に確保したい目標在庫を設定します。未設定に戻す場合は空欄にしてください。</p><label>在庫アラート残量mL<input name=reorder type=number min=0 step=0.001 value="${c.reorder_threshold ?? ""}"></label><label>目標在庫mL<input name=target type=number min=0 step=0.001 value="${c.target_stock ?? ""}"></label>`,async e=>{e.preventDefault();const f=e.currentTarget;const reorder=f.reorder.value===""?null:+f.reorder.value;const target=f.target.value===""?null:+f.target.value;if(reorder!=null&&target!=null&&target<reorder)return alert("目標在庫は在庫アラート残量以上にしてください。");const {error:updateError}=await supabase.from("recordare_chemicals").update({reorder_threshold:reorder,target_stock:target}).eq("id",id);if(updateError)return alert(saveErrorMessage(updateError));renderChemicalDetail(id);});
+  document.getElementById("backChemicals").onclick=renderChemicalList;
 }
 
 function setCustomerContent(content) {
