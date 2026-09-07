@@ -37,7 +37,18 @@ const emptyToNull = (value) => {
 const saveErrorMessage = (error) => error?.message ? `${errorMessage}（${error.message}）` : errorMessage;
 const chemicalCategories = ["プレウォッシュ","シャンプー / コンタクトウォッシュ","リンスレス","鉄粉除去","スケール / 酸性洗浄","下地処理","脱脂","コーティング / 保護剤","ガラス洗浄","ガラス油膜除去","ガラスウロコ除去","ガラス撥水","タイヤ・ホイール洗浄","タイヤ・ホイール保護","未塗装樹脂洗浄","未塗装樹脂保護","虫汚れ","ピッチ・タール","その他"];
 const normalizeChemicalName = (value) => String(value || "").toLowerCase().replace(/[\s\-_/・]/g, "");
-const detailingChemicals = () => { try { return JSON.parse(localStorage.getItem("chemicals") || "[]"); } catch { return []; } };
+const detailingChemicals = () => {
+  try {
+    const stored = JSON.parse(localStorage.getItem("chemicals") || "[]");
+    const items = Array.isArray(stored) ? stored : Array.isArray(stored?.items) ? stored.items : Array.isArray(stored?.chemicals) ? stored.chemicals : [];
+    return items.filter((item) => item && typeof item === "object");
+  } catch { return []; }
+};
+const detailingChemicalFields = (chemical) => ({
+  manufacturer: chemical.manufacturer || chemical.maker || chemical.brand || "",
+  name: chemical.name || chemical.product_name || chemical.productName || chemical.product || chemical.title || "名称なし",
+  category: chemical.type || chemical.category || ""
+});
 
 async function renderChemicalList() {
   setCustomerContent('<div class="card placeholder"><p class="muted">ケミカルを読み込んでいます…</p></div>');
@@ -56,16 +67,16 @@ async function renderChemicalAdd() {
   if (catalogError) return setCustomerContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(catalogError))}</p></div>`);
   setCustomerContent(`<form class="card form-card" id="chemicalAddForm"><h2>ケミカルを追加</h2><label>追加方法</label><select name="source" id="chemicalSource"><option value="manual">手入力</option><option value="detailing">Detailing Managerから追加</option><option value="catalog">メーカー / 共通カタログから追加</option></select><label id="detailLabel">候補</label><select name="detail" id="chemicalDetail"><option value="">選択してください</option></select><label>メーカー</label><input name="manufacturer" required /><label>商品名</label><input name="product_name" required /><label>カテゴリ</label><select name="category"><option value="">未分類</option>${chemicalCategories.map(x=>`<option>${escapeHtml(x)}</option>`).join("")}</select><p class="muted">標準使用量・希釈率は未設定のまま後から追加できます。</p><button class="primary" type="submit">マイケミカルへ追加</button><button class="text-button" type="button" id="backChemicals">戻る</button></form>`);
   const source = document.getElementById("chemicalSource"), detail = document.getElementById("chemicalDetail");
-  const refreshChoices = () => { const isDm = source.value === "detailing", isCatalog = source.value === "catalog"; detail.parentElement.querySelector("#detailLabel").style.display = isDm || isCatalog ? "" : "none"; detail.style.display = isDm || isCatalog ? "" : "none"; detail.innerHTML = `<option value="">選択してください</option>${(isDm ? dm.map((c,i)=>`<option value="${i}">${escapeHtml(`${c.manufacturer||""} ${c.name||"名称なし"}`)}</option>`) : isCatalog ? catalogRows.map(c=>`<option value="${c.id}">${escapeHtml(`${c.manufacturer} ${c.product_name}`)}</option>`) : []).join("")}`; };
+  const refreshChoices = () => { const isDm = source.value === "detailing", isCatalog = source.value === "catalog"; detail.parentElement.querySelector("#detailLabel").style.display = isDm || isCatalog ? "" : "none"; detail.style.display = isDm || isCatalog ? "" : "none"; detail.innerHTML = `<option value="">選択してください</option>${(isDm ? dm.map((c,i)=>{const fields=detailingChemicalFields(c);return `<option value="${i}">${escapeHtml(`${fields.manufacturer} ${fields.name}`.trim())}</option>`;}) : isCatalog ? catalogRows.map(c=>`<option value="${c.id}">${escapeHtml(`${c.manufacturer} ${c.product_name}`)}</option>`) : []).join("")}`; };
   refreshChoices(); source.addEventListener("change", refreshChoices);
-  detail.addEventListener("change",()=>{const item=source.value === "detailing" ? dm[detail.value] : catalogRows.find(c=>c.id===detail.value);if(item){document.querySelector('[name=manufacturer]').value=item.manufacturer||"";document.querySelector('[name=product_name]').value=item.name||item.product_name||"";document.querySelector('[name=category]').value=item.category||"";}});
+  detail.addEventListener("change",()=>{const item=source.value === "detailing" ? dm[detail.value] : catalogRows.find(c=>c.id===detail.value);if(item){const fields=source.value === "detailing" ? detailingChemicalFields(item) : {manufacturer:item.manufacturer||"",name:item.product_name||"",category:item.category||""};document.querySelector('[name=manufacturer]').value=fields.manufacturer;document.querySelector('[name=product_name]').value=fields.name;document.querySelector('[name=category]').value=fields.category;}});
   document.getElementById("backChemicals").addEventListener("click",renderChemicalList);
-  document.getElementById("chemicalAddForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget;const manufacturer=f.manufacturer.value.trim(), product=f.product_name.value.trim(), normalized=normalizeChemicalName(product), selected=source.value === "detailing" ? dm[detail.value] : null, sourceId=selected && (selected.id || selected.catalogId || selected.chemicalId);let catalog;
+  document.getElementById("chemicalAddForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget;const manufacturer=f.manufacturer.value.trim(), product=f.product_name.value.trim(), normalized=normalizeChemicalName(product), selected=source.value === "detailing" ? dm[detail.value] : null, sourceId=selected && (selected.id || selected.catalogId || selected.chemicalId), selectedFields=selected ? detailingChemicalFields(selected) : null;let catalog;
     if(sourceId){const {data:link,error}=await supabase.from("chemical_source_links").select("catalog_product_id").eq("source_system","detailing_manager").eq("source_chemical_id",String(sourceId)).maybeSingle();if(error)return alert(saveErrorMessage(error));if(link)catalog={id:link.catalog_product_id};}
     if(!catalog && source.value === "catalog") catalog={id:detail.value};
     if(!catalog){const {data,error}=await supabase.from("chemical_catalog_products").select("id").eq("manufacturer",manufacturer).eq("normalized_name",normalized).maybeSingle();if(error)return alert(saveErrorMessage(error));catalog=data;}
     if(!catalog){const {data,error}=await supabase.from("chemical_catalog_products").insert({manufacturer,product_name:product,normalized_name:normalized,category:f.category.value||null}).select("id").single();if(error)return alert(saveErrorMessage(error));catalog=data;}
-    if(sourceId){const {error}=await supabase.from("chemical_source_links").upsert({catalog_product_id:catalog.id,source_system:"detailing_manager",source_chemical_id:String(sourceId),source_name:`${selected.manufacturer||""} ${selected.name||""}`.trim(),match_status:"linked"},{onConflict:"source_system,source_chemical_id"});if(error)return alert(saveErrorMessage(error));}
+    if(sourceId){const {error}=await supabase.from("chemical_source_links").upsert({catalog_product_id:catalog.id,source_system:"detailing_manager",source_chemical_id:String(sourceId),source_name:`${selectedFields.manufacturer} ${selectedFields.name}`.trim(),match_status:"linked"},{onConflict:"source_system,source_chemical_id"});if(error)return alert(saveErrorMessage(error));}
     const {data:existing,error:existingError}=await supabase.from("recordare_chemicals").select("id").eq("catalog_product_id",catalog.id).maybeSingle();if(existingError)return alert(saveErrorMessage(existingError));if(existing)return alert("この商品はすでにマイケミカルへ追加されています。");const {error:addError}=await supabase.from("recordare_chemicals").insert({catalog_product_id:catalog.id,category:f.category.value||null});if(addError)return alert(saveErrorMessage(addError));await renderChemicalList();});
 }
 
