@@ -1570,10 +1570,18 @@ const plannerStepOptions = () => {
 };
 const plannerCourseLabels = { all: "全コース共通", ...reservationCourses };
 const plannerConfidence = (count) => count >= 5 ? "高" : count >= 2 ? "中" : count >= 1 ? "低" : "実績なし";
-const plannerPriorityLabel = (tagKey, details = {}, count = 1, date = "") => {
-  const high = count >= 2 || tagKey === "ホイール汚れ強め" || tagKey === "鉄粉多め" || tagKey === "ガラスウロコあり" || (tagKey === "水ジミ・スケール" && ["heavy", "paint_impact"].includes(details.scale_level));
-  if (high) return { key: "high", label: "優先確認" };
+const plannerPriorityLabel = (tagKey, details = {}, count = 1, date = "", pastStatus = "重点確認") => {
+  const untreated = ["該当工程なし", "スキップ", "未実施", "途中"].includes(pastStatus);
+  if (untreated) return { key: "high", label: "優先確認" };
+  if (pastStatus === "実施" && count >= 2) return { key: "high", label: "優先確認" };
   const days = date ? Math.floor((Date.now() - new Date(date + "T00:00:00").getTime()) / 86400000) : 0;
+  if (pastStatus === "実施" && days > 180) return { key: "reference", label: "参考" };
+  if (pastStatus === "実施") return { key: "recommended", label: "確認推奨" };
+  const severe = tagKey === "ホイール汚れ強め"
+    || tagKey === "鉄粉多め"
+    || tagKey === "ガラスウロコあり"
+    || (tagKey === "水ジミ・スケール" && ["heavy", "paint_impact"].includes(details.scale_level));
+  if (count >= 2 || severe) return { key: "high", label: "優先確認" };
   if (days > 180) return { key: "reference", label: "参考" };
   return { key: "recommended", label: "確認推奨" };
 };
@@ -1808,15 +1816,17 @@ async function renderReservationPrePlan(reservation) {
       const pastStatus = relatedStepKeys.length ? plannerPastStepStatus(relatedSteps) : "重点確認";
       const detail = plannerConditionDetail(condition.tag_key, condition.details || {});
       const occurrenceCount = conditionCountByTag.get(condition.tag_key) || 1;
-      const priority = plannerPriorityLabel(condition.tag_key, condition.details || {}, occurrenceCount, record.service_date);
+      const priority = plannerPriorityLabel(condition.tag_key, condition.details || {}, occurrenceCount, record.service_date, pastStatus);
       const stepNames = relatedStepKeys.map((key) => plannerStepNameByKey.get(key) || key);
       const recommendation = !relatedStepKeys.length
         ? "今回も重点確認"
         : pastStatus === "実施"
-          ? `前回実施・今回も${stepNames.join("・")}の要否を確認`
+          ? occurrenceCount >= 2
+            ? `処置後に再発履歴あり・${stepNames.join("・")}を優先確認`
+            : `前回処置済み・再発していないか${stepNames.join("・")}を確認`
           : pastStatus === "スキップ"
-            ? `前回スキップ・今回も${stepNames.join("・")}の要否を確認`
-            : `今回も${stepNames.join("・")}の要否を確認`;
+            ? `前回スキップ・${stepNames.join("・")}を優先確認`
+            : `前回未処置・${stepNames.join("・")}を優先確認`;
       vehicleConditionInsights.push({
         date: record.service_date,
         tagKey: condition.tag_key,
@@ -1837,7 +1847,7 @@ async function renderReservationPrePlan(reservation) {
     ? plannerCoatingStateLabels[latestVehicleRecord.coating_state] || latestVehicleRecord.coating_state
     : "";
   const vehicleHistoryMarkup = (vehicleHistoryRecords || []).length
-    ? `<section class="card"><h2>この車の過去履歴からの確認候補</h2><p class="muted">この車の完了施工 ${escapeHtml(vehicleHistoryRecords.length)}件を参照しています。過去に状態があって工程を実施した項目は、今回も確認候補として表示します。強い症状・繰り返しは「優先確認」、最近の単発履歴は「確認推奨」、180日を超えた単発履歴は「参考」です。</p>${latestCoatingText ? `<p><strong>直近の既存コーティング</strong> ・ ${escapeHtml(latestVehicleRecord.service_date)} ・ ${escapeHtml(latestCoatingText)}</p>` : ""}${vehicleConditionInsights.length ? vehicleConditionInsights.map((item) => `<div class="service-timing-correction"><div class="planner-priority-row"><p><strong>${escapeHtml(item.tagKey)}${item.detail ? `（${escapeHtml(item.detail)}）` : ""}</strong></p><span class="planner-priority-badge ${escapeHtml(item.priority.key)}">${escapeHtml(item.priority.label)}</span></div><p class="muted">${escapeHtml(item.date)} ・ 履歴 ${escapeHtml(item.occurrenceCount)}回 ・ 前回工程：${escapeHtml(item.pastStatus)} ・ ${escapeHtml(item.recommendation)}</p></div>`).join("") : '<p class="muted">施工前状態の履歴はまだありません。</p>'}</section>`
+    ? `<section class="card"><h2>この車の過去履歴からの確認候補</h2><p class="muted">この車の完了施工 ${escapeHtml(vehicleHistoryRecords.length)}件を参照しています。過去に状態があって工程を実施した項目は、今回も確認候補として表示します。前回未処置・スキップ、または処置後に同じ症状が再発している場合は「優先確認」。前回処置済みの単発履歴は「確認推奨」、処置済みで180日を超えた単発履歴は「参考」です。</p>${latestCoatingText ? `<p><strong>直近の既存コーティング</strong> ・ ${escapeHtml(latestVehicleRecord.service_date)} ・ ${escapeHtml(latestCoatingText)}</p>` : ""}${vehicleConditionInsights.length ? vehicleConditionInsights.map((item) => `<div class="service-timing-correction"><div class="planner-priority-row"><p><strong>${escapeHtml(item.tagKey)}${item.detail ? `（${escapeHtml(item.detail)}）` : ""}</strong></p><span class="planner-priority-badge ${escapeHtml(item.priority.key)}">${escapeHtml(item.priority.label)}</span></div><p class="muted">${escapeHtml(item.date)} ・ 履歴 ${escapeHtml(item.occurrenceCount)}回 ・ 前回工程：${escapeHtml(item.pastStatus)} ・ ${escapeHtml(item.recommendation)}</p></div>`).join("") : '<p class="muted">施工前状態の履歴はまだありません。</p>'}</section>`
     : '<section class="card"><h2>この車の過去履歴</h2><p class="muted">この車の完了施工履歴はまだありません。今回は標準設定と他の施工実績を参考にします。</p></section>';
 
   const usageRecordIds = [...new Set(historyUsages.map((usage) => usage.service_record_id))];
