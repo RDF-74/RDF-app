@@ -915,7 +915,7 @@ async function renderChemicalStandardSettings(id) {
   setCustomerContent('<div class="card placeholder"><p class="muted">標準設定を読み込んでいます…</p></div>');
   const [{ data: chemical, error: chemicalError }, { data: standards, error: standardError }] = await Promise.all([
     supabase.from("recordare_chemicals").select("id,unit,chemical_catalog_products(manufacturer,product_name)").eq("id", id).maybeSingle(),
-    supabase.from("recordare_chemical_step_standards").select("*").eq("recordare_chemical_id", id).eq("is_active", true).order("course_code").order("step_key"),
+    supabase.from("recordare_chemical_step_standards").select("*").eq("recordare_chemical_id", id).eq("course_code", "all").eq("is_active", true).order("step_key"),
   ]);
   if (chemicalError || standardError || !chemical) {
     return setCustomerContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(chemicalError || standardError || new Error("ケミカルが見つかりません。")))}</p><button class="text-button" id="backChemicalStandard">← ケミカルへ戻る</button></div>`);
@@ -924,14 +924,13 @@ async function renderChemicalStandardSettings(id) {
   const stepMap = new Map(plannerStepOptions().map((step) => [step.step_key, step.name]));
   const rows = (standards || []).length
     ? standards.map((standard) => {
-        const course = plannerCourseLabels[standard.course_code] || standard.course_code;
         const stepName = stepMap.get(standard.step_key) || standard.step_key;
         const amount = standard.standard_usage_amount == null ? "使用目安未設定" : `使用目安 ${standard.standard_usage_amount}${chemical.unit || "mL"}`;
-        return `<div class="service-timing-correction"><p><strong>${escapeHtml(course)} / ${escapeHtml(stepName)}</strong></p><p class="muted">${escapeHtml(amount)}${standard.notes ? ` ・ ${escapeHtml(standard.notes)}` : ""}</p><button class="secondary" type="button" data-disable-standard="${escapeHtml(standard.id)}">この標準設定を削除</button></div>`;
+        return `<div class="service-timing-correction"><p><strong>${escapeHtml(stepName)}</strong></p><p class="muted">${escapeHtml(amount)}${standard.notes ? ` ・ ${escapeHtml(standard.notes)}` : ""}</p><button class="secondary" type="button" data-disable-standard="${escapeHtml(standard.id)}">この標準設定を削除</button></div>`;
       }).join("")
     : '<p class="muted">まだ標準設定はありません。</p>';
 
-  setCustomerContent(`<section class="card"><h2>施工プラン標準設定</h2><p><strong>${escapeHtml(recordareChemicalName(chemical))}</strong></p><p class="muted">過去実績が少ない工程で使うRE:CORDARE標準です。メーカー公式情報とは別に扱います。</p>${rows}</section><form class="card form-card" id="chemicalStandardForm"><h2>標準設定を追加・更新</h2><p class="muted">同じコース・工程で保存すると内容を更新します。</p><label>適用コース<select name="course_code">${Object.entries(plannerCourseLabels).map(([value,label]) => `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`).join("")}</select></label><label>工程<select name="step_key" required><option value="">工程を選択</option>${plannerStepOptions().map((step) => `<option value="${escapeHtml(step.step_key)}">${escapeHtml(step.name)}</option>`).join("")}</select></label><label>標準使用目安mL<input name="amount" type="number" inputmode="decimal" min="0.001" step="0.001"></label><label>メモ<input name="notes"></label><button class="primary" type="submit">標準設定を保存</button></form><button class="text-button" type="button" id="backChemicalStandard">← ケミカルへ戻る</button>`);
+  setCustomerContent(`<section class="card"><h2>施工プラン標準設定</h2><p><strong>${escapeHtml(recordareChemicalName(chemical))}</strong></p><p class="muted">過去実績が少ない工程で使うRE:CORDARE標準です。メーカー公式情報とは別に扱います。</p>${rows}</section><form class="card form-card" id="chemicalStandardForm"><h2>標準設定を追加・更新</h2><p class="muted">このケミカルを標準で使う工程を登録します。同じ工程で保存すると内容を更新します。</p><label>工程<select name="step_key" required><option value="">工程を選択</option>${plannerStepOptions().map((step) => `<option value="${escapeHtml(step.step_key)}">${escapeHtml(step.name)}</option>`).join("")}</select></label><label>標準使用目安mL<input name="amount" type="number" inputmode="decimal" min="0.001" step="0.001"></label><label>メモ<input name="notes"></label><button class="primary" type="submit">標準設定を保存</button></form><button class="text-button" type="button" id="backChemicalStandard">← ケミカルへ戻る</button>`);
 
   document.getElementById("chemicalStandardForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -939,7 +938,7 @@ async function renderChemicalStandardSettings(id) {
     const amount = form.amount.value === "" ? null : Number(form.amount.value);
     const values = {
       recordare_chemical_id: id,
-      course_code: form.course_code.value,
+      course_code: "all",
       step_key: form.step_key.value,
       standard_usage_amount: amount,
       notes: emptyToNull(form.notes.value),
@@ -1546,7 +1545,7 @@ async function renderReservationPrePlan(reservation) {
       .from("recordare_chemical_step_standards")
       .select("id,recordare_chemical_id,course_code,step_key,standard_usage_amount,notes,recordare_chemicals(id,unit,current_stock,status,chemical_catalog_products(manufacturer,product_name))")
       .eq("is_active", true)
-      .in("course_code", ["all", reservation.course_code]),
+      .eq("course_code", "all"),
   ]);
 
   if (historyError || standardError) {
@@ -1625,9 +1624,7 @@ async function renderReservationPrePlan(reservation) {
     const sameCourse = aggregateUsageCandidates(stepStats.filter((item) => item.courseCode === reservation.course_code));
     const otherCourse = aggregateUsageCandidates(stepStats.filter((item) => item.courseCode !== reservation.course_code));
 
-    const exactStandards = (standardRows || []).filter((item) => item.step_key === step.step_key && item.course_code === reservation.course_code);
-    const commonStandards = (standardRows || []).filter((item) => item.step_key === step.step_key && item.course_code === "all");
-    const standards = exactStandards.length ? exactStandards : commonStandards;
+    const standards = (standardRows || []).filter((item) => item.step_key === step.step_key);
 
     let sourceLabel = "";
     let candidates = [];
@@ -1693,7 +1690,7 @@ async function renderReservationPrePlan(reservation) {
         ? "RE:CORDARE標準"
         : "実績なし";
 
-  setReservationContent(`<section class="card"><h2>施工プラン（一次提案）</h2><p><strong>${escapeHtml(reservationCourses[reservation.course_code] || reservation.course_code)}</strong></p><p class="muted">オプション：${escapeHtml(optionText)}</p><p class="muted">同コース実績を最優先し、なければ他コースの同工程実績、それもなければRE:CORDARE標準を使います。現地の施工前確認で変更する前提の一次提案です。</p><p>同コース実績 ${escapeHtml(sameCourseCount)}件 ・ 他コース参考 ${escapeHtml(otherCourseCount)}件 ・ 標準設定 ${escapeHtml(standardCount)}件</p><p>全体目安 ${escapeHtml(summaryConfidence)}</p></section>${stepMarkup}<button class="text-button" type="button" id="backReservationPlan">← 予約へ戻る</button>`);
+  setReservationContent(`<section class="card"><h2>施工プラン（一次提案）</h2><p><strong>${escapeHtml(reservationCourses[reservation.course_code] || reservation.course_code)}</strong></p><p class="muted">オプション：${escapeHtml(optionText)}</p><p class="muted">同コース実績を最優先し、なければ他コースの同工程実績、それもなければ工程ごとのRE:CORDARE標準を使います。現地の施工前確認で変更する前提の一次提案です。</p><p>同コース実績 ${escapeHtml(sameCourseCount)}件 ・ 他コース参考 ${escapeHtml(otherCourseCount)}件 ・ 標準設定 ${escapeHtml(standardCount)}件</p><p>全体目安 ${escapeHtml(summaryConfidence)}</p></section>${stepMarkup}<button class="text-button" type="button" id="backReservationPlan">← 予約へ戻る</button>`);
 
   document.getElementById("backReservationPlan")?.addEventListener("click", () => renderReservationForm(reservation));
 }
