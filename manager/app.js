@@ -1396,6 +1396,13 @@ const plannerStepOptions = () => {
 };
 const plannerCourseLabels = { all: "全コース共通", ...reservationCourses };
 const plannerConfidence = (count) => count >= 5 ? "高" : count >= 2 ? "中" : count >= 1 ? "低" : "実績なし";
+const plannerPriorityLabel = (tagKey, details = {}, count = 1, date = "") => {
+  const high = count >= 2 || tagKey === "ホイール汚れ強め" || tagKey === "鉄粉多め" || tagKey === "ガラスウロコあり" || (tagKey === "水ジミ・スケール" && ["heavy", "paint_impact"].includes(details.scale_level));
+  if (high) return { key: "high", label: "優先確認" };
+  const days = date ? Math.floor((Date.now() - new Date(date + "T00:00:00").getTime()) / 86400000) : 0;
+  if (days > 180) return { key: "reference", label: "参考" };
+  return { key: "recommended", label: "確認推奨" };
+};
 const plannerConditionStepKeys = {
   "水ジミ・スケール": ["step_900"],
   "鉄粉多め": ["step_300"],
@@ -1614,6 +1621,8 @@ async function renderReservationPrePlan(reservation) {
     vehicleConditionsByRecord.get(condition.service_record_id).push(condition);
   });
 
+  const conditionCountByTag = new Map();
+  vehicleConditions.forEach((condition) => conditionCountByTag.set(condition.tag_key, (conditionCountByTag.get(condition.tag_key) || 0) + 1));
   const seenConditionTags = new Set();
   const vehicleConditionInsights = [];
   (vehicleHistoryRecords || []).forEach((record) => {
@@ -1624,6 +1633,8 @@ async function renderReservationPrePlan(reservation) {
       const relatedSteps = (vehicleStepsByRecord.get(record.id) || []).filter((step) => relatedStepKeys.includes(step.step_key));
       const pastStatus = relatedStepKeys.length ? plannerPastStepStatus(relatedSteps) : "重点確認";
       const detail = plannerConditionDetail(condition.tag_key, condition.details || {});
+      const occurrenceCount = conditionCountByTag.get(condition.tag_key) || 1;
+      const priority = plannerPriorityLabel(condition.tag_key, condition.details || {}, occurrenceCount, record.service_date);
       const stepNames = relatedStepKeys.map((key) => plannerStepNameByKey.get(key) || key);
       const recommendation = !relatedStepKeys.length
         ? "今回も重点確認"
@@ -1636,19 +1647,23 @@ async function renderReservationPrePlan(reservation) {
         date: record.service_date,
         tagKey: condition.tag_key,
         detail,
+        occurrenceCount,
+        priority,
         pastStatus,
         recommendation,
         relatedStepKeys,
       });
     });
   });
+  const plannerPriorityOrder = { high: 0, recommended: 1, reference: 2 };
+  vehicleConditionInsights.sort((a, b) => (plannerPriorityOrder[a.priority.key] ?? 9) - (plannerPriorityOrder[b.priority.key] ?? 9));
 
   const latestVehicleRecord = (vehicleHistoryRecords || [])[0];
   const latestCoatingText = latestVehicleRecord?.coating_state
     ? plannerCoatingStateLabels[latestVehicleRecord.coating_state] || latestVehicleRecord.coating_state
     : "";
   const vehicleHistoryMarkup = (vehicleHistoryRecords || []).length
-    ? `<section class="card"><h2>この車の過去履歴からの確認候補</h2><p class="muted">この車の完了施工 ${escapeHtml(vehicleHistoryRecords.length)}件を参照しています。過去に状態があって工程を実施した項目は、今回も確認候補として表示します。</p>${latestCoatingText ? `<p><strong>直近の既存コーティング</strong> ・ ${escapeHtml(latestVehicleRecord.service_date)} ・ ${escapeHtml(latestCoatingText)}</p>` : ""}${vehicleConditionInsights.length ? vehicleConditionInsights.map((item) => `<div class="service-timing-correction"><p><strong>${escapeHtml(item.tagKey)}${item.detail ? `（${escapeHtml(item.detail)}）` : ""}</strong></p><p class="muted">${escapeHtml(item.date)} ・ 前回工程：${escapeHtml(item.pastStatus)} ・ ${escapeHtml(item.recommendation)}</p></div>`).join("") : '<p class="muted">施工前状態の履歴はまだありません。</p>'}</section>`
+    ? `<section class="card"><h2>この車の過去履歴からの確認候補</h2><p class="muted">この車の完了施工 ${escapeHtml(vehicleHistoryRecords.length)}件を参照しています。過去に状態があって工程を実施した項目は、今回も確認候補として表示します。強い症状・繰り返しは「優先確認」、最近の単発履歴は「確認推奨」、180日を超えた単発履歴は「参考」です。</p>${latestCoatingText ? `<p><strong>直近の既存コーティング</strong> ・ ${escapeHtml(latestVehicleRecord.service_date)} ・ ${escapeHtml(latestCoatingText)}</p>` : ""}${vehicleConditionInsights.length ? vehicleConditionInsights.map((item) => `<div class="service-timing-correction"><div class="planner-priority-row"><p><strong>${escapeHtml(item.tagKey)}${item.detail ? `（${escapeHtml(item.detail)}）` : ""}</strong></p><span class="planner-priority-badge ${escapeHtml(item.priority.key)}">${escapeHtml(item.priority.label)}</span></div><p class="muted">${escapeHtml(item.date)} ・ 履歴 ${escapeHtml(item.occurrenceCount)}回 ・ 前回工程：${escapeHtml(item.pastStatus)} ・ ${escapeHtml(item.recommendation)}</p></div>`).join("") : '<p class="muted">施工前状態の履歴はまだありません。</p>'}</section>`
     : '<section class="card"><h2>この車の過去履歴</h2><p class="muted">この車の完了施工履歴はまだありません。今回は標準設定と他の施工実績を参考にします。</p></section>';
 
   const usageRecordIds = [...new Set(historyUsages.map((usage) => usage.service_record_id))];

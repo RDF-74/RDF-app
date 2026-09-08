@@ -44,6 +44,12 @@ button,input,select,textarea { font:inherit; } button { cursor:pointer; border:0
 .service-actual-summary span { display:block; color:var(--muted); font-size:11px; }
 .service-actual-summary strong { display:block; margin-top:4px; font-size:16px; }
 
+.planner-priority-row { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.planner-priority-row p { margin:0; }
+.planner-priority-badge { flex:0 0 auto; padding:5px 8px; border:1px solid var(--line); border-radius:999px; font-size:11px; font-weight:900; }
+.planner-priority-badge.high { color:#ffd7a8; border-color:#6a4d2a; background:#342517; }
+.planner-priority-badge.recommended { color:#a9dcff; border-color:#315d7a; background:#153044; }
+.planner-priority-badge.reference { color:var(--muted); background:#111923; }
 .service-timing-correction { margin:14px 0 6px; padding:13px; border:1px solid var(--line); border-radius:16px; background:#0d151d; }
 .service-timing-correction h3 { margin:0 0 8px; font-size:14px; }
 .service-timing-correction label { margin-top:8px; }
