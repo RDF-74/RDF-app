@@ -20,6 +20,9 @@ button,input,select,textarea { font:inherit; } button { cursor:pointer; border:0
 .pricing-amount { display:flex; align-items:center; gap:10px; margin-top:10px; padding-left:34px; }
 .pricing-amount span { color:var(--muted); font-size:12px; }
 .pricing-amount input { width:150px; max-width:48%; margin-left:auto; }
+.standard-step-fields { display:grid; gap:10px; padding-left:34px; }
+.standard-step-fields label { margin:0; }
+.standard-step-fields input { width:100%; max-width:none; margin:6px 0 0; }
 .price-summary { margin:18px 0 4px; padding:15px; border:1px solid #294256; border-radius:18px; background:#0b141c; }
 .price-line { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:6px 0; font-size:14px; }
 .price-line strong { font-variant-numeric:tabular-nums; }
