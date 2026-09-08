@@ -765,25 +765,41 @@ async function renderChemicalStandardSettings(id) {
       }).join("")
     : '<p class="muted">まだ標準設定はありません。</p>';
 
-  setCustomerContent(`<section class="card"><h2>施工プラン標準設定</h2><p><strong>${escapeHtml(recordareChemicalName(chemical))}</strong></p><p class="muted">過去実績が少ない工程で使うRE:CORDARE標準です。メーカー公式情報とは別に扱います。</p>${rows}</section><form class="card form-card" id="chemicalStandardForm"><h2>標準設定を追加・更新</h2><p class="muted">このケミカルを標準で使う工程を登録します。同じ工程で保存すると内容を更新します。</p><label>工程<select name="step_key" required><option value="">工程を選択</option>${plannerStepOptions().map((step) => `<option value="${escapeHtml(step.step_key)}">${escapeHtml(step.name)}</option>`).join("")}</select></label><label>標準使用目安mL<input name="amount" type="number" inputmode="decimal" min="0.001" step="0.001"></label><label>メモ<input name="notes"></label><button class="primary" type="submit">標準設定を保存</button></form><button class="text-button" type="button" id="backChemicalStandard">← ケミカルへ戻る</button>`);
+  setCustomerContent(`<section class="card"><h2>施工プラン標準設定</h2><p><strong>${escapeHtml(recordareChemicalName(chemical))}</strong></p><p class="muted">過去実績が少ない工程で使うRE:CORDARE標準です。メーカー公式情報とは別に扱います。</p>${rows}</section><form class="card form-card" id="chemicalStandardForm"><h2>標準設定を追加・更新</h2><p class="muted">このケミカルを標準で使う工程を複数選択できます。選んだ工程には同じ使用目安・メモを保存します。</p><div class="pricing-group"><div class="pricing-group-title">工程（複数選択可）</div>${plannerStepOptions().map((step) => `<label class="pricing-choice pricing-choice-main"><input type="checkbox" name="step_key" value="${escapeHtml(step.step_key)}"><span><strong>${escapeHtml(step.name)}</strong></span></label>`).join("")}</div><label>標準使用目安mL<input name="amount" type="number" inputmode="decimal" min="0.001" step="0.001"></label><label>メモ<input name="notes"></label><p class="error hidden" id="chemicalStandardFormError"></p><button class="primary" type="submit">標準設定を保存</button></form><button class="text-button" type="button" id="backChemicalStandard">← ケミカルへ戻る</button>`);
 
   document.getElementById("chemicalStandardForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
+    const selectedSteps = [...form.querySelectorAll('input[name="step_key"]:checked')].map((input) => input.value);
+    const message = document.getElementById("chemicalStandardFormError");
+    if (!selectedSteps.length) {
+      message.textContent = "工程を1つ以上選択してください。";
+      message.classList.remove("hidden");
+      return;
+    }
+    message.classList.add("hidden");
     const amount = form.amount.value === "" ? null : Number(form.amount.value);
-    const values = {
+    const now = new Date().toISOString();
+    const values = selectedSteps.map((stepKey) => ({
       recordare_chemical_id: id,
       course_code: "all",
-      step_key: form.step_key.value,
+      step_key: stepKey,
       standard_usage_amount: amount,
       notes: emptyToNull(form.notes.value),
       is_active: true,
-      updated_at: new Date().toISOString(),
-    };
+      updated_at: now,
+    }));
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
+    button.textContent = "保存中…";
     const { error } = await supabase.from("recordare_chemical_step_standards").upsert(values, {
       onConflict: "recordare_chemical_id,course_code,step_key",
     });
-    if (error) return alert(saveErrorMessage(error));
+    if (error) {
+      button.disabled = false;
+      button.textContent = "標準設定を保存";
+      return alert(saveErrorMessage(error));
+    }
     await renderChemicalStandardSettings(id);
   });
 
