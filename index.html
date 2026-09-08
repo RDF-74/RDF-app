@@ -2242,7 +2242,7 @@
             </button>
           </div>
           <div class="muted tiny">
-            8メーカー・300商品から、必要なものだけチェックして追加できます。
+            日本で入手しやすい商品を中心に、必要なものだけチェックして追加できます。
           </div>
           <label>メーカー名（任意）</label><input id="chemManufacturer" />
           <label>商品名</label><input id="chemName" /><label>分類</label
@@ -2256,16 +2256,8 @@
             <option>QD</option>
             <option>その他</option>
           </select>
-          <div class="grid2">
-            <div>
-              <label>推奨倍率</label><input id="chemRatio" type="number" />
-            </div>
-            <div>
-              <label>容量 (mL)</label><input id="chemCapacity" type="number" />
-            </div>
-          </div>
-          <label>現在の残量 (mL)</label
-          ><input id="chemStock" type="number" /><label>ボトル写真</label
+          <label>推奨倍率</label><input id="chemRatio" type="number" />
+          <label>ボトル写真</label
           ><input id="chemImage" type="file" accept="image/*" /><button
             class="primary"
             style="margin-top: 14px; width: 100%"
@@ -2299,30 +2291,7 @@
             <option>QD</option>
             <option>その他</option>
           </select>
-          <div class="grid2">
-            <div>
-              <label>推奨倍率</label><input id="editChemRatio" type="number" />
-            </div>
-            <div>
-              <label>容量 (mL)</label
-              ><input id="editChemCapacity" type="number" />
-            </div>
-          </div>
-          <label>現在の残量 (mL)</label
-          ><input id="editChemStock" type="number" />
-          <div class="stock-actions">
-            <button class="secondary" onclick="setEditStockPercent(100)">
-              満タン</button
-            ><button class="secondary" onclick="setEditStockPercent(75)">
-              75%</button
-            ><button class="secondary" onclick="setEditStockPercent(50)">
-              50%</button
-            ><button class="secondary" onclick="setEditStockPercent(25)">
-              25%</button
-            ><button class="secondary" onclick="setEditStockPercent(0)">
-              空
-            </button>
-          </div>
+          <label>推奨倍率</label><input id="editChemRatio" type="number" />
           <button
             class="primary"
             style="width: 100%; margin-top: 12px"
@@ -3100,8 +3069,8 @@
           <div class="setup-step">
             <span class="setup-num">3</span>
             <div>
-              <b>在庫を自動管理</b>
-              <div class="tiny muted">使用量に応じてケミカル残量を更新</div>
+              <b>ケミカルを登録</b>
+              <div class="tiny muted">手持ち商品をカタログから選んで登録</div>
             </div>
           </div>
         </div>
@@ -4920,7 +4889,7 @@
           arr
             .map(
               (c, i) =>
-                `<option value="${i}" ${String(i) === String(selected) ? "selected" : ""}>${escapeHTML(chemicalDisplayName(c))}${c.stock !== undefined ? `（残 ${numberOr(c.stock, 0)}mL）` : ""}</option>`,
+                `<option value="${i}" ${String(i) === String(selected) ? "selected" : ""}>${escapeHTML(chemicalDisplayName(c))}</option>`,
             )
             .join("")
         );
@@ -4961,17 +4930,6 @@
               : null;
           })
           .filter(Boolean);
-      }
-      function deductChemicalStock(usages) {
-        const arr = load("chemicals", []);
-        usages.forEach((u) => {
-          if (arr[u.chemIndex])
-            arr[u.chemIndex].stock = Math.max(
-              0,
-              Number(arr[u.chemIndex].stock || 0) - Number(u.amount || 0),
-            );
-        });
-        return save("chemicals", arr);
       }
       function suggestChemicalsForProcesses(processes) {
         const chems = load("chemicals", []);
@@ -5136,7 +5094,6 @@
         });
         if (save("history", a)) {
           markPhotoRefsSaved({ history: [a[0]] });
-          deductChemicalStock(chemicalUsages);
           $("histMileage").value = "";
           $("histMinutes").value = "";
           $("histMemo").value = "";
@@ -5165,17 +5122,15 @@
           name: "Koch-Chemie",
           source: "https://www.koch-chemie.com/en/products",
         },
-        { name: "VONIXX", source: "https://www.vonixx.com.br/" },
-        {
-          name: "Labocosmetica",
-          source: "https://www.labocosmetica.it/negozio/",
-        },
+        { name: "GANBASS", source: "https://ganbass.net/" },
+        { name: "PROVIDE", source: "https://provide.shop-pro.jp/" },
+        { name: "SOFT99", source: "https://www.soft99.co.jp/products/" },
       ];
       function catalogRows(manufacturer, rows) {
         const source =
           CATALOG_MANUFACTURERS.find((item) => item.name === manufacturer)
             ?.source || "";
-        return rows.map(([name, type, purpose, aliases = []]) => ({
+        return rows.map(([name, type, purpose, aliases = [], meta = {}]) => ({
           id: `${manufacturer}::${name}`,
           manufacturer,
           name,
@@ -5183,9 +5138,26 @@
           purpose,
           aliases,
           source,
+          sourceUrl: meta.sourceUrl || source,
+          ph:
+            meta.ph ||
+            (["酸性", "中性", "アルカリ"].includes(type) ? type : "不明"),
+          uses: meta.uses || [purpose],
+          parts: meta.parts || [],
+          cautionParts: meta.cautionParts || [],
+          prohibitedParts: meta.prohibitedParts || [],
+          dilution: meta.dilution || { mode: "不明" },
+          rinse: meta.rinse || "商品説明に従う",
+          environment: meta.environment || [],
+          strength: meta.strength || "不明",
+          diyDifficulty: meta.diyDifficulty || "不明",
+          coatingImpact: meta.coatingImpact || "不明",
+          safety: meta.safety || [],
+          aiRecommendation: meta.aiRecommendation || "条件付き",
+          aiVerified: meta.aiVerified === true,
         }));
       }
-      const CHEMICAL_CATALOG = [
+      const CHEMICAL_CATALOG_RAW = [
         ...catalogRows("OVERcoat", [
           ["OVERcoat Ceramic BOOST コーティングスプレー", "コーティング", "スプレーコーティング"],
           ["OVERcoat NANOpolish ボディ専用コンパウンド", "その他", "ボディ用コンパウンド"],
@@ -5503,6 +5475,196 @@
           ["VITREO", "その他", "ガラス用研磨コンパウンド"],
         ]),
       ];
+      const CHEMICAL_CATALOG = CHEMICAL_CATALOG_RAW.filter(
+        (item) => !["VONIXX", "Labocosmetica"].includes(item.manufacturer),
+      ).concat(
+        ...catalogRows("GANBASS", [
+          ["REBOOT NEXT", "その他", "シリカスケール除去", [], {
+            uses: ["スケール・水ジミ"],
+            parts: ["ボディ"],
+            dilution: { mode: "原液" },
+            strength: "標準",
+            diyDifficulty: "注意して使用",
+            coatingImpact: "弱める可能性あり",
+            safety: ["小範囲テスト", "乾燥禁止", "メーカー説明優先"],
+            aiRecommendation: "条件付き",
+            aiVerified: true,
+            sourceUrl: "https://ganbass.net/?pid=180694231"
+          }],
+          ["PM-LIGHT", "その他", "油分除去・コーティングメンテナンス", [], {
+            uses: ["油脂汚れ", "コーティングメンテナンス"],
+            parts: ["ボディ"],
+            strength: "マイルド",
+            diyDifficulty: "初心者向け",
+            coatingImpact: "影響しにくい",
+            safety: ["小範囲テスト", "メーカー説明優先"],
+            aiRecommendation: "通常候補",
+            aiVerified: true,
+            sourceUrl: "https://ganbass.net/?pid=61436159"
+          }],
+          ["GBS-R NEXT", "鉄粉除去", "鉄粉除去剤", [], {
+            uses: ["鉄粉"],
+            dilution: { mode: "原液" },
+            rinse: "必須",
+            strength: "標準",
+            diyDifficulty: "注意して使用",
+            safety: ["乾燥禁止", "他ケミカルと混合禁止", "十分にすすぐ"],
+            aiRecommendation: "条件付き",
+            aiVerified: true,
+            sourceUrl: "https://ganbass.net/?pid=180694257"
+          }],
+          ["GBS-D", "脱脂", "水溶性脱脂剤", [], {
+            uses: ["脱脂", "油脂汚れ"],
+            parts: ["ボディ"],
+            strength: "標準",
+            diyDifficulty: "注意して使用",
+            coatingImpact: "弱める可能性あり",
+            safety: ["小範囲テスト", "メーカー説明優先"],
+            aiRecommendation: "条件付き",
+            aiVerified: true,
+            sourceUrl: "https://ganbass.net/?pid=71716908"
+          }],
+          ["ENDIX", "アルカリ", "低溶剤弱アルカリメンテナンスクリーナー", [], {
+            ph: "アルカリ性",
+            uses: ["油脂汚れ", "コーティングメンテナンス"],
+            parts: ["ボディ"],
+            strength: "マイルド",
+            diyDifficulty: "注意して使用",
+            coatingImpact: "影響しにくい",
+            safety: ["小範囲テスト", "メーカー説明優先"],
+            aiRecommendation: "条件付き",
+            aiVerified: true,
+            sourceUrl: "https://ganbass.net/?pid=186273168"
+          }],
+        ]),
+        ...catalogRows("PROVIDE", [
+          ["NO.4", "その他", "スケール除去剤", [], {
+            uses: ["スケール・水ジミ"],
+            parts: ["ボディ"],
+            strength: "標準",
+            diyDifficulty: "注意して使用",
+            coatingImpact: "弱める可能性あり",
+            safety: ["小範囲テスト", "乾燥禁止", "メーカー説明優先"],
+            aiRecommendation: "条件付き",
+            aiVerified: true,
+            sourceUrl: "https://provide.shop-pro.jp/?cbid=1491224&csid=0&mode=cate"
+          }],
+          ["PVD-A06", "その他", "黒ずみ・スケール除去剤", [], {
+            uses: ["スケール・水ジミ", "黒ずみ"],
+            parts: ["ボディ"],
+            cautionParts: ["再塗装", "劣化塗装", "金属モール", "特殊ホイール"],
+            strength: "強め",
+            diyDifficulty: "経験者向け",
+            coatingImpact: "弱める可能性あり",
+            safety: ["小範囲テスト", "乾燥禁止", "他ケミカルと混合禁止", "工程ごとに水ですすぐ"],
+            aiRecommendation: "条件付き",
+            aiVerified: true,
+            sourceUrl: "https://provide.shop-pro.jp/?pid=26514686"
+          }],
+          ["OC メンテナンスクリーナー", "その他", "油脂系汚れ除去", [], {
+            uses: ["油脂汚れ", "コーティングメンテナンス"],
+            parts: ["ボディ"],
+            strength: "標準",
+            diyDifficulty: "注意して使用",
+            coatingImpact: "弱める可能性あり",
+            safety: ["小範囲テスト", "メーカー説明優先"],
+            aiRecommendation: "条件付き",
+            aiVerified: true,
+            sourceUrl: "https://provide.shop-pro.jp/?cbid=1010464&csid=0&mode=cate"
+          }],
+          ["PVD-I07", "鉄粉除去", "鉄粉除去剤", [], {
+            uses: ["鉄粉"],
+            parts: ["ボディ", "ホイール"],
+            rinse: "必須",
+            strength: "標準",
+            diyDifficulty: "注意して使用",
+            safety: ["乾燥禁止", "十分にすすぐ", "メーカー説明優先"],
+            aiRecommendation: "条件付き",
+            aiVerified: true,
+            sourceUrl: "https://provide.shop-pro.jp/?cbid=1491224&csid=0&mode=cate"
+          }],
+          ["PVD-G03", "その他", "ガラス専用研磨剤", [], {
+            uses: ["油膜", "ガラス固着汚れ", "研磨"],
+            parts: ["ガラス"],
+            prohibitedParts: ["ボディ"],
+            rinse: "必須",
+            strength: "強め",
+            diyDifficulty: "経験者向け",
+            coatingImpact: "除去する可能性あり",
+            safety: ["小範囲テスト", "研磨しすぎ注意", "メーカー説明優先"],
+            aiRecommendation: "AIからは直接推奨しない",
+            aiVerified: true,
+            sourceUrl: "https://provide.shop-pro.jp/?cbid=1491224&csid=0&mode=cate"
+          }],
+        ]),
+        ...catalogRows("SOFT99", [
+          ["ガラスリフレッシュ", "その他", "ガラスのウロコ・油膜・撥水剤除去", [], {
+            uses: ["スケール・水ジミ", "油膜", "研磨"],
+            parts: ["ガラス"],
+            prohibitedParts: ["ボディ", "透明プラスチック"],
+            rinse: "必須",
+            environment: ["直射日光NG", "高温面NG", "長時間放置NG"],
+            strength: "強め",
+            diyDifficulty: "注意して使用",
+            coatingImpact: "除去する可能性あり",
+            safety: ["保護手袋推奨", "研磨しすぎ注意", "加工ガラス注意"],
+            aiRecommendation: "条件付き",
+            aiVerified: true,
+            sourceUrl: "https://www.soft99.co.jp/products/detail/05066/"
+          }],
+          ["ニュー油膜ねこそぎクリーナー", "その他", "ガラス油膜・劣化撥水剤除去", [], {
+            uses: ["油膜", "研磨"],
+            parts: ["ガラス"],
+            prohibitedParts: ["ボディ", "透明プラスチック", "撥水加工ガラス"],
+            rinse: "必須",
+            environment: ["直射日光NG", "高温面NG"],
+            strength: "標準",
+            diyDifficulty: "注意して使用",
+            coatingImpact: "除去する可能性あり",
+            safety: ["保護手袋推奨", "用途外使用禁止"],
+            aiRecommendation: "条件付き",
+            aiVerified: true,
+            sourceUrl: "https://www.soft99.co.jp/products/detail/05054/"
+          }],
+          ["ニューピッチクリーナー", "その他", "ピッチ・タール・虫汚れ除去", [], {
+            ph: "溶剤系",
+            uses: ["ピッチ・タール", "虫"],
+            parts: ["ボディ"],
+            prohibitedParts: ["再塗装", "劣化塗装", "ゴム"],
+            environment: ["高温面NG", "換気"],
+            strength: "標準",
+            diyDifficulty: "注意して使用",
+            coatingImpact: "弱める可能性あり",
+            safety: ["保護手袋推奨", "火気厳禁", "換気"],
+            aiRecommendation: "条件付き",
+            aiVerified: true,
+            sourceUrl: "https://www.soft99.co.jp/products/detail/02026/"
+          }],
+          ["フクピカ 虫・フン取りシート強化タイプ", "その他", "虫・鳥フン・樹液除去", [], {
+            uses: ["虫", "鳥フン", "樹液"],
+            parts: ["ボディ", "ガラス"],
+            strength: "マイルド",
+            diyDifficulty: "初心者向け",
+            coatingImpact: "影響しにくい",
+            safety: ["砂や泥を先に除去", "強くこすらない"],
+            aiRecommendation: "通常候補",
+            aiVerified: true,
+            sourceUrl: "https://www.soft99.co.jp/products/detail/04119/"
+          }],
+          ["99工房モドシ隊 ホイール鉄粉溶解クリーナー", "鉄粉除去", "ホイール鉄粉除去", [], {
+            uses: ["鉄粉", "ブレーキダスト"],
+            parts: ["ホイール"],
+            prohibitedParts: ["鉄製ホイール", "メッキ", "アルマイト", "再塗装", "特殊加工ホイール"],
+            rinse: "必須",
+            strength: "強め",
+            diyDifficulty: "経験者向け",
+            safety: ["保護手袋必須", "冷えたホイールで使用", "十分にすすぐ", "目立たない場所で確認"],
+            aiRecommendation: "AIからは直接推奨しない",
+            aiVerified: true,
+            sourceUrl: "https://www.soft99.co.jp/products/detail/09507/"
+          }],
+        ]),
+      );
       function finderCandidate(id, reason, caution, traits = []) {
         return { id, reason, caution, traits };
       }
@@ -6343,9 +6505,7 @@
               name: item.name,
               type: item.type,
               purpose: item.purpose,
-              ratio: 0,
-              capacity: 0,
-              stock: 0,
+              ratio: item.defaultRatio || 0,
               image: "",
               catalogId: item.id,
               catalogSource: item.source,
@@ -6405,17 +6565,12 @@
           return;
         }
         let a = load("chemicals", []),
-          img = await readFile($("chemImage")),
-          cap = +$("chemCapacity").value || 0,
-          stock = +$("chemStock").value || 0;
-        if (cap > 0 && stock === 0) stock = cap;
+          img = await readFile($("chemImage"));
         a.unshift({
           manufacturer: $("chemManufacturer").value.trim(),
           name,
           type: $("chemType").value,
           ratio: +$("chemRatio").value || 0,
-          capacity: cap,
-          stock,
           image: img,
         });
         if (save("chemicals", a)) {
@@ -6424,8 +6579,6 @@
             "chemManufacturer",
             "chemName",
             "chemRatio",
-            "chemCapacity",
-            "chemStock",
             "chemImage",
           ].forEach((id) => ($(id).value = ""));
           await cleanupUnusedPhotos();
@@ -6531,8 +6684,6 @@
         $("editChemName").value = c.name || "";
         $("editChemType").value = c.type || "その他";
         $("editChemRatio").value = c.ratio || "";
-        $("editChemCapacity").value = c.capacity || "";
-        $("editChemStock").value = c.stock || "";
         $("chemicalEditor").style.display = "block";
         $("chemicalEditor").scrollIntoView({
           behavior: "smooth",
@@ -6541,14 +6692,6 @@
       }
       function closeChemicalEditor() {
         $("chemicalEditor").style.display = "none";
-      }
-      function setEditStockPercent(p) {
-        let cap = +$("editChemCapacity").value || 0;
-        if (cap <= 0) {
-          alert("先に容量を入力してください。");
-          return;
-        }
-        $("editChemStock").value = Math.round((cap * p) / 100);
       }
       function saveChemicalEdit() {
         let i = +$("editChemIndex").value,
@@ -6565,8 +6708,6 @@
           name,
           type: $("editChemType").value,
           ratio: +$("editChemRatio").value || 0,
-          capacity: +$("editChemCapacity").value || 0,
-          stock: +$("editChemStock").value || 0,
         };
         const catalogItem = CHEMICAL_CATALOG.find((item) =>
           catalogItemMatchesChemical(item, a[i]),
@@ -6732,9 +6873,7 @@
               .slice(0, 3)
               .map((chemical) => {
                 const image = chemicalDisplayImage(chemical);
-                const capacity = numberOr(chemical.capacity, 0);
-                const stock = numberOr(chemical.stock, 0);
-                return `<div class="list-item row"><img class="mini-img" src="${image}" alt=""><div style="flex:1">${chemical.manufacturer ? `<span class="chemical-maker">${escapeHTML(chemical.manufacturer)}</span>` : ""}<div class="row between"><b>${escapeHTML(chemical.name || "名称なし")}</b><span class="tag">${escapeHTML(chemical.type || "その他")}</span></div><div class="muted tiny">${capacity ? `残量 ${stock}/${capacity}mL` : `残量 ${stock || 0}mL`}</div></div></div>`;
+                return `<div class="list-item row"><img class="mini-img" src="${image}" alt=""><div style="flex:1">${chemical.manufacturer ? `<span class="chemical-maker">${escapeHTML(chemical.manufacturer)}</span>` : ""}<div class="row between"><b>${escapeHTML(chemical.name || "名称なし")}</b><span class="tag">${escapeHTML(chemical.type || "その他")}</span></div>${chemical.purpose ? `<div class="muted tiny">${escapeHTML(chemical.purpose)}</div>` : ""}</div></div>`;
               })
               .join("")
           : "まだ登録されていません。";
@@ -6785,17 +6924,8 @@
         $("chemicalList").innerHTML = c.length
           ? c
               .map((x, i) => {
-                let cap = +x.capacity || 0,
-                  stock = +x.stock || 0,
-                  image = chemicalDisplayImage(x),
-                  pct =
-                    cap > 0
-                      ? Math.max(
-                          0,
-                          Math.min(100, Math.round((stock / cap) * 100)),
-                        )
-                      : 0;
-                return `<div class="list-item row"><img class="mini-img" src="${image}" alt="${escapeHTML(x.type || "ケミカル")}のイメージ"><div style="flex:1">${x.manufacturer ? `<span class="chemical-maker">${escapeHTML(x.manufacturer)}</span>` : ""}<div class="row between"><b>${escapeHTML(x.name || "名称なし")}</b><span class="tag">${escapeHTML(x.type || "その他")}</span></div>${x.purpose ? `<div class="muted tiny">${escapeHTML(x.purpose)}</div>` : ""}<div class="muted tiny">推奨 ${x.ratio ? numberOr(x.ratio, 0) + "倍" : "—"} / ${cap ? `残量 ${stock}/${cap}mL (${pct}%)` : `残量 ${stock || 0}mL`}</div><div class="progress"><i style="width:${pct}%"></i></div><div class="stock-actions">${isGreenStarChemical(x) ? '<button class="secondary tiny" onclick="openGreenStarGuide()">使い方</button>' : ""}<button class="secondary tiny" onclick="openChemicalEditor(${i})">編集</button><button class="ghost danger tiny" onclick="delChem(${i})">削除</button></div></div></div>`;
+                const image = chemicalDisplayImage(x);
+                return `<div class="list-item row"><img class="mini-img" src="${image}" alt="${escapeHTML(x.type || "ケミカル")}のイメージ"><div style="flex:1">${x.manufacturer ? `<span class="chemical-maker">${escapeHTML(x.manufacturer)}</span>` : ""}<div class="row between"><b>${escapeHTML(x.name || "名称なし")}</b><span class="tag">${escapeHTML(x.type || "その他")}</span></div>${x.purpose ? `<div class="muted tiny">${escapeHTML(x.purpose)}</div>` : ""}<div class="muted tiny">推奨 ${x.ratio ? numberOr(x.ratio, 0) + "倍" : "—"}</div><div class="stock-actions">${isGreenStarChemical(x) ? '<button class="secondary tiny" onclick="openGreenStarGuide()">使い方</button>' : ""}<button class="secondary tiny" onclick="openChemicalEditor(${i})">編集</button><button class="ghost danger tiny" onclick="delChem(${i})">削除</button></div></div></div>`;
               })
               .join("")
           : '<span class="muted">まだありません。</span>';
