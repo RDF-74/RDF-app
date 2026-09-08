@@ -930,12 +930,24 @@ async function renderChemicalStandardSettings(id) {
       }).join("")
     : '<p class="muted">まだ標準設定はありません。</p>';
 
-  setCustomerContent(`<section class="card"><h2>施工プラン標準設定</h2><p><strong>${escapeHtml(recordareChemicalName(chemical))}</strong></p><p class="muted">過去実績が少ない工程で使うRE:CORDARE標準です。メーカー公式情報とは別に扱います。</p>${rows}</section><form class="card form-card" id="chemicalStandardForm"><h2>標準設定を追加・更新</h2><p class="muted">このケミカルを標準で使う工程を複数選択できます。選んだ工程には同じ使用目安・メモを保存します。</p><div class="pricing-group"><div class="pricing-group-title">工程（複数選択可）</div>${plannerStepOptions().map((step) => `<label class="pricing-choice pricing-choice-main"><input type="checkbox" name="step_key" value="${escapeHtml(step.step_key)}"><span><strong>${escapeHtml(step.name)}</strong></span></label>`).join("")}</div><label>標準使用目安mL<input name="amount" type="number" inputmode="decimal" min="0.001" step="0.001"></label><label>メモ<input name="notes"></label><p class="error hidden" id="chemicalStandardFormError"></p><button class="primary" type="submit">標準設定を保存</button></form><button class="text-button" type="button" id="backChemicalStandard">← ケミカルへ戻る</button>`);
+  const standardByStep = new Map((standards || []).map((standard) => [standard.step_key, standard]));
+  const stepChoiceMarkup = plannerStepOptions().map((step) => {
+    const saved = standardByStep.get(step.step_key);
+    const checked = Boolean(saved);
+    return `<div class="pricing-choice"><label class="pricing-choice-main"><input type="checkbox" name="step_key" value="${escapeHtml(step.step_key)}" ${checked ? "checked" : ""}><span><strong>${escapeHtml(step.name)}</strong></span></label><div class="pricing-amount ${checked ? "" : "hidden"}" data-standard-step-fields="${escapeHtml(step.step_key)}"><label>標準使用目安mL<input data-standard-amount type="number" inputmode="decimal" min="0.001" step="0.001" value="${saved?.standard_usage_amount ?? ""}"></label><label>メモ<input data-standard-notes value="${escapeHtml(saved?.notes || "")}"></label></div></div>`;
+  }).join("");
 
-  document.getElementById("chemicalStandardForm").addEventListener("submit", async (event) => {
+  setCustomerContent(`<section class="card"><h2>施工プラン標準設定</h2><p><strong>${escapeHtml(recordareChemicalName(chemical))}</strong></p><p class="muted">過去実績が少ない工程で使うRE:CORDARE標準です。メーカー公式情報とは別に扱います。</p>${rows}</section><form class="card form-card" id="chemicalStandardForm"><h2>標準設定を追加・更新</h2><p class="muted">工程を複数選択し、選んだ工程ごとに使用目安とメモを設定できます。</p><div class="pricing-group"><div class="pricing-group-title">工程（複数選択可）</div>${stepChoiceMarkup}</div><p class="error hidden" id="chemicalStandardFormError"></p><button class="primary" type="submit">標準設定を保存</button></form><button class="text-button" type="button" id="backChemicalStandard">← ケミカルへ戻る</button>`);
+
+  const standardForm = document.getElementById("chemicalStandardForm");
+  standardForm.querySelectorAll('input[name="step_key"]').forEach((checkbox) => checkbox.addEventListener("change", () => {
+    standardForm.querySelector(`[data-standard-step-fields="${checkbox.value}"]`)?.classList.toggle("hidden", !checkbox.checked);
+  }));
+
+  standardForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
-    const selectedSteps = [...form.querySelectorAll('input[name="step_key"]:checked')].map((input) => input.value);
+    const selectedSteps = [...form.querySelectorAll('input[name="step_key"]:checked')];
     const message = document.getElementById("chemicalStandardFormError");
     if (!selectedSteps.length) {
       message.textContent = "工程を1つ以上選択してください。";
@@ -943,17 +955,21 @@ async function renderChemicalStandardSettings(id) {
       return;
     }
     message.classList.add("hidden");
-    const amount = form.amount.value === "" ? null : Number(form.amount.value);
     const now = new Date().toISOString();
-    const values = selectedSteps.map((stepKey) => ({
-      recordare_chemical_id: id,
-      course_code: "all",
-      step_key: stepKey,
-      standard_usage_amount: amount,
-      notes: emptyToNull(form.notes.value),
-      is_active: true,
-      updated_at: now,
-    }));
+    const values = selectedSteps.map((checkbox) => {
+      const fields = form.querySelector(`[data-standard-step-fields="${checkbox.value}"]`);
+      const amountInput = fields?.querySelector("[data-standard-amount]");
+      const notesInput = fields?.querySelector("[data-standard-notes]");
+      return {
+        recordare_chemical_id: id,
+        course_code: "all",
+        step_key: checkbox.value,
+        standard_usage_amount: amountInput?.value === "" ? null : Number(amountInput?.value),
+        notes: emptyToNull(notesInput?.value),
+        is_active: true,
+        updated_at: now,
+      };
+    });
     const button = form.querySelector('button[type="submit"]');
     button.disabled = true;
     button.textContent = "保存中…";
