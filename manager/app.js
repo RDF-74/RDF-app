@@ -1006,7 +1006,7 @@ async function renderReservationForm(reservation = null) {
 
   const discountMarkup = reservationDiscounts.map((discount) => `<label class="pricing-choice pricing-choice-main"><input type="checkbox" data-discount-code="${discount.code}" ${selectedDiscounts.has(discount.code) ? "checked" : ""} /><span><strong>${escapeHtml(discount.label)}</strong><small>−${escapeHtml(yen(discount.amount))}${discount.capped ? "（通常割引）" : "（別枠）"}</small></span></label>`).join("");
 
-  setReservationContent(`<form class="card form-card" id="reservationForm"><h2>${isEdit ? "予約を編集" : "新規予約"}</h2>${isEdit ? '<button class="secondary service-create-button" type="button" id="createServiceRecordButton">この予約から施工記録を作成</button>' : ""}<label for="reservationCustomerSearch">顧客</label><input id="reservationCustomerSearch" type="search" placeholder="顧客名で検索" autocomplete="off" value="${valueOf(initialCustomerName)}" required /><input id="reservationCustomerId" type="hidden" value="${valueOf(reservation?.customer_id)}" /><div class="picker-results" id="reservationCustomerResults"></div><button class="text-button ${reservation?.customer_id ? "" : "hidden"}" type="button" id="viewReservationCustomer">顧客詳細を見る</button><label for="reservationVehicle">車両</label><select id="reservationVehicle" name="vehicle_id" required disabled><option value="">先に顧客を選択してください</option></select><label for="reservationSizeClass">車両区分</label><select id="reservationSizeClass" name="vehicle_size_class" required><option value="">車両区分を選択</option>${Object.entries(reservationSizeClasses).map(([value, label]) => `<option value="${value}" ${reservation?.vehicle_size_class === value ? "selected" : ""}>${label}</option>`).join("")}</select><p class="muted">一度選んだ車両区分は車両情報にも保存し、次回から自動入力します。</p><label for="reservationCourse">コース</label><select id="reservationCourse" name="course_code" required>${Object.entries(reservationCourses).map(([value, label]) => `<option value="${value}" ${reservation?.course_code === value ? "selected" : ""}>${label}</option>`).join("")}</select><label for="reservationDate">施工日</label><input id="reservationDate" name="reservation_date" type="date" required value="${valueOf(reservationDate(reservation?.reservation_date) || new Date().toLocaleDateString("en-CA"))}" /><label for="reservationTime">開始時間</label><input id="reservationTime" name="start_time" type="time" required value="${valueOf(reservationTime(reservation?.start_time))}" /><div class="time-planning-group"><div class="pricing-group-title">予定時間</div><div class="time-grid"><label>準備<input id="reservationPrepMinutes" name="planned_prep_minutes" type="number" inputmode="numeric" min="0" step="5" value="${initialTimes.prep}" /></label><label>施工<input id="reservationServiceMinutes" name="planned_service_minutes" type="number" inputmode="numeric" min="0" step="5" value="${initialTimes.service}" /></label><label>片付け<input id="reservationCleanupMinutes" name="planned_cleanup_minutes" type="number" inputmode="numeric" min="0" step="5" value="${initialTimes.cleanup}" /></label></div><div class="time-summary"><span>予約枠 <strong id="reservationSlotMinutes">${initialTimes.slot}分</strong></span><span>終了予定 <strong id="reservationEndTime">--:--</strong></span></div><p class="muted">準備＋施工＋片付けを予約枠として確保します。移動時間は含みません。</p></div><div class="pricing-group"><div class="pricing-group-title">オプション</div>${optionMarkup}</div><div class="pricing-group"><div class="pricing-group-title">割引</div><p class="muted">通常割引は合計最大¥1,000。同一住所2台目割は別枠です。</p>${discountMarkup}</div><label for="reservationTravelZone">出張距離</label><select id="reservationTravelZone" name="travel_zone" required><option value="">出張距離を選択</option>${Object.entries(reservationTravelZones).map(([value, item]) => `<option value="${value}" ${initialTravelZone === value ? "selected" : ""}>${escapeHtml(item.label)}${item.fee ? `（+${escapeHtml(yen(item.fee))}）` : ""}</option>`).join("")}</select><div class="price-summary"><div class="price-line"><span>基本料金</span><strong id="priceBase">¥0</strong></div><div class="price-line"><span>オプション</span><strong id="priceOptions">¥0</strong></div><div class="price-line"><span>出張料</span><strong id="priceTravel">¥0</strong></div><div class="price-line"><span>割引</span><strong id="priceDiscount">−¥0</strong></div><div class="price-line price-calculated"><span>自動計算</span><strong id="priceCalculated">¥0</strong></div><label for="reservationFinalTotal">予定合計（手動調整可）</label><input id="reservationFinalTotal" name="final_total" type="number" inputmode="numeric" min="0" step="100" value="${reservation?.final_total ?? ""}" required /><p class="muted">「〜」料金・要相談メニューは実車確認後に予定合計を調整できます。</p></div><label for="reservationStatus">予約状態</label><select id="reservationStatus" name="status" required>${Object.entries(reservationStatuses).map(([value, label]) => `<option value="${value}" ${reservation?.status === value || (!reservation && value === "confirmed") ? "selected" : ""}>${label}</option>`).join("")}</select><label for="reservationNotes">備考</label><textarea id="reservationNotes" name="notes" rows="3">${valueOf(reservation?.notes)}</textarea><p class="error hidden" id="reservationFormError"></p><button class="primary" type="submit">${isEdit ? "変更を保存" : "予約を登録"}</button><button class="text-button" type="button" id="cancelReservationButton">予約一覧へ戻る</button></form>`);
+  setReservationContent(`<form class="card form-card" id="reservationForm"><h2>${isEdit ? "予約を編集" : "新規予約"}</h2>${isEdit ? '<button class="secondary service-create-button" type="button" id="reservationPrePlanButton">施工プランを見る（一次提案）</button><button class="secondary service-create-button" type="button" id="createServiceRecordButton">この予約から施工記録を作成</button>' : ""}<label for="reservationCustomerSearch">顧客</label><input id="reservationCustomerSearch" type="search" placeholder="顧客名で検索" autocomplete="off" value="${valueOf(initialCustomerName)}" required /><input id="reservationCustomerId" type="hidden" value="${valueOf(reservation?.customer_id)}" /><div class="picker-results" id="reservationCustomerResults"></div><button class="text-button ${reservation?.customer_id ? "" : "hidden"}" type="button" id="viewReservationCustomer">顧客詳細を見る</button><label for="reservationVehicle">車両</label><select id="reservationVehicle" name="vehicle_id" required disabled><option value="">先に顧客を選択してください</option></select><label for="reservationSizeClass">車両区分</label><select id="reservationSizeClass" name="vehicle_size_class" required><option value="">車両区分を選択</option>${Object.entries(reservationSizeClasses).map(([value, label]) => `<option value="${value}" ${reservation?.vehicle_size_class === value ? "selected" : ""}>${label}</option>`).join("")}</select><p class="muted">一度選んだ車両区分は車両情報にも保存し、次回から自動入力します。</p><label for="reservationCourse">コース</label><select id="reservationCourse" name="course_code" required>${Object.entries(reservationCourses).map(([value, label]) => `<option value="${value}" ${reservation?.course_code === value ? "selected" : ""}>${label}</option>`).join("")}</select><label for="reservationDate">施工日</label><input id="reservationDate" name="reservation_date" type="date" required value="${valueOf(reservationDate(reservation?.reservation_date) || new Date().toLocaleDateString("en-CA"))}" /><label for="reservationTime">開始時間</label><input id="reservationTime" name="start_time" type="time" required value="${valueOf(reservationTime(reservation?.start_time))}" /><div class="time-planning-group"><div class="pricing-group-title">予定時間</div><div class="time-grid"><label>準備<input id="reservationPrepMinutes" name="planned_prep_minutes" type="number" inputmode="numeric" min="0" step="5" value="${initialTimes.prep}" /></label><label>施工<input id="reservationServiceMinutes" name="planned_service_minutes" type="number" inputmode="numeric" min="0" step="5" value="${initialTimes.service}" /></label><label>片付け<input id="reservationCleanupMinutes" name="planned_cleanup_minutes" type="number" inputmode="numeric" min="0" step="5" value="${initialTimes.cleanup}" /></label></div><div class="time-summary"><span>予約枠 <strong id="reservationSlotMinutes">${initialTimes.slot}分</strong></span><span>終了予定 <strong id="reservationEndTime">--:--</strong></span></div><p class="muted">準備＋施工＋片付けを予約枠として確保します。移動時間は含みません。</p></div><div class="pricing-group"><div class="pricing-group-title">オプション</div>${optionMarkup}</div><div class="pricing-group"><div class="pricing-group-title">割引</div><p class="muted">通常割引は合計最大¥1,000。同一住所2台目割は別枠です。</p>${discountMarkup}</div><label for="reservationTravelZone">出張距離</label><select id="reservationTravelZone" name="travel_zone" required><option value="">出張距離を選択</option>${Object.entries(reservationTravelZones).map(([value, item]) => `<option value="${value}" ${initialTravelZone === value ? "selected" : ""}>${escapeHtml(item.label)}${item.fee ? `（+${escapeHtml(yen(item.fee))}）` : ""}</option>`).join("")}</select><div class="price-summary"><div class="price-line"><span>基本料金</span><strong id="priceBase">¥0</strong></div><div class="price-line"><span>オプション</span><strong id="priceOptions">¥0</strong></div><div class="price-line"><span>出張料</span><strong id="priceTravel">¥0</strong></div><div class="price-line"><span>割引</span><strong id="priceDiscount">−¥0</strong></div><div class="price-line price-calculated"><span>自動計算</span><strong id="priceCalculated">¥0</strong></div><label for="reservationFinalTotal">予定合計（手動調整可）</label><input id="reservationFinalTotal" name="final_total" type="number" inputmode="numeric" min="0" step="100" value="${reservation?.final_total ?? ""}" required /><p class="muted">「〜」料金・要相談メニューは実車確認後に予定合計を調整できます。</p></div><label for="reservationStatus">予約状態</label><select id="reservationStatus" name="status" required>${Object.entries(reservationStatuses).map(([value, label]) => `<option value="${value}" ${reservation?.status === value || (!reservation && value === "confirmed") ? "selected" : ""}>${label}</option>`).join("")}</select><label for="reservationNotes">備考</label><textarea id="reservationNotes" name="notes" rows="3">${valueOf(reservation?.notes)}</textarea><p class="error hidden" id="reservationFormError"></p><button class="primary" type="submit">${isEdit ? "変更を保存" : "予約を登録"}</button><button class="text-button" type="button" id="cancelReservationButton">予約一覧へ戻る</button></form>`);
 
   const search = document.getElementById("reservationCustomerSearch");
   const customerId = document.getElementById("reservationCustomerId");
@@ -1143,6 +1143,7 @@ async function renderReservationForm(reservation = null) {
   updateSchedule();
 
   if (isEdit) {
+    document.getElementById("reservationPrePlanButton")?.addEventListener("click", () => renderReservationPrePlan(reservation));
     const serviceButton = document.getElementById("createServiceRecordButton");
     const { data: existingService } = await supabase.from("service_records").select("id").eq("reservation_id", reservation.id).maybeSingle();
     if (existingService?.id) serviceButton.textContent = "施工記録を見る";
@@ -1295,6 +1296,109 @@ const buildServiceSteps = (courseCode, selectedOptions) => {
   jsonArray(selectedOptions).forEach((option) => (serviceOptionSteps[option.code] || []).forEach((step) => { if (courseCode !== "reset_coat" || !byKey.has(step.step_key)) byKey.set(step.step_key, { ...step, timed: true, skippable: true, rinseless: courseCode === "rinseless" ? "conditional" : "allowed" }); }));
   return [...byKey.values()].sort((a, b) => a.order_group - b.order_group || a.name.localeCompare(b.name, "ja"));
 };
+const plannerConfidence = (count) => count >= 5 ? "高" : count >= 2 ? "中" : count >= 1 ? "低" : "実績なし";
+
+async function renderReservationPrePlan(reservation) {
+  setReservationContent('<div class="card placeholder"><p class="muted">施工プランを作成しています…</p></div>');
+
+  const plannedSteps = buildServiceSteps(reservation.course_code, reservation.selected_options);
+  const { data: historyRecords, error: historyError } = await supabase
+    .from("service_records")
+    .select("id,service_date")
+    .eq("status", "completed")
+    .eq("course_code", reservation.course_code)
+    .order("service_date", { ascending: false })
+    .limit(20);
+
+  if (historyError) {
+    return setReservationContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(historyError))}</p><button class="text-button" id="backReservationPlan">← 予約へ戻る</button></div>`);
+  }
+
+  const recordIds = (historyRecords || []).map((record) => record.id);
+  let historySteps = [];
+  let historyUsages = [];
+  if (recordIds.length) {
+    const [{ data: stepRows, error: stepError }, { data: usageRows, error: usageError }] = await Promise.all([
+      supabase.from("service_steps")
+        .select("id,service_record_id,step_key,step_name")
+        .in("service_record_id", recordIds),
+      supabase.from("service_chemical_usages")
+        .select("service_record_id,service_step_id,recordare_chemical_id,usage_status,actual_amount,recordare_chemicals(id,unit,current_stock,status,chemical_catalog_products(manufacturer,product_name))")
+        .in("service_record_id", recordIds)
+        .eq("usage_status", "recorded"),
+    ]);
+    if (stepError || usageError) {
+      return setReservationContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(stepError || usageError))}</p><button class="text-button" id="backReservationPlan">← 予約へ戻る</button></div>`);
+    }
+    historySteps = stepRows || [];
+    historyUsages = usageRows || [];
+  }
+
+  const stepById = new Map(historySteps.map((step) => [step.id, step]));
+  const stats = new Map();
+  historyUsages.forEach((usage) => {
+    const step = stepById.get(usage.service_step_id);
+    if (!step || usage.actual_amount == null) return;
+    const chemical = Array.isArray(usage.recordare_chemicals) ? usage.recordare_chemicals[0] : usage.recordare_chemicals;
+    if (!chemical) return;
+    const key = `${step.step_key}|${usage.recordare_chemical_id}`;
+    if (!stats.has(key)) {
+      stats.set(key, {
+        stepKey: step.step_key,
+        chemicalId: usage.recordare_chemical_id,
+        chemical,
+        amounts: [],
+        recordIds: new Set(),
+      });
+    }
+    const item = stats.get(key);
+    item.amounts.push(Number(usage.actual_amount));
+    item.recordIds.add(usage.service_record_id);
+  });
+
+  const stepMarkup = plannedSteps.map((step, index) => {
+    const candidates = [...stats.values()]
+      .filter((item) => item.stepKey === step.step_key)
+      .map((item) => {
+        const average = item.amounts.reduce((sum, amount) => sum + amount, 0) / item.amounts.length;
+        return {
+          ...item,
+          average,
+          count: item.recordIds.size,
+        };
+      })
+      .sort((a, b) => b.count - a.count || a.average - b.average);
+
+    const candidateMarkup = candidates.length
+      ? candidates.map((item) => {
+          const unit = item.chemical?.unit || "mL";
+          const stock = item.chemical?.current_stock == null ? null : Number(item.chemical.current_stock);
+          const average = Math.round(item.average * 10) / 10;
+          const stockText = stock == null
+            ? "在庫未登録"
+            : stock < average
+              ? `現在在庫 ${stock}${unit} ・ この目安量に不足`
+              : `現在在庫 ${stock}${unit}`;
+          return `<div class="service-timing-correction"><strong>${escapeHtml(recordareChemicalName(item.chemical))}</strong><p class="muted">平均使用量 ${escapeHtml(average)}${escapeHtml(unit)} ・ 実績 ${escapeHtml(item.count)}件 ・ 信頼度 ${escapeHtml(plannerConfidence(item.count))}</p><p class="muted">${escapeHtml(stockText)}</p></div>`;
+        }).join("")
+      : '<p class="muted">この工程のケミカル使用実績はまだありません。</p>';
+
+    return `<section class="card"><p class="muted">工程 ${index + 1}</p><h2>${escapeHtml(step.name)}</h2>${candidateMarkup}</section>`;
+  }).join("");
+
+  const options = jsonArray(reservation.selected_options);
+  const optionText = options.length
+    ? options.map((item) => reservationOptions.find((option) => option.code === item.code)?.label || item.code).join(" / ")
+    : "なし";
+  const referenceCount = recordIds.length;
+  const trackedReferenceCount = new Set(historyUsages.map((usage) => usage.service_record_id)).size;
+  const summaryConfidence = plannerConfidence(trackedReferenceCount);
+
+  setReservationContent(`<section class="card"><h2>施工プラン（一次提案）</h2><p><strong>${escapeHtml(reservationCourses[reservation.course_code] || reservation.course_code)}</strong></p><p class="muted">オプション：${escapeHtml(optionText)}</p><p class="muted">同コースの完了施工を最大20件参照し、工程ごとの実使用量からケミカル候補を表示しています。現地の施工前確認で変更する前提の一次提案です。</p><p>参照施工 ${escapeHtml(referenceCount)}件 ・ 全体目安 ${escapeHtml(summaryConfidence)}</p></section>${stepMarkup}<button class="text-button" type="button" id="backReservationPlan">← 予約へ戻る</button>`);
+
+  document.getElementById("backReservationPlan")?.addEventListener("click", () => renderReservationForm(reservation));
+}
+
 const conditionTagLabels = ["水ジミ・スケール", "鉄粉多め", "虫汚れ多め", "傷あり", "未塗装樹脂白化", "ガラス油膜あり", "ガラスウロコあり", "ホイール汚れ強め"];
 const conditionFields = (tag) => tag === "水ジミ・スケール" ? '<select name="scale_level"><option value="light">軽度</option><option value="heavy">重度</option><option value="paint_impact">塗装影響あり</option></select>' : tag === "ガラス油膜あり" || tag === "ガラスウロコあり" ? '<label><input type="checkbox" name="area" value="front"> フロント</label><label><input type="checkbox" name="area" value="side"> サイド</label><label><input type="checkbox" name="area" value="rear"> リア</label>' : tag === "ホイール汚れ強め" ? '<select name="wheel_count"><option value="1">1本</option><option value="2">2本</option><option value="3">3本</option><option value="4">4本</option></select>' : '';
 let serviceElapsedInterval = null;
