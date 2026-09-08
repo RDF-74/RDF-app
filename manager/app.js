@@ -1396,18 +1396,61 @@ const plannerStepOptions = () => {
 };
 const plannerCourseLabels = { all: "全コース共通", ...reservationCourses };
 const plannerConfidence = (count) => count >= 5 ? "高" : count >= 2 ? "中" : count >= 1 ? "低" : "実績なし";
+const plannerConditionStepKeys = {
+  "水ジミ・スケール": ["step_900"],
+  "鉄粉多め": ["step_300"],
+  "未塗装樹脂白化": ["step_800", "resin_coat"],
+  "ガラス油膜あり": ["glass_oil"],
+  "ガラスウロコあり": ["glass_scale"],
+  "ホイール汚れ強め": ["wheel_scale"],
+};
+const plannerCoatingStateLabels = {
+  unknown: "未確認",
+  good: "良好に残存",
+  partial: "部分的に残存",
+  none: "残存なし",
+};
+const plannerConditionDetail = (tagKey, details = {}) => {
+  if (tagKey === "水ジミ・スケール") {
+    return { light: "軽度", heavy: "重度", paint_impact: "塗装影響あり" }[details.scale_level] || "";
+  }
+  if (tagKey === "ガラス油膜あり" || tagKey === "ガラスウロコあり") {
+    const labels = { front: "フロント", side: "サイド", rear: "リア" };
+    return jsonArray(details.areas).map((area) => labels[area] || area).join("・");
+  }
+  if (tagKey === "ホイール汚れ強め" && details.wheel_count) return `${details.wheel_count}本`;
+  return "";
+};
+const plannerPastStepStatus = (steps) => {
+  if (!steps?.length) return "該当工程なし";
+  if (steps.some((step) => step.skipped_reason)) return "スキップ";
+  if (steps.some((step) => step.ended_at)) return "実施";
+  if (steps.some((step) => step.started_at)) return "途中";
+  return "未実施";
+};
 
 async function renderReservationPrePlan(reservation) {
   setReservationContent('<div class="card placeholder"><p class="muted">施工プランを作成しています…</p></div>');
 
   const plannedSteps = buildServiceSteps(reservation.course_code, reservation.selected_options);
-  const [{ data: historyRecords, error: historyError }, { data: standardRows, error: standardError }] = await Promise.all([
+  const [
+    { data: historyRecords, error: historyError },
+    { data: vehicleHistoryRecords, error: vehicleHistoryError },
+    { data: standardRows, error: standardError },
+  ] = await Promise.all([
     supabase
       .from("service_records")
-      .select("id,service_date,course_code")
+      .select("id,service_date,course_code,vehicle_id,coating_state")
       .eq("status", "completed")
       .order("service_date", { ascending: false })
       .limit(50),
+    supabase
+      .from("service_records")
+      .select("id,service_date,course_code,vehicle_id,coating_state")
+      .eq("status", "completed")
+      .eq("vehicle_id", reservation.vehicle_id)
+      .order("service_date", { ascending: false })
+      .limit(10),
     supabase
       .from("recordare_chemical_step_standards")
       .select("id,recordare_chemical_id,course_code,step_key,standard_usage_amount,notes,recordare_chemicals(id,unit,current_stock,status,chemical_catalog_products(manufacturer,product_name))")
@@ -1415,45 +1458,60 @@ async function renderReservationPrePlan(reservation) {
       .eq("course_code", "all"),
   ]);
 
-  if (historyError || standardError) {
-    return setReservationContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(historyError || standardError))}</p><button class="text-button" id="backReservationPlan">← 予約へ戻る</button></div>`);
+  if (historyError || vehicleHistoryError || standardError) {
+    return setReservationContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(historyError || vehicleHistoryError || standardError))}</p><button class="text-button" id="backReservationPlan">← 予約へ戻る</button></div>`);
   }
 
-  const recordIds = (historyRecords || []).map((record) => record.id);
+  const vehicleRecordIds = (vehicleHistoryRecords || []).map((record) => record.id);
+  const recordIds = [...new Set([...(historyRecords || []).map((record) => record.id), ...vehicleRecordIds])];
   let historySteps = [];
   let historyUsages = [];
+  let vehicleConditions = [];
   if (recordIds.length) {
-    const [{ data: stepRows, error: stepError }, { data: usageRows, error: usageError }] = await Promise.all([
+    const requests = [
       supabase.from("service_steps")
-        .select("id,service_record_id,step_key,step_name")
+        .select("id,service_record_id,step_key,step_name,started_at,ended_at,skipped_reason")
         .in("service_record_id", recordIds),
       supabase.from("service_chemical_usages")
         .select("service_record_id,service_step_id,recordare_chemical_id,usage_status,actual_amount,recordare_chemicals(id,unit,current_stock,status,chemical_catalog_products(manufacturer,product_name))")
         .in("service_record_id", recordIds)
         .eq("usage_status", "recorded"),
-    ]);
-    if (stepError || usageError) {
-      return setReservationContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(stepError || usageError))}</p><button class="text-button" id="backReservationPlan">← 予約へ戻る</button></div>`);
+    ];
+    if (vehicleRecordIds.length) {
+      requests.push(
+        supabase.from("service_condition_tags")
+          .select("service_record_id,tag_key,details")
+          .in("service_record_id", vehicleRecordIds)
+      );
     }
-    historySteps = stepRows || [];
-    historyUsages = usageRows || [];
+    const [stepResult, usageResult, conditionResult] = await Promise.all(requests);
+    if (stepResult.error || usageResult.error || conditionResult?.error) {
+      return setReservationContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(stepResult.error || usageResult.error || conditionResult?.error))}</p><button class="text-button" id="backReservationPlan">← 予約へ戻る</button></div>`);
+    }
+    historySteps = stepResult.data || [];
+    historyUsages = usageResult.data || [];
+    vehicleConditions = conditionResult?.data || [];
   }
 
   const stepById = new Map(historySteps.map((step) => [step.id, step]));
-  const courseByRecord = new Map((historyRecords || []).map((record) => [record.id, record.course_code]));
+  const allHistoryRecords = [...new Map([...(historyRecords || []), ...(vehicleHistoryRecords || [])].map((record) => [record.id, record])).values()];
+  const recordById = new Map(allHistoryRecords.map((record) => [record.id, record]));
+  const courseByRecord = new Map(allHistoryRecords.map((record) => [record.id, record.course_code]));
   const stats = new Map();
   historyUsages.forEach((usage) => {
     const step = stepById.get(usage.service_step_id);
-    const courseCode = courseByRecord.get(usage.service_record_id);
-    if (!step || !courseCode || usage.actual_amount == null) return;
+    const record = recordById.get(usage.service_record_id);
+    const courseCode = record?.course_code;
+    if (!step || !record || !courseCode || usage.actual_amount == null) return;
     const chemical = Array.isArray(usage.recordare_chemicals) ? usage.recordare_chemicals[0] : usage.recordare_chemicals;
     if (!chemical) return;
-    const key = `${step.step_key}|${usage.recordare_chemical_id}|${courseCode}`;
+    const key = `${step.step_key}|${usage.recordare_chemical_id}|${courseCode}|${record.vehicle_id || ""}`;
     if (!stats.has(key)) {
       stats.set(key, {
         stepKey: step.step_key,
         chemicalId: usage.recordare_chemical_id,
         courseCode,
+        vehicleId: record.vehicle_id,
         chemical,
         amounts: [],
         recordIds: new Set(),
@@ -1488,14 +1546,18 @@ async function renderReservationPrePlan(reservation) {
 
   const stepMarkup = plannedSteps.map((step, index) => {
     const stepStats = [...stats.values()].filter((item) => item.stepKey === step.step_key);
-    const sameCourse = aggregateUsageCandidates(stepStats.filter((item) => item.courseCode === reservation.course_code));
-    const otherCourse = aggregateUsageCandidates(stepStats.filter((item) => item.courseCode !== reservation.course_code));
+    const sameVehicle = aggregateUsageCandidates(stepStats.filter((item) => item.vehicleId === reservation.vehicle_id));
+    const sameCourse = aggregateUsageCandidates(stepStats.filter((item) => item.vehicleId !== reservation.vehicle_id && item.courseCode === reservation.course_code));
+    const otherCourse = aggregateUsageCandidates(stepStats.filter((item) => item.vehicleId !== reservation.vehicle_id && item.courseCode !== reservation.course_code));
 
     const standards = (standardRows || []).filter((item) => item.step_key === step.step_key);
 
     let sourceLabel = "";
     let candidates = [];
-    if (sameCourse.length) {
+    if (sameVehicle.length) {
+      sourceLabel = "この車の実績";
+      candidates = sameVehicle.map((item) => ({ ...item, kind: "vehicle" }));
+    } else if (sameCourse.length) {
       sourceLabel = "同コース実績";
       candidates = sameCourse.map((item) => ({ ...item, kind: "same" }));
     } else if (otherCourse.length) {
@@ -1523,9 +1585,11 @@ async function renderReservationPrePlan(reservation) {
               : `現在在庫 ${stock}${unit}`;
           const detail = item.kind === "standard"
             ? `RE:CORDARE標準 ・ ${average == null ? "使用目安未設定" : `使用目安 ${average}${unit}`}${item.notes ? ` ・ ${item.notes}` : ""}`
-            : item.kind === "same"
-              ? `同コース実績 ・ 平均使用量 ${average}${unit} ・ 実績 ${item.count}件 ・ 信頼度 ${plannerConfidence(item.count)}`
-              : `他コース参考 ・ 平均使用量 ${average}${unit} ・ 実績 ${item.count}件`;
+            : item.kind === "vehicle"
+              ? `この車の実績 ・ 平均使用量 ${average}${unit} ・ 実績 ${item.count}件 ・ 信頼度 ${plannerConfidence(item.count)}`
+              : item.kind === "same"
+                ? `同コース実績 ・ 平均使用量 ${average}${unit} ・ 実績 ${item.count}件 ・ 信頼度 ${plannerConfidence(item.count)}`
+                : `他コース参考 ・ 平均使用量 ${average}${unit} ・ 実績 ${item.count}件`;
           return `<div class="service-timing-correction"><strong>${escapeHtml(recordareChemicalName(item.chemical))}</strong><p class="muted">${escapeHtml(detail)}</p><p class="muted">${escapeHtml(stockText)}</p></div>`;
         }).join("")
       : '<p class="muted">候補なし。RE:CORDARE標準を登録すると、実績がない工程でも提案できます。</p>';
@@ -1537,27 +1601,78 @@ async function renderReservationPrePlan(reservation) {
   const optionText = options.length
     ? options.map((item) => reservationOptions.find((option) => option.code === item.code)?.label || item.code).join(" / ")
     : "なし";
-  const trackedByCourse = new Map();
-  historyUsages.forEach((usage) => {
-    const courseCode = courseByRecord.get(usage.service_record_id);
-    if (!courseCode) return;
-    if (!trackedByCourse.has(courseCode)) trackedByCourse.set(courseCode, new Set());
-    trackedByCourse.get(courseCode).add(usage.service_record_id);
+  const plannerStepNameByKey = new Map(plannerStepOptions().map((step) => [step.step_key, step.name]));
+  const vehicleStepsByRecord = new Map();
+  historySteps.forEach((step) => {
+    if (!vehicleRecordIds.includes(step.service_record_id)) return;
+    if (!vehicleStepsByRecord.has(step.service_record_id)) vehicleStepsByRecord.set(step.service_record_id, []);
+    vehicleStepsByRecord.get(step.service_record_id).push(step);
   });
-  const sameCourseCount = trackedByCourse.get(reservation.course_code)?.size || 0;
-  const otherCourseCount = [...trackedByCourse.entries()]
-    .filter(([courseCode]) => courseCode !== reservation.course_code)
-    .reduce((sum, [, ids]) => sum + ids.size, 0);
-  const standardCount = (standardRows || []).length;
-  const summaryConfidence = sameCourseCount
-    ? plannerConfidence(sameCourseCount)
-    : otherCourseCount
-      ? "他コース参考"
-      : standardCount
-        ? "RE:CORDARE標準"
-        : "実績なし";
+  const vehicleConditionsByRecord = new Map();
+  vehicleConditions.forEach((condition) => {
+    if (!vehicleConditionsByRecord.has(condition.service_record_id)) vehicleConditionsByRecord.set(condition.service_record_id, []);
+    vehicleConditionsByRecord.get(condition.service_record_id).push(condition);
+  });
 
-  setReservationContent(`<section class="card"><h2>施工プラン（一次提案）</h2><p><strong>${escapeHtml(reservationCourses[reservation.course_code] || reservation.course_code)}</strong></p><p class="muted">オプション：${escapeHtml(optionText)}</p><p class="muted">同コース実績を最優先し、なければ他コースの同工程実績、それもなければ工程ごとのRE:CORDARE標準を使います。現地の施工前確認で変更する前提の一次提案です。</p><p>同コース実績 ${escapeHtml(sameCourseCount)}件 ・ 他コース参考 ${escapeHtml(otherCourseCount)}件 ・ 標準設定 ${escapeHtml(standardCount)}件</p><p>全体目安 ${escapeHtml(summaryConfidence)}</p></section>${stepMarkup}<button class="text-button" type="button" id="backReservationPlan">← 予約へ戻る</button>`);
+  const seenConditionTags = new Set();
+  const vehicleConditionInsights = [];
+  (vehicleHistoryRecords || []).forEach((record) => {
+    (vehicleConditionsByRecord.get(record.id) || []).forEach((condition) => {
+      if (seenConditionTags.has(condition.tag_key)) return;
+      seenConditionTags.add(condition.tag_key);
+      const relatedStepKeys = plannerConditionStepKeys[condition.tag_key] || [];
+      const relatedSteps = (vehicleStepsByRecord.get(record.id) || []).filter((step) => relatedStepKeys.includes(step.step_key));
+      const pastStatus = relatedStepKeys.length ? plannerPastStepStatus(relatedSteps) : "重点確認";
+      const detail = plannerConditionDetail(condition.tag_key, condition.details || {});
+      const stepNames = relatedStepKeys.map((key) => plannerStepNameByKey.get(key) || key);
+      const recommendation = !relatedStepKeys.length
+        ? "今回も重点確認"
+        : pastStatus === "実施"
+          ? `前回実施・今回も${stepNames.join("・")}の要否を確認`
+          : pastStatus === "スキップ"
+            ? `前回スキップ・今回も${stepNames.join("・")}の要否を確認`
+            : `今回も${stepNames.join("・")}の要否を確認`;
+      vehicleConditionInsights.push({
+        date: record.service_date,
+        tagKey: condition.tag_key,
+        detail,
+        pastStatus,
+        recommendation,
+        relatedStepKeys,
+      });
+    });
+  });
+
+  const latestVehicleRecord = (vehicleHistoryRecords || [])[0];
+  const latestCoatingText = latestVehicleRecord?.coating_state
+    ? plannerCoatingStateLabels[latestVehicleRecord.coating_state] || latestVehicleRecord.coating_state
+    : "";
+  const vehicleHistoryMarkup = (vehicleHistoryRecords || []).length
+    ? `<section class="card"><h2>この車の過去履歴からの確認候補</h2><p class="muted">この車の完了施工 ${escapeHtml(vehicleHistoryRecords.length)}件を参照しています。過去に状態があって工程を実施した項目は、今回も確認候補として表示します。</p>${latestCoatingText ? `<p><strong>直近の既存コーティング</strong> ・ ${escapeHtml(latestVehicleRecord.service_date)} ・ ${escapeHtml(latestCoatingText)}</p>` : ""}${vehicleConditionInsights.length ? vehicleConditionInsights.map((item) => `<div class="service-timing-correction"><p><strong>${escapeHtml(item.tagKey)}${item.detail ? `（${escapeHtml(item.detail)}）` : ""}</strong></p><p class="muted">${escapeHtml(item.date)} ・ 前回工程：${escapeHtml(item.pastStatus)} ・ ${escapeHtml(item.recommendation)}</p></div>`).join("") : '<p class="muted">施工前状態の履歴はまだありません。</p>'}</section>`
+    : '<section class="card"><h2>この車の過去履歴</h2><p class="muted">この車の完了施工履歴はまだありません。今回は標準設定と他の施工実績を参考にします。</p></section>';
+
+  const usageRecordIds = [...new Set(historyUsages.map((usage) => usage.service_record_id))];
+  const sameVehicleUsageCount = usageRecordIds.filter((recordId) => recordById.get(recordId)?.vehicle_id === reservation.vehicle_id).length;
+  const sameCourseCount = usageRecordIds.filter((recordId) => {
+    const record = recordById.get(recordId);
+    return record?.vehicle_id !== reservation.vehicle_id && record?.course_code === reservation.course_code;
+  }).length;
+  const otherCourseCount = usageRecordIds.filter((recordId) => {
+    const record = recordById.get(recordId);
+    return record?.vehicle_id !== reservation.vehicle_id && record?.course_code !== reservation.course_code;
+  }).length;
+  const standardCount = (standardRows || []).length;
+  const summaryConfidence = sameVehicleUsageCount
+    ? `この車の実績・${plannerConfidence(sameVehicleUsageCount)}`
+    : sameCourseCount
+      ? plannerConfidence(sameCourseCount)
+      : otherCourseCount
+        ? "他コース参考"
+        : standardCount
+          ? "RE:CORDARE標準"
+          : "実績なし";
+
+  setReservationContent(`<section class="card"><h2>施工プラン（一次提案）</h2><p><strong>${escapeHtml(reservationCourses[reservation.course_code] || reservation.course_code)}</strong></p><p class="muted">オプション：${escapeHtml(optionText)}</p><p class="muted">この車の過去状態・工程履歴・ケミカル実績を最優先し、足りない部分を同コース実績、他コースの同工程実績、RE:CORDARE標準の順で補います。現地の施工前確認で最終判断します。</p><p>この車の施工履歴 ${escapeHtml(vehicleHistoryRecords?.length || 0)}件 ・ 同車ケミカル実績 ${escapeHtml(sameVehicleUsageCount)}件</p><p>同コース参考 ${escapeHtml(sameCourseCount)}件 ・ 他コース参考 ${escapeHtml(otherCourseCount)}件 ・ 標準設定 ${escapeHtml(standardCount)}件</p><p>全体目安 ${escapeHtml(summaryConfidence)}</p></section>${vehicleHistoryMarkup}${stepMarkup}<button class="text-button" type="button" id="backReservationPlan">← 予約へ戻る</button>`);
 
   document.getElementById("backReservationPlan")?.addEventListener("click", () => renderReservationForm(reservation));
 }
