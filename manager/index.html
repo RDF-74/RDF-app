@@ -58,6 +58,8 @@ button,input,select,textarea { font:inherit; } button { cursor:pointer; border:0
 .planner-priority-badge.high { color:#ffd7a8; border-color:#6a4d2a; background:#342517; }
 .planner-priority-badge.recommended { color:#a9dcff; border-color:#315d7a; background:#153044; }
 .planner-priority-badge.reference { color:var(--muted); background:#111923; }
+.service-confirmation-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+.service-confirmation-actions .filter-button { flex:1 1 30%; }
 .service-timing-correction { margin:14px 0 6px; padding:13px; border:1px solid var(--line); border-radius:16px; background:#0d151d; }
 .service-timing-correction h3 { margin:0 0 8px; font-size:14px; }
 .service-timing-correction label { margin-top:8px; }
@@ -1850,47 +1852,6 @@ async function renderReservationPrePlan(reservation) {
     ? `<section class="card"><h2>この車の過去履歴からの確認候補</h2><p class="muted">この車の完了施工 ${escapeHtml(vehicleHistoryRecords.length)}件を参照しています。過去に状態があって工程を実施した項目は、今回も確認候補として表示します。前回未処置・スキップ、または処置後に同じ症状が再発している場合は「優先確認」。前回処置済みの単発履歴は「確認推奨」、処置済みで180日を超えた単発履歴は「参考」です。</p>${latestCoatingText ? `<p><strong>直近の既存コーティング</strong> ・ ${escapeHtml(latestVehicleRecord.service_date)} ・ ${escapeHtml(latestCoatingText)}</p>` : ""}${vehicleConditionInsights.length ? vehicleConditionInsights.map((item) => `<div class="service-timing-correction"><div class="planner-priority-row"><p><strong>${escapeHtml(item.tagKey)}${item.detail ? `（${escapeHtml(item.detail)}）` : ""}</strong></p><span class="planner-priority-badge ${escapeHtml(item.priority.key)}">${escapeHtml(item.priority.label)}</span></div><p class="muted">${escapeHtml(item.date)} ・ 履歴 ${escapeHtml(item.occurrenceCount)}回 ・ 前回工程：${escapeHtml(item.pastStatus)} ・ ${escapeHtml(item.recommendation)}</p></div>`).join("") : '<p class="muted">施工前状態の履歴はまだありません。</p>'}</section>`
     : '<section class="card"><h2>この車の過去履歴</h2><p class="muted">この車の完了施工履歴はまだありません。今回は標準設定と他の施工実績を参考にします。</p></section>';
 
-  const plannedStepKeys = new Set(plannedSteps.map((step) => step.step_key));
-  const additionalStepMap = new Map();
-  vehicleConditionInsights.forEach((item) => {
-    if (item.priority.key === "reference") return;
-    item.relatedStepKeys.forEach((stepKey) => {
-      if (plannedStepKeys.has(stepKey)) return;
-      const existing = additionalStepMap.get(stepKey);
-      if (!existing) {
-        additionalStepMap.set(stepKey, {
-          stepKey,
-          priority: item.priority,
-          reasons: [item],
-        });
-        return;
-      }
-      existing.reasons.push(item);
-      if ((plannerPriorityOrder[item.priority.key] ?? 9) < (plannerPriorityOrder[existing.priority.key] ?? 9)) {
-        existing.priority = item.priority;
-      }
-    });
-  });
-  const additionalSteps = [...additionalStepMap.values()]
-    .sort((a, b) => (plannerPriorityOrder[a.priority.key] ?? 9) - (plannerPriorityOrder[b.priority.key] ?? 9)
-      || (plannerStepOptions().find((step) => step.step_key === a.stepKey)?.order_group ?? 9999)
-      - (plannerStepOptions().find((step) => step.step_key === b.stepKey)?.order_group ?? 9999));
-  const additionalStepMarkup = additionalSteps.length
-    ? `<section class="card"><h2>追加候補工程</h2><p class="muted">予約コースには入っていない工程のうち、この車の過去履歴から今回確認した方がよいものです。現地確認までは確定しません。</p>${additionalSteps.map((item) => {
-        const stepName = plannerStepNameByKey.get(item.stepKey) || item.stepKey;
-        const standards = (standardRows || []).filter((standard) => standard.step_key === item.stepKey);
-        const standardText = standards.length
-          ? standards.map((standard) => {
-              const chemical = Array.isArray(standard.recordare_chemicals) ? standard.recordare_chemicals[0] : standard.recordare_chemicals;
-              const amount = standard.standard_usage_amount == null ? "" : ` ${standard.standard_usage_amount}${chemical?.unit || "mL"}`;
-              return `${recordareChemicalName(chemical)}${amount}`;
-            }).join(" / ")
-          : "標準ケミカル未設定";
-        const reasonText = item.reasons.map((reason) => `${reason.tagKey}${reason.detail ? `（${reason.detail}）` : ""}`).join(" / ");
-        return `<div class="service-timing-correction"><div class="planner-priority-row"><p><strong>${escapeHtml(stepName)}</strong></p><span class="planner-priority-badge ${escapeHtml(item.priority.key)}">${escapeHtml(item.priority.label)}</span></div><p class="muted">理由：${escapeHtml(reasonText)}</p><p class="muted">RE:CORDARE標準：${escapeHtml(standardText)}</p></div>`;
-      }).join("")}</section>`
-    : "";
-
   const usageRecordIds = [...new Set(historyUsages.map((usage) => usage.service_record_id))];
   const sameVehicleUsageCount = usageRecordIds.filter((recordId) => recordById.get(recordId)?.vehicle_id === reservation.vehicle_id).length;
   const sameCourseCount = usageRecordIds.filter((recordId) => {
@@ -1912,7 +1873,7 @@ async function renderReservationPrePlan(reservation) {
           ? "RE:CORDARE標準"
           : "実績なし";
 
-  setReservationContent(`<section class="card"><h2>施工プラン（一次提案）</h2><p><strong>${escapeHtml(reservationCourses[reservation.course_code] || reservation.course_code)}</strong></p><p class="muted">オプション：${escapeHtml(optionText)}</p><p class="muted">この車の過去状態・工程履歴・ケミカル実績を最優先し、足りない部分を同コース実績、他コースの同工程実績、RE:CORDARE標準の順で補います。現地の施工前確認で最終判断します。</p><p>この車の施工履歴 ${escapeHtml(vehicleHistoryRecords?.length || 0)}件 ・ 同車ケミカル実績 ${escapeHtml(sameVehicleUsageCount)}件</p><p>同コース参考 ${escapeHtml(sameCourseCount)}件 ・ 他コース参考 ${escapeHtml(otherCourseCount)}件 ・ 標準設定 ${escapeHtml(standardCount)}件</p><p>追加候補工程 ${escapeHtml(additionalSteps.length)}件 ・ 全体目安 ${escapeHtml(summaryConfidence)}</p></section>${vehicleHistoryMarkup}${additionalStepMarkup}${stepMarkup}<button class="text-button" type="button" id="backReservationPlan">← 予約へ戻る</button>`);
+  setReservationContent(`<section class="card"><h2>施工プラン（一次提案）</h2><p><strong>${escapeHtml(reservationCourses[reservation.course_code] || reservation.course_code)}</strong></p><p class="muted">オプション：${escapeHtml(optionText)}</p><p class="muted">この車の過去状態・工程履歴・ケミカル実績を最優先し、足りない部分を同コース実績、他コースの同工程実績、RE:CORDARE標準の順で補います。現地の施工前確認で最終判断します。</p><p>この車の施工履歴 ${escapeHtml(vehicleHistoryRecords?.length || 0)}件 ・ 同車ケミカル実績 ${escapeHtml(sameVehicleUsageCount)}件</p><p>同コース参考 ${escapeHtml(sameCourseCount)}件 ・ 他コース参考 ${escapeHtml(otherCourseCount)}件 ・ 標準設定 ${escapeHtml(standardCount)}件</p><p>全体目安 ${escapeHtml(summaryConfidence)}</p></section>${vehicleHistoryMarkup}${stepMarkup}<button class="text-button" type="button" id="backReservationPlan">← 予約へ戻る</button>`);
 
   document.getElementById("backReservationPlan")?.addEventListener("click", () => renderReservationForm(reservation));
 }
@@ -1943,6 +1904,184 @@ const serviceConditionMarkup = (record, savedConditions) => {
   const conditionMap = new Map((savedConditions || []).map((item) => [item.tag_key, item.details || {}]));
   return `<form class="card form-card" id="serviceConditionForm"><h2>施工前状態</h2><label for="coatingState">既存コーティング状態</label><select id="coatingState" name="coating_state"><option value="unknown" ${record.coating_state === "unknown" ? "selected" : ""}>未確認</option><option value="good" ${record.coating_state === "good" ? "selected" : ""}>良好に残存</option><option value="partial" ${record.coating_state === "partial" ? "selected" : ""}>部分的に残存</option><option value="none" ${record.coating_state === "none" ? "selected" : ""}>残存なし</option></select><div class="condition-tags">${conditionTagLabels.map((tag) => `<div class="condition-tag"><label><input type="checkbox" name="condition_tag" value="${tag}" ${conditionMap.has(tag) ? "checked" : ""}> ${tag}</label><div class="condition-extra ${conditionMap.has(tag) ? "" : "hidden"}" data-condition-extra="${tag}">${conditionFields(tag)}</div></div>`).join("")}</div><button class="secondary" type="submit">施工前状態を保存</button></form>`;
 };
+
+const serviceConfirmationStatusLabels = {
+  unproposed: "未確認",
+  adopted: "施工必要",
+  declined: "今回は不要",
+  proposed: "保留",
+};
+
+async function ensureServiceConfirmationProposals(record) {
+  if (!record?.vehicle_id) return null;
+  const [{ data: existing, error: existingError }, { data: pastRecords, error: recordError }] = await Promise.all([
+    supabase.from("service_proposals")
+      .select("source_tag_key")
+      .eq("service_record_id", record.id)
+      .not("source_tag_key", "is", null),
+    supabase.from("service_records")
+      .select("id,service_date")
+      .eq("status", "completed")
+      .eq("vehicle_id", record.vehicle_id)
+      .neq("id", record.id)
+      .order("service_date", { ascending: false })
+      .limit(10),
+  ]);
+  if (existingError || recordError) return existingError || recordError;
+  if (!(pastRecords || []).length) return null;
+
+  const pastIds = pastRecords.map((item) => item.id);
+  const [{ data: conditions, error: conditionError }, { data: steps, error: stepError }] = await Promise.all([
+    supabase.from("service_condition_tags")
+      .select("service_record_id,tag_key,details")
+      .in("service_record_id", pastIds),
+    supabase.from("service_steps")
+      .select("service_record_id,step_key,started_at,ended_at,skipped_reason")
+      .in("service_record_id", pastIds),
+  ]);
+  if (conditionError || stepError) return conditionError || stepError;
+
+  const existingTags = new Set((existing || []).map((item) => item.source_tag_key));
+  const conditionsByRecord = new Map();
+  (conditions || []).forEach((item) => {
+    if (!conditionsByRecord.has(item.service_record_id)) conditionsByRecord.set(item.service_record_id, []);
+    conditionsByRecord.get(item.service_record_id).push(item);
+  });
+  const stepsByRecord = new Map();
+  (steps || []).forEach((item) => {
+    if (!stepsByRecord.has(item.service_record_id)) stepsByRecord.set(item.service_record_id, []);
+    stepsByRecord.get(item.service_record_id).push(item);
+  });
+  const countByTag = new Map();
+  (conditions || []).forEach((item) => countByTag.set(item.tag_key, (countByTag.get(item.tag_key) || 0) + 1));
+
+  const seen = new Set();
+  const values = [];
+  (pastRecords || []).forEach((pastRecord) => {
+    (conditionsByRecord.get(pastRecord.id) || []).forEach((condition) => {
+      if (seen.has(condition.tag_key) || existingTags.has(condition.tag_key)) return;
+      seen.add(condition.tag_key);
+      const stepKeys = plannerConditionStepKeys[condition.tag_key] || [];
+      const relatedSteps = (stepsByRecord.get(pastRecord.id) || []).filter((step) => stepKeys.includes(step.step_key));
+      const pastStatus = stepKeys.length ? plannerPastStepStatus(relatedSteps) : "重点確認";
+      const occurrenceCount = countByTag.get(condition.tag_key) || 1;
+      const priority = plannerPriorityLabel(condition.tag_key, condition.details || {}, occurrenceCount, pastRecord.service_date, pastStatus);
+      values.push({
+        service_record_id: record.id,
+        title: condition.tag_key,
+        priority: priority.key,
+        status: "unproposed",
+        source_tag_key: condition.tag_key,
+        step_keys: stepKeys,
+        source_service_record_id: pastRecord.id,
+        snapshot: {
+          source_date: pastRecord.service_date,
+          source_details: condition.details || {},
+          detail: plannerConditionDetail(condition.tag_key, condition.details || {}),
+          occurrence_count: occurrenceCount,
+          past_status: pastStatus,
+          priority_label: priority.label,
+        },
+      });
+    });
+  });
+  if (!values.length) return null;
+  const { error } = await supabase.from("service_proposals").insert(values);
+  return error || null;
+}
+
+const serviceConfirmationMarkup = (proposals, steps) => {
+  if (!(proposals || []).length) return "";
+  const existingStepKeys = new Set((steps || []).map((step) => step.step_key));
+  const stepNames = new Map(plannerStepOptions().map((step) => [step.step_key, step.name]));
+  const priorityLabels = { high: "優先確認", recommended: "確認推奨", reference: "参考" };
+  const priorityOrder = { high: 0, recommended: 1, reference: 2 };
+  const sorted = [...proposals].sort((a, b) => (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9));
+  return `<section class="card"><h2>過去履歴の確認候補</h2><p class="muted">現車を確認して結果を選びます。「施工必要」にした項目だけ、施工前確認を終える時に対応工程へ反映します。</p>${sorted.map((proposal) => {
+    const keys = jsonArray(proposal.step_keys);
+    const targetNames = keys.map((key) => stepNames.get(key) || key);
+    const alreadyIncluded = keys.length && keys.every((key) => existingStepKeys.has(key));
+    const targetText = !keys.length
+      ? "対応工程は未設定"
+      : alreadyIncluded
+        ? `対象工程：${targetNames.join("・")}（今回の工程に含まれています）`
+        : `対象工程：${targetNames.join("・")}（施工必要なら追加）`;
+    const snapshot = proposal.snapshot || {};
+    const detail = snapshot.detail ? `（${snapshot.detail}）` : "";
+    const status = serviceConfirmationStatusLabels[proposal.status] || proposal.status;
+    const requiredLabel = keys.length ? "施工必要" : "対応必要";
+    return `<div class="service-timing-correction"><div class="planner-priority-row"><p><strong>${escapeHtml(proposal.source_tag_key || proposal.title)}${escapeHtml(detail)}</strong></p><span class="planner-priority-badge ${escapeHtml(proposal.priority || "reference")}">${escapeHtml(priorityLabels[proposal.priority] || "参考")}</span></div><p class="muted">${escapeHtml(snapshot.source_date || "")} ・ 履歴 ${escapeHtml(snapshot.occurrence_count || 1)}回 ・ 前回工程：${escapeHtml(snapshot.past_status || "不明")}</p><p class="muted">${escapeHtml(targetText)}</p><p class="muted">確認結果：${escapeHtml(status)}</p><div class="service-confirmation-actions"><button type="button" class="filter-button ${proposal.status === "adopted" ? "active" : ""}" data-confirmation-result="adopted" data-proposal-id="${escapeHtml(proposal.id)}">${requiredLabel}</button><button type="button" class="filter-button ${proposal.status === "declined" ? "active" : ""}" data-confirmation-result="declined" data-proposal-id="${escapeHtml(proposal.id)}">今回は不要</button><button type="button" class="filter-button ${proposal.status === "proposed" ? "active" : ""}" data-confirmation-result="proposed" data-proposal-id="${escapeHtml(proposal.id)}">保留</button></div></div>`;
+  }).join("")}</section>`;
+};
+
+const bindServiceConfirmationResults = (recordId, rerender) => {
+  document.querySelectorAll("[data-confirmation-result]").forEach((button) => button.addEventListener("click", async () => {
+    const buttons = document.querySelectorAll(`[data-proposal-id="${button.dataset.proposalId}"]`);
+    buttons.forEach((item) => { item.disabled = true; });
+    const { error } = await supabase.from("service_proposals")
+      .update({ status: button.dataset.confirmationResult })
+      .eq("id", button.dataset.proposalId)
+      .eq("service_record_id", recordId);
+    if (error) {
+      buttons.forEach((item) => { item.disabled = false; });
+      return alert(saveErrorMessage(error));
+    }
+    await rerender(recordId);
+  }));
+};
+
+async function applyServiceConfirmationResults(recordId, proposals) {
+  const requiredPending = (proposals || []).filter((proposal) =>
+    ["high", "recommended"].includes(proposal.priority) && ["unproposed", "proposed"].includes(proposal.status)
+  );
+  if (requiredPending.length) {
+    return new Error("確認候補の「優先確認・確認推奨」は、施工必要または今回は不要を確定してから次へ進んでください。");
+  }
+
+  const adopted = (proposals || []).filter((proposal) => proposal.status === "adopted");
+  if (!adopted.length) return null;
+
+  const conditionValues = adopted
+    .filter((proposal) => proposal.source_tag_key)
+    .map((proposal) => ({
+      service_record_id: recordId,
+      tag_key: proposal.source_tag_key,
+      details: proposal.snapshot?.source_details || {},
+    }));
+  if (conditionValues.length) {
+    const { error: conditionError } = await supabase.from("service_condition_tags")
+      .upsert(conditionValues, { onConflict: "service_record_id,tag_key" });
+    if (conditionError) return conditionError;
+  }
+
+  const stepByKey = new Map(plannerStepOptions().map((step) => [step.step_key, step]));
+  const addedKeys = new Set();
+  const stepValues = [];
+  adopted.forEach((proposal) => jsonArray(proposal.step_keys).forEach((stepKey) => {
+    if (addedKeys.has(stepKey)) return;
+    const step = stepByKey.get(stepKey);
+    if (!step) return;
+    addedKeys.add(stepKey);
+    stepValues.push({
+      step_key: step.step_key,
+      step_name: step.name,
+      order_group: step.order_group,
+      timed: step.timed !== false,
+      skippable: step.skippable !== false,
+      snapshot: {
+        ...step,
+        source: "confirmation_result",
+        source_tag_key: proposal.source_tag_key,
+      },
+    });
+  }));
+  if (!stepValues.length) return null;
+  const { error } = await supabase.rpc("add_service_confirmation_steps", {
+    p_service_record_id: recordId,
+    p_steps: stepValues,
+  });
+  return error || null;
+}
 
 async function renderServiceList() {
   clearServiceElapsed();
@@ -2271,14 +2410,41 @@ async function renderServiceTimer(recordId) {
   const currentIndex = steps.findIndex((step) => step.id === activeStep.id);
   const nextStep = steps[currentIndex + 1];
   const isPreCheck = activeStep.step_key === "pre_check" || activeStep.sequence_no === 1;
+  let confirmationProposals = [];
+  let confirmationMarkup = "";
+  if (isPreCheck) {
+    const confirmationError = await ensureServiceConfirmationProposals(record);
+    if (confirmationError) {
+      return setServiceContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(confirmationError))}</p></div>`);
+    }
+    const { data: proposalRows, error: proposalError } = await supabase.from("service_proposals")
+      .select("id,title,priority,status,source_tag_key,step_keys,source_service_record_id,snapshot")
+      .eq("service_record_id", recordId)
+      .not("source_tag_key", "is", null)
+      .order("created_at", { ascending: true });
+    if (proposalError) {
+      return setServiceContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(proposalError))}</p></div>`);
+    }
+    confirmationProposals = proposalRows || [];
+    confirmationMarkup = serviceConfirmationMarkup(confirmationProposals, steps);
+  }
   const chemicalMarkup = isPreCheck ? "" : serviceChemicalUsageMarkup(activeStep, chemicalUsages, chemicals);
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工中</span></div><h2>${escapeHtml(activeStep.step_name)}</h2><dl><dt>開始</dt><dd>${escapeHtml(formatActualTime(activeStep.started_at))}</dd><dt>経過</dt><dd id="serviceStepElapsed"></dd></dl></div>${isPreCheck ? serviceConditionMarkup(record, savedConditions) : ""}${chemicalMarkup}<button class="primary service-action-button" type="button" id="nextServiceStepButton">${nextStep ? "次の工程へ" : "施工終了"}</button><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工中</span></div><h2>${escapeHtml(activeStep.step_name)}</h2><dl><dt>開始</dt><dd>${escapeHtml(formatActualTime(activeStep.started_at))}</dd><dt>経過</dt><dd id="serviceStepElapsed"></dd></dl></div>${isPreCheck ? serviceConditionMarkup(record, savedConditions) : ""}${confirmationMarkup}${chemicalMarkup}<button class="primary service-action-button" type="button" id="nextServiceStepButton">${nextStep ? "次の工程へ" : "施工終了"}</button><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
   showServiceElapsed("serviceStepElapsed", activeStep.started_at);
-  if (isPreCheck) bindServiceConditionForm(recordId, renderServiceTimer);
-  else bindServiceChemicalUsageForms(recordId, activeStep);
+  if (isPreCheck) {
+    bindServiceConditionForm(recordId, renderServiceTimer);
+    bindServiceConfirmationResults(recordId, renderServiceTimer);
+  } else bindServiceChemicalUsageForms(recordId, activeStep);
   document.getElementById("nextServiceStepButton").addEventListener("click", async (event) => {
     const button = event.currentTarget;
     button.disabled = true;
+    if (isPreCheck) {
+      const confirmationApplyError = await applyServiceConfirmationResults(recordId, confirmationProposals);
+      if (confirmationApplyError) {
+        button.disabled = false;
+        return alert(saveErrorMessage(confirmationApplyError));
+      }
+    }
     const now = new Date().toISOString();
     const { error: endError } = await supabase.from("service_steps").update({ ended_at: now }).eq("id", activeStep.id).is("ended_at", null);
     if (endError) return alert(saveErrorMessage(endError));
@@ -2308,6 +2474,25 @@ async function renderServiceDetail(recordId) {
   const { data: preparationSession } = await supabase.from("service_sessions").select("id, started_at").eq("service_record_id", recordId).eq("status", "active").is("ended_at", null).order("started_at", { ascending: false }).limit(1).maybeSingle();
   if (record.status === "in_progress") return renderServiceTimer(recordId);
   if (record.status === "planned" && preparationSession) return renderPreparationState(recordId, record, preparationSession);
+
+  let confirmationHistoryMarkup = "";
+  if (record.status === "completed") {
+    const { data: confirmationRows, error: confirmationHistoryError } = await supabase.from("service_proposals")
+      .select("title,priority,status,source_tag_key,step_keys,snapshot")
+      .eq("service_record_id", recordId)
+      .not("source_tag_key", "is", null)
+      .order("created_at", { ascending: true });
+    if (confirmationHistoryError) {
+      confirmationHistoryMarkup = '<section class="card"><h2>確認候補の結果</h2><p class="error">確認結果を読み込めませんでした。</p></section>';
+    } else if ((confirmationRows || []).length) {
+      const priorityLabels = { high: "優先確認", recommended: "確認推奨", reference: "参考" };
+      confirmationHistoryMarkup = `<section class="card"><h2>確認候補の結果</h2>${confirmationRows.map((item) => {
+        const snapshot = item.snapshot || {};
+        const detail = snapshot.detail ? `（${snapshot.detail}）` : "";
+        return `<div class="service-timing-correction"><div class="planner-priority-row"><p><strong>${escapeHtml(item.source_tag_key || item.title)}${escapeHtml(detail)}</strong></p><span class="planner-priority-badge ${escapeHtml(item.priority || "reference")}">${escapeHtml(priorityLabels[item.priority] || "参考")}</span></div><p class="muted">確認結果：${escapeHtml(serviceConfirmationStatusLabels[item.status] || item.status)}</p></div>`;
+      }).join("")}</section>`;
+    }
+  }
 
   let serviceChemicalUsageDetailMarkup = "";
   if (record.status === "completed") {
@@ -2396,7 +2581,7 @@ async function renderServiceDetail(recordId) {
       : "";
   const conditionMarkup = serviceConditionMarkup(record, savedConditions);
 
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl></div>${conditionMarkup}${serviceChemicalUsageDetailMarkup}<form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl></div>${conditionMarkup}${confirmationHistoryMarkup}${serviceChemicalUsageDetailMarkup}<form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
   if (record.status === "completed") bindCompletedServiceChemicalUsageForms(recordId);
 
   document.getElementById("prepareServiceButton")?.addEventListener("click", async (event) => {

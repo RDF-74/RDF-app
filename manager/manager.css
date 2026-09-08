@@ -50,6 +50,8 @@ button,input,select,textarea { font:inherit; } button { cursor:pointer; border:0
 .planner-priority-badge.high { color:#ffd7a8; border-color:#6a4d2a; background:#342517; }
 .planner-priority-badge.recommended { color:#a9dcff; border-color:#315d7a; background:#153044; }
 .planner-priority-badge.reference { color:var(--muted); background:#111923; }
+.service-confirmation-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+.service-confirmation-actions .filter-button { flex:1 1 30%; }
 .service-timing-correction { margin:14px 0 6px; padding:13px; border:1px solid var(--line); border-radius:16px; background:#0d151d; }
 .service-timing-correction h3 { margin:0 0 8px; font-size:14px; }
 .service-timing-correction label { margin-top:8px; }
