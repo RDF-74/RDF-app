@@ -178,15 +178,79 @@ function renderLogin(message = "", initializing = false) {
   document.getElementById("loginForm")?.addEventListener("submit", signIn);
 }
 
+async function renderManagerChemicalAlerts() {
+  const target = document.getElementById("managerAlerts");
+  if (!target || activeTab !== "ホーム" || !profile?.id) return;
+  const todayDate = new Date();
+  const today = todayDate.toLocaleDateString("en-CA");
+  const [{ data: chemicals, error: chemicalError }, { data: orders, error: orderError }, { data: pref, error: prefError }] = await Promise.all([
+    supabase.from("recordare_chemicals")
+      .select("id,current_stock,reorder_threshold,status,chemical_catalog_products(manufacturer,product_name)")
+      .eq("status", "active"),
+    supabase.from("chemical_purchase_orders")
+      .select("id,recordare_chemical_id,capacity,quantity,status,planned_on")
+      .in("status", ["planned","ordered"]),
+    supabase.from("manager_notification_preferences")
+      .select("purchase_reminder_days")
+      .eq("user_id", profile.id)
+      .maybeSingle(),
+  ]);
+  if (!document.getElementById("managerAlerts") || activeTab !== "ホーム") return;
+  if (chemicalError || orderError || prefError) {
+    target.innerHTML = '<div class="card"><p class="error">ケミカル通知の確認に失敗しました。</p></div>';
+    return;
+  }
+
+  const orderedInbound = new Map();
+  (orders || []).forEach((order) => {
+    if (order.status !== "ordered") return;
+    const total = Number(order.capacity || 0) * Number(order.quantity || 0);
+    orderedInbound.set(order.recordare_chemical_id, (orderedInbound.get(order.recordare_chemical_id) || 0) + total);
+  });
+  const stockAlerts = (chemicals || []).filter((chemical) => {
+    if (chemical.current_stock == null || chemical.reorder_threshold == null) return false;
+    const current = Number(chemical.current_stock);
+    const threshold = Number(chemical.reorder_threshold);
+    const inbound = orderedInbound.get(chemical.id) || 0;
+    return current <= threshold && current + inbound <= threshold;
+  });
+
+  const reminderDays = Math.max(1, Math.min(30, Number(pref?.purchase_reminder_days || 3)));
+  const cutoffDate = new Date(todayDate);
+  cutoffDate.setDate(cutoffDate.getDate() - reminderDays);
+  const cutoff = cutoffDate.toLocaleDateString("en-CA");
+  const overduePlans = (orders || []).filter((order) => order.status === "planned" && String(order.planned_on || "") <= cutoff);
+
+  if (!stockAlerts.length && !overduePlans.length) {
+    target.innerHTML = "";
+    return;
+  }
+
+  const stockRows = stockAlerts.map((chemical) => {
+    const catalog = Array.isArray(chemical.chemical_catalog_products) ? chemical.chemical_catalog_products[0] : chemical.chemical_catalog_products;
+    const name = [catalog?.manufacturer, catalog?.product_name].filter(Boolean).join(" ") || "名称なし";
+    return `<p><strong>${escapeHtml(name)}</strong> ・ 在庫 ${escapeHtml(chemical.current_stock)}mL / アラート ${escapeHtml(chemical.reorder_threshold)}mL</p>`;
+  }).join("");
+  const purchaseRows = overduePlans.map((order) => `<p>購入予定に追加して${reminderDays}日以上未注文の項目があります。</p>`).join("");
+
+  target.innerHTML = `<section class="card"><h2>要対応</h2>${stockAlerts.length ? `<p><strong>在庫アラート ${stockAlerts.length}件</strong></p>${stockRows}<button class="secondary" type="button" id="openManagerAlertPlanner">在庫予測・買い物リストを確認</button>` : ""}${overduePlans.length ? `<p><strong>購入予定の未注文 ${overduePlans.length}件</strong></p>${purchaseRows}<button class="secondary" type="button" id="openManagerAlertPurchases">購入予定一覧を確認</button>` : ""}</section>`;
+  document.getElementById("openManagerAlertPlanner")?.addEventListener("click", renderChemicalPlanner);
+  document.getElementById("openManagerAlertPurchases")?.addEventListener("click", renderChemicalPurchaseList);
+}
+
 function renderManager() {
   const name = escapeHtml(profile?.display_name || "管理者");
-  const content = activeTab === "ホーム" ? `<div id="managerContent"><div class="card"><p class="welcome">${name}さん</p><h2>RE:CORDARE Manager</h2><button class="secondary" type="button" id="openChemicalsButton">ケミカル・在庫</button><a class="return-link" href="/">← Detailing Managerへ戻る</a></div></div>` : `<div id="managerContent">${activeTab === "顧客" || activeTab === "予約" || activeTab === "施工" ? '<div class="card placeholder"><p class="muted">読み込んでいます…</p></div>' : `<div class="card placeholder"><h2>${activeTab}</h2><p class="muted">この機能は準備中です。</p></div>`}</div>`;
-  app.innerHTML = `<section class="screen"><header class="topbar"><div><div class="brand">RE:CORDARE Manager</div><h1>${activeTab}</h1></div><button class="icon-button" type="button" aria-label="設定" id="settingsButton">⚙</button></header>${content}</section><nav class="manager-nav" aria-label="管理メニュー">${tabs.map((tab) => `<button type="button" data-tab="${tab}" class="${tab === activeTab ? "active" : ""}">${tab}</button>`).join("")}</nav><div class="settings-panel hidden" id="settingsPanel"><div class="settings-box"><h2>設定</h2><p class="muted">管理者：${name}</p><p class="muted">Build: ${escapeHtml(buildSha)}</p><button class="secondary" type="button" id="signOutButton">ログアウト</button><button class="secondary" type="button" id="closeSettingsButton" style="margin-top:10px">閉じる</button></div></div>`;
+  const content = activeTab === "ホーム" ? `<div id="managerContent"><div class="card"><p class="welcome">${name}さん</p><h2>RE:CORDARE Manager</h2><button class="secondary" type="button" id="openChemicalsButton">ケミカル・在庫</button><a class="return-link" href="/">← Detailing Managerへ戻る</a></div><div id="managerAlerts"></div></div>` : `<div id="managerContent">${activeTab === "顧客" || activeTab === "予約" || activeTab === "施工" ? '<div class="card placeholder"><p class="muted">読み込んでいます…</p></div>' : `<div class="card placeholder"><h2>${activeTab}</h2><p class="muted">この機能は準備中です。</p></div>`}</div>`;
+  app.innerHTML = `<section class="screen"><header class="topbar"><div><div class="brand">RE:CORDARE Manager</div><h1>${activeTab}</h1></div><button class="icon-button" type="button" aria-label="設定" id="settingsButton">⚙</button></header>${content}</section><nav class="manager-nav" aria-label="管理メニュー">${tabs.map((tab) => `<button type="button" data-tab="${tab}" class="${tab === activeTab ? "active" : ""}">${tab}</button>`).join("")}</nav><div class="settings-panel hidden" id="settingsPanel"><div class="settings-box"><h2>設定</h2><p class="muted">管理者：${name}</p><p class="muted">Build: ${escapeHtml(buildSha)}</p><p class="muted" id="managerNotificationStatus">通知：確認中…</p><button class="secondary" type="button" id="enableManagerNotifications">通知を有効にする</button><button class="secondary hidden" type="button" id="testManagerNotifications" style="margin-top:10px">テスト通知</button><button class="secondary hidden" type="button" id="disableManagerNotifications" style="margin-top:10px">通知を停止</button><p class="muted">在庫アラートと、購入予定に追加して3日以上未注文の項目を毎朝6:00にまとめて通知します。</p><button class="secondary" type="button" id="signOutButton">ログアウト</button><button class="secondary" type="button" id="closeSettingsButton" style="margin-top:10px">閉じる</button></div></div>`;
   document.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click", () => { activeTab = button.dataset.tab; renderManager(); }));
-  document.getElementById("settingsButton").addEventListener("click", () => document.getElementById("settingsPanel").classList.remove("hidden"));
+  document.getElementById("settingsButton").addEventListener("click", async () => { document.getElementById("settingsPanel").classList.remove("hidden"); await refreshManagerNotificationSettings(); });
   document.getElementById("closeSettingsButton").addEventListener("click", () => document.getElementById("settingsPanel").classList.add("hidden"));
   document.getElementById("signOutButton").addEventListener("click", async () => { await supabase.auth.signOut(); profile = null; renderLogin(); });
   document.getElementById("openChemicalsButton")?.addEventListener("click", renderChemicalList);
+  document.getElementById("enableManagerNotifications").addEventListener("click", enableManagerNotifications);
+  document.getElementById("testManagerNotifications").addEventListener("click", testManagerNotifications);
+  document.getElementById("disableManagerNotifications").addEventListener("click", disableManagerNotifications);
+  if (activeTab === "ホーム") renderManagerChemicalAlerts();
   if (activeTab === "顧客") renderCustomerList();
   if (activeTab === "予約") renderReservationList();
   if (activeTab === "施工") renderServiceList();
@@ -215,6 +279,123 @@ const safeExternalUrl = (value) => {
 const normalizePurchaseUrlField = (input) => {
   const normalized = safeExternalUrl(input?.value);
   if (normalized) input.value = normalized;
+};
+
+const managerNotificationFunction = "manager-notifications";
+const managerIsStandalone = () => Boolean(
+  window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone,
+);
+const base64UrlToUint8Array = (value) => {
+  const padding = "=".repeat((4 - value.length % 4) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64);
+  return Uint8Array.from(raw, (char) => char.charCodeAt(0));
+};
+const pushKeysEqual = (left, right) => {
+  if (!left || !right) return false;
+  const a = new Uint8Array(left);
+  const b = right instanceof Uint8Array ? right : new Uint8Array(right);
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+};
+const invokeManagerNotification = async (action, extra = {}) => {
+  const { data, error } = await supabase.functions.invoke(managerNotificationFunction, {
+    body: { action, ...extra },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data || {};
+};
+const managerServiceWorkerRegistration = async () => {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    throw new Error("この環境ではプッシュ通知を利用できません。");
+  }
+  await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+  return navigator.serviceWorker.ready;
+};
+const enableManagerNotifications = async () => {
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !managerIsStandalone()) {
+    alert("iPhoneの通知は、ホーム画面へ追加したRE:CORDARE Managerから有効にしてください。");
+    return;
+  }
+  if (!("Notification" in window)) return alert("この環境では通知を利用できません。");
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") return alert("通知が許可されませんでした。iPhoneの設定から通知を許可してください。");
+  try {
+    const registration = await managerServiceWorkerRegistration();
+    const { publicKey } = await invokeManagerNotification("vapid-public-key");
+    if (!publicKey) throw new Error("通知用の公開鍵を取得できませんでした。");
+    const applicationServerKey = base64UrlToUint8Array(publicKey);
+    let subscription = await registration.pushManager.getSubscription();
+    if (subscription && !pushKeysEqual(subscription.options?.applicationServerKey, applicationServerKey)) {
+      await subscription.unsubscribe();
+      subscription = null;
+    }
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
+      });
+    }
+    await invokeManagerNotification("subscribe", { subscription: subscription.toJSON() });
+    alert("通知を有効にしました。ケミカルの要対応がある場合は毎朝6:00にまとめて通知します。");
+  } catch (error) {
+    alert(`通知を有効にできませんでした。（${error?.message || error}）`);
+  }
+  await refreshManagerNotificationSettings();
+};
+const disableManagerNotifications = async () => {
+  try {
+    const registration = await navigator.serviceWorker?.ready;
+    const subscription = await registration?.pushManager?.getSubscription();
+    await invokeManagerNotification("unsubscribe", { endpoint: subscription?.endpoint || "" });
+    alert("RE:CORDARE Managerの通知を停止しました。");
+  } catch (error) {
+    alert(`通知を停止できませんでした。（${error?.message || error}）`);
+  }
+  await refreshManagerNotificationSettings();
+};
+const testManagerNotifications = async () => {
+  try {
+    const result = await invokeManagerNotification("test");
+    if (Number(result.sent || 0) < 1) return alert("通知先が登録されていません。先に通知を有効にしてください。");
+    alert("テスト通知を送信しました。");
+  } catch (error) {
+    alert(`テスト通知を送信できませんでした。（${error?.message || error}）`);
+  }
+};
+const refreshManagerNotificationSettings = async () => {
+  const status = document.getElementById("managerNotificationStatus");
+  const enableButton = document.getElementById("enableManagerNotifications");
+  const testButton = document.getElementById("testManagerNotifications");
+  const disableButton = document.getElementById("disableManagerNotifications");
+  if (!status || !enableButton || !testButton || !disableButton) return;
+  if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    status.textContent = "通知：この環境では利用できません";
+    enableButton.classList.add("hidden");
+    testButton.classList.add("hidden");
+    disableButton.classList.add("hidden");
+    return;
+  }
+  if (Notification.permission === "denied") {
+    status.textContent = "通知：iPhone側で拒否されています";
+    enableButton.classList.add("hidden");
+    testButton.classList.add("hidden");
+    disableButton.classList.add("hidden");
+    return;
+  }
+  let remoteEnabled = false;
+  try {
+    if (Notification.permission === "granted") {
+      const result = await invokeManagerNotification("status");
+      remoteEnabled = Boolean(result.enabled);
+    }
+  } catch (error) {
+    console.error("Manager notification status failed", error);
+  }
+  status.textContent = remoteEnabled ? "通知：有効（毎朝6:00）" : "通知：未設定";
+  enableButton.classList.toggle("hidden", remoteEnabled);
+  testButton.classList.toggle("hidden", !remoteEnabled);
+  disableButton.classList.toggle("hidden", !remoteEnabled);
 };
 const saveErrorMessage = (error) => error?.message ? `${errorMessage}（${error.message}）` : errorMessage;
 const chemicalCategories = ["プレウォッシュ","シャンプー / コンタクトウォッシュ","リンスレス","鉄粉除去","スケール / 酸性洗浄","下地処理","脱脂","コーティング / 保護剤","ガラス洗浄","ガラス油膜除去","ガラスウロコ除去","ガラス撥水","タイヤ・ホイール洗浄","タイヤ・ホイール保護","未塗装樹脂洗浄","未塗装樹脂保護","虫汚れ","ピッチ・タール","その他"];
@@ -1934,7 +2115,7 @@ async function createServiceRecordFromReservation(reservationId, button) {
 }
 
 async function getActiveProfile(user) {
-  const { data, error } = await supabase.from("manager_profiles").select("display_name, role, is_active").eq("id", user.id).maybeSingle();
+  const { data, error } = await supabase.from("manager_profiles").select("id, display_name, role, is_active").eq("id", user.id).maybeSingle();
   if (error || !data || !data.is_active || data.role !== "admin") return null;
   return data;
 }
