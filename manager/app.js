@@ -688,7 +688,7 @@ async function renderChemicalDetail(id) {
     const url=safeExternalUrl(source?.product_url);
     return `<p><strong>${escapeHtml(capacity)}mL</strong> ・ ${escapeHtml(store)}${url ? ` ・ <a class="return-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">購入先を開く</a>` : ""}</p>`;
   }).join("") : '<p class="muted">初期在庫または購入履歴を登録すると容量候補が表示されます。</p>';
-  setCustomerContent(`<div class="card detail-card"><h2>${escapeHtml(c.chemical_catalog_products.manufacturer)} ${escapeHtml(c.chemical_catalog_products.product_name)}</h2><dl><dt>現在在庫</dt><dd>${stockText}</dd><dt>状態</dt><dd>${c.status==="active"?"使用中":"休止"}</dd><dt>在庫アラート</dt><dd>${c.reorder_threshold == null ? "未設定" : `${c.reorder_threshold}${escapeHtml(c.unit)}以下`}</dd><dt>目標在庫</dt><dd>${c.target_stock == null ? "未設定" : `${c.target_stock}${escapeHtml(c.unit)}`}</dd></dl><button class="secondary" id="purchaseChemical">購入・補充</button>${initialAdjustment?"":'<button class="secondary" id="initialChemical">初期在庫を登録</button>'}<button class="secondary" id="adjustChemical">在庫を修正</button><button class="secondary" id="stockSettingsChemical">在庫管理設定</button><button class="secondary" id="purchaseSourceSettingsChemical">購入先設定</button></div><section class="card"><h2>購入先</h2><p class="muted">初期在庫登録と購入履歴の容量を候補にしています。</p>${purchaseSourceRows}</section><section class="card"><h2>初期在庫登録</h2>${initialAdjustment?`<p>${initialAdjustment.adjusted_on} ・ ${initialAdjustment.new_stock}${escapeHtml(c.unit)}${initialAdjustment.price_amount==null?" ・ 価格未設定":` ・ ¥${initialAdjustment.price_amount}`}</p>`:"<p class=muted>未登録</p>"}</section><section class="card"><h2>購入履歴</h2>${(purchases||[]).map(x=>`<p>${x.purchased_on} ・ ${x.capacity}mL × ${x.quantity}本${x.amount==null?" ・ 価格未設定":` ・ ¥${x.amount}`}</p>`).join("")||"<p class=muted>なし</p>"}</section><section class="card"><h2>在庫修正履歴</h2>${inventoryAdjustments.map(x=>`<p>${x.adjusted_on} ・ ${escapeHtml(chemicalAdjustmentReasons[x.reason] || x.reason)} ・ ${x.previous_stock == null ? "未登録" : x.previous_stock}→${x.new_stock}${escapeHtml(c.unit)}</p>`).join("")||"<p class=muted>なし</p>"}</section><button class="text-button" id="backChemicals">← 一覧へ戻る</button>`);
+  setCustomerContent(`<div class="card detail-card"><h2>${escapeHtml(c.chemical_catalog_products.manufacturer)} ${escapeHtml(c.chemical_catalog_products.product_name)}</h2><dl><dt>現在在庫</dt><dd>${stockText}</dd><dt>状態</dt><dd>${c.status==="active"?"使用中":"休止"}</dd><dt>在庫アラート</dt><dd>${c.reorder_threshold == null ? "未設定" : `${c.reorder_threshold}${escapeHtml(c.unit)}以下`}</dd><dt>目標在庫</dt><dd>${c.target_stock == null ? "未設定" : `${c.target_stock}${escapeHtml(c.unit)}`}</dd></dl><button class="secondary" id="purchaseChemical">購入・補充</button>${initialAdjustment?"":'<button class="secondary" id="initialChemical">初期在庫を登録</button>'}<button class="secondary" id="adjustChemical">在庫を修正</button><button class="secondary" id="stockSettingsChemical">在庫管理設定</button><button class="secondary" id="purchaseSourceSettingsChemical">購入先設定</button><button class="secondary" id="plannerStandardChemical">施工プラン標準設定</button></div><section class="card"><h2>購入先</h2><p class="muted">初期在庫登録と購入履歴の容量を候補にしています。</p>${purchaseSourceRows}</section><section class="card"><h2>初期在庫登録</h2>${initialAdjustment?`<p>${initialAdjustment.adjusted_on} ・ ${initialAdjustment.new_stock}${escapeHtml(c.unit)}${initialAdjustment.price_amount==null?" ・ 価格未設定":` ・ ¥${initialAdjustment.price_amount}`}</p>`:"<p class=muted>未登録</p>"}</section><section class="card"><h2>購入履歴</h2>${(purchases||[]).map(x=>`<p>${x.purchased_on} ・ ${x.capacity}mL × ${x.quantity}本${x.amount==null?" ・ 価格未設定":` ・ ¥${x.amount}`}</p>`).join("")||"<p class=muted>なし</p>"}</section><section class="card"><h2>在庫修正履歴</h2>${inventoryAdjustments.map(x=>`<p>${x.adjusted_on} ・ ${escapeHtml(chemicalAdjustmentReasons[x.reason] || x.reason)} ・ ${x.previous_stock == null ? "未登録" : x.previous_stock}→${x.new_stock}${escapeHtml(c.unit)}</p>`).join("")||"<p class=muted>なし</p>"}</section><button class="text-button" id="backChemicals">← 一覧へ戻る</button>`);
   const form=(title,fields,save)=>{setCustomerContent(`<form class="card form-card" id="inventoryForm"><h2>${title}</h2>${fields}<button class="primary">保存</button><button type="button" class="text-button" id="cancelInventory">戻る</button></form>`);document.getElementById("inventoryForm").addEventListener("submit",save);document.getElementById("cancelInventory").addEventListener("click",()=>renderChemicalDetail(id));};
   document.getElementById("purchaseChemical").onclick=()=>form("購入・補充",`<label>購入日<input name=date type=date value="${new Date().toLocaleDateString("en-CA")}"></label><label>購入容量mL<input name=capacity type=number min=0.001 step=0.001 required></label><label>本数<input name=quantity type=number min=1 value=1 required></label><label>支払金額<input name=amount type=number min=0></label><label>購入先<input name=store></label><label>メモ<input name=notes></label>`,async e=>{e.preventDefault();const f=e.currentTarget,total=+f.capacity.value*+f.quantity.value;const amount=f.amount.value===""?null:+f.amount.value;const {error}=await supabase.from("chemical_purchases").insert({recordare_chemical_id:id,purchased_on:f.date.value,capacity:+f.capacity.value,quantity:+f.quantity.value,amount,store:emptyToNull(f.store.value),notes:emptyToNull(f.notes.value),unit_price_per_ml:amount==null?null:amount/total});if(error)return alert(saveErrorMessage(error));const {error:updateError}=await supabase.from("recordare_chemicals").update({current_stock:(c.current_stock||0)+total,unknown_cost_stock:(c.unknown_cost_stock||0)+(amount==null?total:0)}).eq("id",id);if(updateError)return alert(saveErrorMessage(updateError));renderChemicalDetail(id);});
   const adjustment=(initial)=>form(initial?"初期在庫を登録":"在庫を修正",`<label>現在残量mL<input name=stock type=number min=0 required></label>${initial?'<label>購入価格（不明の場合は空欄）<input name=price type=number min=0></label>':''}<label>理由<select name=reason>${(initial?["initial"]:["inventory","spill","discard","usage_missing","other"]).map(x=>`<option value=${x}>${chemicalAdjustmentReasons[x] || x}</option>`).join("")}</select></label><label>メモ<input name=notes></label>`,async e=>{e.preventDefault();const f=e.currentTarget,next=+f.stock.value,price=initial&&f.price.value!==""?+f.price.value:null;const {error}=await supabase.from("chemical_inventory_adjustments").insert({recordare_chemical_id:id,previous_stock:c.current_stock,new_stock:next,reason:f.reason.value,notes:emptyToNull(f.notes.value),price_amount:price});if(error)return alert(saveErrorMessage(error));const {error:updateError}=await supabase.from("recordare_chemicals").update({current_stock:next,unknown_cost_stock:initial&&price==null?next:(c.unknown_cost_stock||0)}).eq("id",id);if(updateError)return alert(saveErrorMessage(updateError));renderChemicalDetail(id);});
@@ -742,7 +742,65 @@ async function renderChemicalDetail(id) {
     });
     document.querySelectorAll("[data-purchase-url]").forEach((input)=>input.addEventListener("blur",()=>normalizePurchaseUrlField(input)));
   };
+  document.getElementById("plannerStandardChemical").onclick=()=>renderChemicalStandardSettings(id);
   document.getElementById("backChemicals").onclick=renderChemicalList;
+}
+
+async function renderChemicalStandardSettings(id) {
+  setCustomerContent('<div class="card placeholder"><p class="muted">標準設定を読み込んでいます…</p></div>');
+  const [{ data: chemical, error: chemicalError }, { data: standards, error: standardError }] = await Promise.all([
+    supabase.from("recordare_chemicals").select("id,unit,chemical_catalog_products(manufacturer,product_name)").eq("id", id).maybeSingle(),
+    supabase.from("recordare_chemical_step_standards").select("*").eq("recordare_chemical_id", id).eq("is_active", true).order("course_code").order("step_key"),
+  ]);
+  if (chemicalError || standardError || !chemical) {
+    return setCustomerContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(chemicalError || standardError || new Error("ケミカルが見つかりません。")))}</p><button class="text-button" id="backChemicalStandard">← ケミカルへ戻る</button></div>`);
+  }
+
+  const stepMap = new Map(plannerStepOptions().map((step) => [step.step_key, step.name]));
+  const rows = (standards || []).length
+    ? standards.map((standard) => {
+        const course = plannerCourseLabels[standard.course_code] || standard.course_code;
+        const stepName = stepMap.get(standard.step_key) || standard.step_key;
+        const amount = standard.standard_usage_amount == null ? "使用目安未設定" : `使用目安 ${standard.standard_usage_amount}${chemical.unit || "mL"}`;
+        return `<div class="service-timing-correction"><p><strong>${escapeHtml(course)} / ${escapeHtml(stepName)}</strong></p><p class="muted">${escapeHtml(amount)}${standard.notes ? ` ・ ${escapeHtml(standard.notes)}` : ""}</p><button class="secondary" type="button" data-disable-standard="${escapeHtml(standard.id)}">この標準設定を削除</button></div>`;
+      }).join("")
+    : '<p class="muted">まだ標準設定はありません。</p>';
+
+  setCustomerContent(`<section class="card"><h2>施工プラン標準設定</h2><p><strong>${escapeHtml(recordareChemicalName(chemical))}</strong></p><p class="muted">過去実績が少ない工程で使うRE:CORDARE標準です。メーカー公式情報とは別に扱います。</p>${rows}</section><form class="card form-card" id="chemicalStandardForm"><h2>標準設定を追加・更新</h2><p class="muted">同じコース・工程で保存すると内容を更新します。</p><label>適用コース<select name="course_code">${Object.entries(plannerCourseLabels).map(([value,label]) => `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`).join("")}</select></label><label>工程<select name="step_key" required><option value="">工程を選択</option>${plannerStepOptions().map((step) => `<option value="${escapeHtml(step.step_key)}">${escapeHtml(step.name)}</option>`).join("")}</select></label><label>標準使用目安mL<input name="amount" type="number" inputmode="decimal" min="0.001" step="0.001"></label><label>メモ<input name="notes"></label><button class="primary" type="submit">標準設定を保存</button></form><button class="text-button" type="button" id="backChemicalStandard">← ケミカルへ戻る</button>`);
+
+  document.getElementById("chemicalStandardForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const amount = form.amount.value === "" ? null : Number(form.amount.value);
+    const values = {
+      recordare_chemical_id: id,
+      course_code: form.course_code.value,
+      step_key: form.step_key.value,
+      standard_usage_amount: amount,
+      notes: emptyToNull(form.notes.value),
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from("recordare_chemical_step_standards").upsert(values, {
+      onConflict: "recordare_chemical_id,course_code,step_key",
+    });
+    if (error) return alert(saveErrorMessage(error));
+    await renderChemicalStandardSettings(id);
+  });
+
+  document.querySelectorAll("[data-disable-standard]").forEach((button) => button.addEventListener("click", async () => {
+    button.disabled = true;
+    const { error } = await supabase.from("recordare_chemical_step_standards")
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq("id", button.dataset.disableStandard);
+    if (error) {
+      button.disabled = false;
+      return alert(saveErrorMessage(error));
+    }
+    await renderChemicalStandardSettings(id);
+  }));
+
+  document.getElementById("backChemicalStandard").addEventListener("click", () => renderChemicalDetail(id));
 }
 
 function setCustomerContent(content) {
@@ -1296,22 +1354,38 @@ const buildServiceSteps = (courseCode, selectedOptions) => {
   jsonArray(selectedOptions).forEach((option) => (serviceOptionSteps[option.code] || []).forEach((step) => { if (courseCode !== "reset_coat" || !byKey.has(step.step_key)) byKey.set(step.step_key, { ...step, timed: true, skippable: true, rinseless: courseCode === "rinseless" ? "conditional" : "allowed" }); }));
   return [...byKey.values()].sort((a, b) => a.order_group - b.order_group || a.name.localeCompare(b.name, "ja"));
 };
+const plannerStepOptions = () => {
+  const byKey = new Map();
+  serviceStepMaster.forEach((step) => byKey.set(step.step_key, { ...step }));
+  byKey.set("rinseless_wash_dry", { step_key: "rinseless_wash_dry", name: "リンスレス洗浄＋拭き上げ", order_group: 1100 });
+  Object.values(serviceOptionSteps).flat().forEach((step) => {
+    if (!byKey.has(step.step_key)) byKey.set(step.step_key, { ...step });
+  });
+  return [...byKey.values()].sort((a, b) => a.order_group - b.order_group || a.name.localeCompare(b.name, "ja"));
+};
+const plannerCourseLabels = { all: "全コース共通", ...reservationCourses };
 const plannerConfidence = (count) => count >= 5 ? "高" : count >= 2 ? "中" : count >= 1 ? "低" : "実績なし";
 
 async function renderReservationPrePlan(reservation) {
   setReservationContent('<div class="card placeholder"><p class="muted">施工プランを作成しています…</p></div>');
 
   const plannedSteps = buildServiceSteps(reservation.course_code, reservation.selected_options);
-  const { data: historyRecords, error: historyError } = await supabase
-    .from("service_records")
-    .select("id,service_date")
-    .eq("status", "completed")
-    .eq("course_code", reservation.course_code)
-    .order("service_date", { ascending: false })
-    .limit(20);
+  const [{ data: historyRecords, error: historyError }, { data: standardRows, error: standardError }] = await Promise.all([
+    supabase
+      .from("service_records")
+      .select("id,service_date,course_code")
+      .eq("status", "completed")
+      .order("service_date", { ascending: false })
+      .limit(50),
+    supabase
+      .from("recordare_chemical_step_standards")
+      .select("id,recordare_chemical_id,course_code,step_key,standard_usage_amount,notes,recordare_chemicals(id,unit,current_stock,status,chemical_catalog_products(manufacturer,product_name))")
+      .eq("is_active", true)
+      .in("course_code", ["all", reservation.course_code]),
+  ]);
 
-  if (historyError) {
-    return setReservationContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(historyError))}</p><button class="text-button" id="backReservationPlan">← 予約へ戻る</button></div>`);
+  if (historyError || standardError) {
+    return setReservationContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(historyError || standardError))}</p><button class="text-button" id="backReservationPlan">← 予約へ戻る</button></div>`);
   }
 
   const recordIds = (historyRecords || []).map((record) => record.id);
@@ -1335,17 +1409,20 @@ async function renderReservationPrePlan(reservation) {
   }
 
   const stepById = new Map(historySteps.map((step) => [step.id, step]));
+  const courseByRecord = new Map((historyRecords || []).map((record) => [record.id, record.course_code]));
   const stats = new Map();
   historyUsages.forEach((usage) => {
     const step = stepById.get(usage.service_step_id);
-    if (!step || usage.actual_amount == null) return;
+    const courseCode = courseByRecord.get(usage.service_record_id);
+    if (!step || !courseCode || usage.actual_amount == null) return;
     const chemical = Array.isArray(usage.recordare_chemicals) ? usage.recordare_chemicals[0] : usage.recordare_chemicals;
     if (!chemical) return;
-    const key = `${step.step_key}|${usage.recordare_chemical_id}`;
+    const key = `${step.step_key}|${usage.recordare_chemical_id}|${courseCode}`;
     if (!stats.has(key)) {
       stats.set(key, {
         stepKey: step.step_key,
         chemicalId: usage.recordare_chemical_id,
+        courseCode,
         chemical,
         amounts: [],
         recordIds: new Set(),
@@ -1356,45 +1433,102 @@ async function renderReservationPrePlan(reservation) {
     item.recordIds.add(usage.service_record_id);
   });
 
+  const aggregateUsageCandidates = (items) => {
+    const byChemical = new Map();
+    items.forEach((item) => {
+      if (!byChemical.has(item.chemicalId)) {
+        byChemical.set(item.chemicalId, {
+          chemicalId: item.chemicalId,
+          chemical: item.chemical,
+          amounts: [],
+          recordIds: new Set(),
+        });
+      }
+      const target = byChemical.get(item.chemicalId);
+      target.amounts.push(...item.amounts);
+      item.recordIds.forEach((recordId) => target.recordIds.add(recordId));
+    });
+    return [...byChemical.values()].map((item) => ({
+      ...item,
+      average: item.amounts.reduce((sum, amount) => sum + amount, 0) / item.amounts.length,
+      count: item.recordIds.size,
+    })).sort((a, b) => b.count - a.count || a.average - b.average);
+  };
+
   const stepMarkup = plannedSteps.map((step, index) => {
-    const candidates = [...stats.values()]
-      .filter((item) => item.stepKey === step.step_key)
-      .map((item) => {
-        const average = item.amounts.reduce((sum, amount) => sum + amount, 0) / item.amounts.length;
-        return {
-          ...item,
-          average,
-          count: item.recordIds.size,
-        };
-      })
-      .sort((a, b) => b.count - a.count || a.average - b.average);
+    const stepStats = [...stats.values()].filter((item) => item.stepKey === step.step_key);
+    const sameCourse = aggregateUsageCandidates(stepStats.filter((item) => item.courseCode === reservation.course_code));
+    const otherCourse = aggregateUsageCandidates(stepStats.filter((item) => item.courseCode !== reservation.course_code));
+
+    const exactStandards = (standardRows || []).filter((item) => item.step_key === step.step_key && item.course_code === reservation.course_code);
+    const commonStandards = (standardRows || []).filter((item) => item.step_key === step.step_key && item.course_code === "all");
+    const standards = exactStandards.length ? exactStandards : commonStandards;
+
+    let sourceLabel = "";
+    let candidates = [];
+    if (sameCourse.length) {
+      sourceLabel = "同コース実績";
+      candidates = sameCourse.map((item) => ({ ...item, kind: "same" }));
+    } else if (otherCourse.length) {
+      sourceLabel = "他コース参考";
+      candidates = otherCourse.map((item) => ({ ...item, kind: "other" }));
+    } else if (standards.length) {
+      sourceLabel = "RE:CORDARE標準";
+      candidates = standards.map((standard) => ({
+        kind: "standard",
+        chemical: Array.isArray(standard.recordare_chemicals) ? standard.recordare_chemicals[0] : standard.recordare_chemicals,
+        average: standard.standard_usage_amount == null ? null : Number(standard.standard_usage_amount),
+        notes: standard.notes,
+      }));
+    }
 
     const candidateMarkup = candidates.length
       ? candidates.map((item) => {
           const unit = item.chemical?.unit || "mL";
           const stock = item.chemical?.current_stock == null ? null : Number(item.chemical.current_stock);
-          const average = Math.round(item.average * 10) / 10;
+          const average = item.average == null ? null : Math.round(Number(item.average) * 10) / 10;
           const stockText = stock == null
             ? "在庫未登録"
-            : stock < average
+            : average != null && stock < average
               ? `現在在庫 ${stock}${unit} ・ この目安量に不足`
               : `現在在庫 ${stock}${unit}`;
-          return `<div class="service-timing-correction"><strong>${escapeHtml(recordareChemicalName(item.chemical))}</strong><p class="muted">平均使用量 ${escapeHtml(average)}${escapeHtml(unit)} ・ 実績 ${escapeHtml(item.count)}件 ・ 信頼度 ${escapeHtml(plannerConfidence(item.count))}</p><p class="muted">${escapeHtml(stockText)}</p></div>`;
+          const detail = item.kind === "standard"
+            ? `RE:CORDARE標準 ・ ${average == null ? "使用目安未設定" : `使用目安 ${average}${unit}`}${item.notes ? ` ・ ${item.notes}` : ""}`
+            : item.kind === "same"
+              ? `同コース実績 ・ 平均使用量 ${average}${unit} ・ 実績 ${item.count}件 ・ 信頼度 ${plannerConfidence(item.count)}`
+              : `他コース参考 ・ 平均使用量 ${average}${unit} ・ 実績 ${item.count}件`;
+          return `<div class="service-timing-correction"><strong>${escapeHtml(recordareChemicalName(item.chemical))}</strong><p class="muted">${escapeHtml(detail)}</p><p class="muted">${escapeHtml(stockText)}</p></div>`;
         }).join("")
-      : '<p class="muted">この工程のケミカル使用実績はまだありません。</p>';
+      : '<p class="muted">候補なし。RE:CORDARE標準を登録すると、実績がない工程でも提案できます。</p>';
 
-    return `<section class="card"><p class="muted">工程 ${index + 1}</p><h2>${escapeHtml(step.name)}</h2>${candidateMarkup}</section>`;
+    return `<section class="card"><p class="muted">工程 ${index + 1} ・ ${escapeHtml(sourceLabel || "候補未設定")}</p><h2>${escapeHtml(step.name)}</h2>${candidateMarkup}</section>`;
   }).join("");
 
   const options = jsonArray(reservation.selected_options);
   const optionText = options.length
     ? options.map((item) => reservationOptions.find((option) => option.code === item.code)?.label || item.code).join(" / ")
     : "なし";
-  const referenceCount = recordIds.length;
-  const trackedReferenceCount = new Set(historyUsages.map((usage) => usage.service_record_id)).size;
-  const summaryConfidence = plannerConfidence(trackedReferenceCount);
+  const trackedByCourse = new Map();
+  historyUsages.forEach((usage) => {
+    const courseCode = courseByRecord.get(usage.service_record_id);
+    if (!courseCode) return;
+    if (!trackedByCourse.has(courseCode)) trackedByCourse.set(courseCode, new Set());
+    trackedByCourse.get(courseCode).add(usage.service_record_id);
+  });
+  const sameCourseCount = trackedByCourse.get(reservation.course_code)?.size || 0;
+  const otherCourseCount = [...trackedByCourse.entries()]
+    .filter(([courseCode]) => courseCode !== reservation.course_code)
+    .reduce((sum, [, ids]) => sum + ids.size, 0);
+  const standardCount = (standardRows || []).length;
+  const summaryConfidence = sameCourseCount
+    ? plannerConfidence(sameCourseCount)
+    : otherCourseCount
+      ? "他コース参考"
+      : standardCount
+        ? "RE:CORDARE標準"
+        : "実績なし";
 
-  setReservationContent(`<section class="card"><h2>施工プラン（一次提案）</h2><p><strong>${escapeHtml(reservationCourses[reservation.course_code] || reservation.course_code)}</strong></p><p class="muted">オプション：${escapeHtml(optionText)}</p><p class="muted">同コースの完了施工を最大20件参照し、工程ごとの実使用量からケミカル候補を表示しています。現地の施工前確認で変更する前提の一次提案です。</p><p>参照施工 ${escapeHtml(referenceCount)}件 ・ 全体目安 ${escapeHtml(summaryConfidence)}</p></section>${stepMarkup}<button class="text-button" type="button" id="backReservationPlan">← 予約へ戻る</button>`);
+  setReservationContent(`<section class="card"><h2>施工プラン（一次提案）</h2><p><strong>${escapeHtml(reservationCourses[reservation.course_code] || reservation.course_code)}</strong></p><p class="muted">オプション：${escapeHtml(optionText)}</p><p class="muted">同コース実績を最優先し、なければ他コースの同工程実績、それもなければRE:CORDARE標準を使います。現地の施工前確認で変更する前提の一次提案です。</p><p>同コース実績 ${escapeHtml(sameCourseCount)}件 ・ 他コース参考 ${escapeHtml(otherCourseCount)}件 ・ 標準設定 ${escapeHtml(standardCount)}件</p><p>全体目安 ${escapeHtml(summaryConfidence)}</p></section>${stepMarkup}<button class="text-button" type="button" id="backReservationPlan">← 予約へ戻る</button>`);
 
   document.getElementById("backReservationPlan")?.addEventListener("click", () => renderReservationForm(reservation));
 }
