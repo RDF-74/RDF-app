@@ -1885,17 +1885,28 @@ const clearServiceElapsed = () => {
   if (serviceElapsedInterval) clearInterval(serviceElapsedInterval);
   serviceElapsedInterval = null;
 };
-const formatServiceElapsed = (startedAt) => {
-  const seconds = Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000));
+const serviceElapsedSeconds = (startedAt, pauses = []) => {
+  const startedMs = new Date(startedAt).getTime();
+  const nowMs = Date.now();
+  const pausedMs = (pauses || []).reduce((total, pause) => {
+    if (!pause.started_at) return total;
+    const pauseStart = Math.max(startedMs, new Date(pause.started_at).getTime());
+    const pauseEnd = Math.min(nowMs, pause.ended_at ? new Date(pause.ended_at).getTime() : nowMs);
+    return total + Math.max(0, pauseEnd - pauseStart);
+  }, 0);
+  return Math.max(0, Math.floor((nowMs - startedMs - pausedMs) / 1000));
+};
+const formatServiceElapsed = (startedAt, pauses = []) => {
+  const seconds = serviceElapsedSeconds(startedAt, pauses);
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 };
-const showServiceElapsed = (elementId, startedAt) => {
+const showServiceElapsed = (elementId, startedAt, pauses = []) => {
   clearServiceElapsed();
   const update = () => {
     const element = document.getElementById(elementId);
-    if (element) element.textContent = formatServiceElapsed(startedAt);
+    if (element) element.textContent = formatServiceElapsed(startedAt, pauses);
   };
   update();
   serviceElapsedInterval = setInterval(update, 1000);
@@ -2449,7 +2460,7 @@ async function renderServiceTimer(recordId) {
     supabase.from("service_steps").select("*").eq("service_record_id", recordId).order("sequence_no", { ascending: true }),
     supabase.from("service_condition_tags").select("tag_key, details").eq("service_record_id", recordId),
     supabase.from("service_sessions").select("id, started_at, ended_at, status").eq("service_record_id", recordId).order("started_at", { ascending: true }),
-    supabase.from("service_pauses").select("started_at, ended_at").eq("service_record_id", recordId),
+    supabase.from("service_pauses").select("id, started_at, ended_at").eq("service_record_id", recordId),
     supabase.from("service_chemical_usages").select("id, service_step_id, recordare_chemical_id, usage_status, actual_amount, known_cost_amount, cost_status, unknown_cost_applied_amount, notes").eq("service_record_id", recordId),
     supabase.from("recordare_chemicals").select("id, status, unit, current_stock, chemical_catalog_products(manufacturer, product_name)").order("created_at", { ascending: true }),
     supabase.from("recordare_chemical_step_standards").select("recordare_chemical_id,step_key,standard_usage_amount,notes").eq("is_active", true).eq("course_code", "all"),
@@ -2470,6 +2481,26 @@ async function renderServiceTimer(recordId) {
   }
   const currentIndex = steps.findIndex((step) => step.id === activeStep.id);
   const nextStep = steps[currentIndex + 1];
+  const previousStep = currentIndex > 0 ? steps[currentIndex - 1] : null;
+  const activePause = (pauses || []).find((pause) => !pause.ended_at);
+  if (activePause) {
+    setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">一時停止中</span></div><h2>${escapeHtml(activeStep.step_name)}</h2><dl><dt>工程開始</dt><dd>${escapeHtml(formatActualTime(activeStep.started_at))}</dd><dt>施工経過</dt><dd id="serviceStepElapsed"></dd><dt>停止開始</dt><dd>${escapeHtml(formatActualTime(activePause.started_at))}</dd></dl><button class="primary service-action-button" type="button" id="resumeServiceButton">施工を再開</button></div><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+    showServiceElapsed("serviceStepElapsed", activeStep.started_at, pauses);
+    document.getElementById("resumeServiceButton").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = "再開中…";
+      const { error } = await supabase.from("service_pauses").update({ ended_at: new Date().toISOString() }).eq("id", activePause.id).is("ended_at", null);
+      if (error) {
+        button.disabled = false;
+        button.textContent = "施工を再開";
+        return alert(saveErrorMessage(error));
+      }
+      await renderServiceTimer(recordId);
+    });
+    document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
+    return;
+  }
   const isPreCheck = activeStep.step_key === "pre_check" || activeStep.sequence_no === 1;
   let confirmationProposals = [];
   let confirmationMarkup = "";
@@ -2490,12 +2521,62 @@ async function renderServiceTimer(recordId) {
     confirmationMarkup = serviceConfirmationMarkup(confirmationProposals, steps);
   }
   const chemicalMarkup = isPreCheck ? "" : serviceChemicalUsageMarkup(activeStep, chemicalUsages, chemicals, chemicalStandards);
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工中</span></div><h2>${escapeHtml(activeStep.step_name)}</h2><dl><dt>開始</dt><dd>${escapeHtml(formatActualTime(activeStep.started_at))}</dd><dt>経過</dt><dd id="serviceStepElapsed"></dd></dl></div>${confirmationMarkup}${isPreCheck ? serviceConditionMarkup(record, savedConditions) : ""}${chemicalMarkup}<button class="primary service-action-button" type="button" id="nextServiceStepButton">${nextStep ? "次の工程へ" : "施工終了"}</button><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
-  showServiceElapsed("serviceStepElapsed", activeStep.started_at);
+  const previousStepMarkup = previousStep
+    ? '<button class="text-button" type="button" id="previousServiceStepButton">← 前の工程へ戻る</button>'
+    : "";
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工中</span></div><h2>${escapeHtml(activeStep.step_name)}</h2><dl><dt>開始</dt><dd>${escapeHtml(formatActualTime(activeStep.started_at))}</dd><dt>経過</dt><dd id="serviceStepElapsed"></dd></dl></div>${confirmationMarkup}${isPreCheck ? serviceConditionMarkup(record, savedConditions) : ""}${chemicalMarkup}<button class="primary service-action-button" type="button" id="nextServiceStepButton">${nextStep ? "次の工程へ" : "施工終了"}</button><button class="secondary service-action-button" type="button" id="pauseServiceButton">一時停止</button>${previousStepMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  showServiceElapsed("serviceStepElapsed", activeStep.started_at, pauses);
   if (isPreCheck) {
     bindServiceConditionForm(recordId, renderServiceTimer);
     bindServiceConfirmationResults(recordId, renderServiceTimer);
   } else bindServiceChemicalUsageForms(recordId, activeStep);
+
+  document.getElementById("pauseServiceButton")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "停止中…";
+    const { error } = await supabase.from("service_pauses").insert({
+      service_record_id: recordId,
+      started_at: new Date().toISOString(),
+    });
+    if (error) {
+      button.disabled = false;
+      button.textContent = "一時停止";
+      return alert(saveErrorMessage(error));
+    }
+    await renderServiceTimer(recordId);
+  });
+
+  document.getElementById("previousServiceStepButton")?.addEventListener("click", async (event) => {
+    if (!previousStep) return;
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "戻っています…";
+    const originalStartedAt = activeStep.started_at;
+    const { error: currentError } = await supabase.from("service_steps")
+      .update({ started_at: null })
+      .eq("id", activeStep.id)
+      .is("ended_at", null);
+    if (currentError) {
+      button.disabled = false;
+      button.textContent = "← 前の工程へ戻る";
+      return alert(saveErrorMessage(currentError));
+    }
+    const { error: previousError } = await supabase.from("service_steps")
+      .update({ ended_at: null, skipped_reason: null })
+      .eq("id", previousStep.id);
+    if (previousError) {
+      await supabase.from("service_steps")
+        .update({ started_at: originalStartedAt })
+        .eq("id", activeStep.id)
+        .is("started_at", null);
+      button.disabled = false;
+      button.textContent = "← 前の工程へ戻る";
+      return alert(saveErrorMessage(previousError));
+    }
+    await renderServiceTimer(recordId);
+  });
+
   document.getElementById("nextServiceStepButton").addEventListener("click", async (event) => {
     const button = event.currentTarget;
     button.disabled = true;
