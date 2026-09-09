@@ -1936,6 +1936,12 @@ const serviceConfirmationStatusLabels = {
   declined: "今回は不要",
   proposed: "保留",
 };
+const serviceCustomerDecisionLabels = {
+  not_required: "未実施",
+  pending: "未確認",
+  approved: "承認",
+  declined: "今回は見送り",
+};
 
 async function ensureServiceConfirmationProposals(record) {
   if (!record?.vehicle_id) return null;
@@ -2024,7 +2030,7 @@ const serviceConfirmationMarkup = (proposals, steps, interactive = true) => {
   const priorityOrder = { high: 0, recommended: 1, reference: 2 };
   const sorted = [...proposals].sort((a, b) => (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9));
   const instructionText = interactive
-    ? "現車を確認して結果を選びます。「施工必要」にした項目だけ、施工前確認を終える時に対応工程へ反映します。"
+    ? "現車を確認して結果を選びます。追加施工が必要な項目は、次のお客様確認で了承後に工程へ反映します。"
     : "予約確定時点の確認候補です。結果の選択と工程反映は現地の施工前確認で行います。";
   return `<section class="card"><h2>過去履歴の確認候補</h2><p class="muted">${escapeHtml(instructionText)}</p>${sorted.map((proposal) => {
     const keys = jsonArray(proposal.step_keys);
@@ -2049,7 +2055,7 @@ const bindServiceConfirmationResults = (recordId, rerender) => {
     const buttons = document.querySelectorAll(`[data-proposal-id="${button.dataset.proposalId}"]`);
     buttons.forEach((item) => { item.disabled = true; });
     const { error } = await supabase.from("service_proposals")
-      .update({ status: button.dataset.confirmationResult })
+      .update({ status: button.dataset.confirmationResult, customer_decision: "not_required", customer_confirmed_at: null })
       .eq("id", button.dataset.proposalId)
       .eq("service_record_id", recordId);
     if (error) {
@@ -2060,16 +2066,21 @@ const bindServiceConfirmationResults = (recordId, rerender) => {
   }));
 };
 
-async function applyServiceConfirmationResults(recordId, proposals) {
+const serviceConfirmationMissingStepKeys = (proposal, steps) => {
+  const existing = new Set((steps || []).map((step) => step.step_key));
+  return jsonArray(proposal.step_keys).filter((stepKey) => !existing.has(stepKey));
+};
+
+async function applyServiceConfirmationResults(recordId, proposals, steps) {
   const requiredPending = (proposals || []).filter((proposal) =>
     ["high", "recommended"].includes(proposal.priority) && ["unproposed", "proposed"].includes(proposal.status)
   );
   if (requiredPending.length) {
-    return new Error("確認候補の「優先確認・確認推奨」は、施工必要または今回は不要を確定してから次へ進んでください。");
+    return { error: new Error("確認候補の「優先確認・確認推奨」は、施工必要または今回は不要を確定してから次へ進んでください。"), needsCustomerConfirmation: false };
   }
 
   const adopted = (proposals || []).filter((proposal) => proposal.status === "adopted");
-  if (!adopted.length) return null;
+  if (!adopted.length) return { error: null, needsCustomerConfirmation: false };
 
   const conditionValues = adopted
     .filter((proposal) => proposal.source_tag_key)
@@ -2081,13 +2092,27 @@ async function applyServiceConfirmationResults(recordId, proposals) {
   if (conditionValues.length) {
     const { error: conditionError } = await supabase.from("service_condition_tags")
       .upsert(conditionValues, { onConflict: "service_record_id,tag_key" });
-    if (conditionError) return conditionError;
+    if (conditionError) return { error: conditionError, needsCustomerConfirmation: false };
   }
+
+  const needsCustomerConfirmation = adopted.filter((proposal) => serviceConfirmationMissingStepKeys(proposal, steps).length);
+  if (!needsCustomerConfirmation.length) return { error: null, needsCustomerConfirmation: false };
+
+  const { error } = await supabase.from("service_proposals")
+    .update({ customer_decision: "pending", customer_confirmed_at: null })
+    .in("id", needsCustomerConfirmation.map((proposal) => proposal.id))
+    .eq("service_record_id", recordId);
+  return { error: error || null, needsCustomerConfirmation: !error };
+}
+
+async function addApprovedServiceConfirmationSteps(recordId, proposals) {
+  const approved = (proposals || []).filter((proposal) => proposal.status === "adopted" && proposal.customer_decision === "approved");
+  if (!approved.length) return null;
 
   const stepByKey = new Map(plannerStepOptions().map((step) => [step.step_key, step]));
   const addedKeys = new Set();
   const stepValues = [];
-  adopted.forEach((proposal) => jsonArray(proposal.step_keys).forEach((stepKey) => {
+  approved.forEach((proposal) => jsonArray(proposal.step_keys).forEach((stepKey) => {
     if (addedKeys.has(stepKey)) return;
     const step = stepByKey.get(stepKey);
     if (!step) return;
@@ -2100,7 +2125,7 @@ async function applyServiceConfirmationResults(recordId, proposals) {
       skippable: step.skippable !== false,
       snapshot: {
         ...step,
-        source: "confirmation_result",
+        source: "customer_confirmation",
         source_tag_key: proposal.source_tag_key,
       },
     });
@@ -2111,6 +2136,99 @@ async function applyServiceConfirmationResults(recordId, proposals) {
     p_steps: stepValues,
   });
   return error || null;
+}
+
+async function renderServiceCustomerConfirmation(recordId, record, activeStep, proposals, steps) {
+  clearServiceElapsed();
+  const stageProposals = (proposals || []).filter((proposal) =>
+    proposal.status === "adopted" && proposal.customer_decision !== "not_required"
+  );
+  const stepNames = new Map(plannerStepOptions().map((step) => [step.step_key, step.name]));
+  const existingKeys = new Set((steps || []).map((step) => step.step_key));
+  const rows = stageProposals.map((proposal) => {
+    const snapshot = proposal.snapshot || {};
+    const detail = snapshot.detail ? `（${snapshot.detail}）` : "";
+    const missingNames = jsonArray(proposal.step_keys)
+      .filter((stepKey) => !existingKeys.has(stepKey))
+      .map((stepKey) => stepNames.get(stepKey) || stepKey);
+    const status = serviceCustomerDecisionLabels[proposal.customer_decision] || "未確認";
+    return `<div class="service-timing-correction"><p><strong>${escapeHtml(proposal.source_tag_key || proposal.title)}${escapeHtml(detail)}</strong></p><p class="muted">追加施工：${escapeHtml(missingNames.join("・") || "追加工程なし")}</p><p class="muted">お客様確認：${escapeHtml(status)}</p><div class="service-confirmation-actions"><button type="button" class="filter-button ${proposal.customer_decision === "approved" ? "active" : ""}" data-customer-confirmation="approved" data-proposal-id="${escapeHtml(proposal.id)}">承認</button><button type="button" class="filter-button ${proposal.customer_decision === "declined" ? "active" : ""}" data-customer-confirmation="declined" data-proposal-id="${escapeHtml(proposal.id)}">今回は見送る</button></div></div>`;
+  }).join("");
+
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">お客様確認</span></div><h2>追加施工の確認</h2><p class="muted">施工前確認で必要と判断した追加施工です。お客様の了承を確認してから工程へ反映します。</p></div><section class="card">${rows}</section><button class="primary service-action-button" type="button" id="confirmCustomerServiceButton">お客様確認を確定して施工へ進む</button><button class="text-button" type="button" id="backToPreCheckButton">← 施工前確認に戻る</button>${activeServiceDeleteMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+
+  document.querySelectorAll("[data-customer-confirmation]").forEach((button) => button.addEventListener("click", async () => {
+    const related = document.querySelectorAll(`[data-proposal-id="${button.dataset.proposalId}"]`);
+    related.forEach((item) => { item.disabled = true; });
+    const decision = button.dataset.customerConfirmation;
+    const { error } = await supabase.from("service_proposals")
+      .update({ customer_decision: decision, customer_confirmed_at: new Date().toISOString() })
+      .eq("id", button.dataset.proposalId)
+      .eq("service_record_id", recordId);
+    if (error) {
+      related.forEach((item) => { item.disabled = false; });
+      return alert(saveErrorMessage(error));
+    }
+    await renderServiceTimer(recordId);
+  }));
+
+  document.getElementById("backToPreCheckButton").addEventListener("click", async () => {
+    const ids = stageProposals.map((proposal) => proposal.id);
+    if (ids.length) {
+      const { error } = await supabase.from("service_proposals")
+        .update({ customer_decision: "not_required", customer_confirmed_at: null })
+        .in("id", ids)
+        .eq("service_record_id", recordId);
+      if (error) return alert(saveErrorMessage(error));
+    }
+    await renderServiceTimer(recordId);
+  });
+
+  document.getElementById("confirmCustomerServiceButton").addEventListener("click", async (event) => {
+    const pending = stageProposals.filter((proposal) => proposal.customer_decision === "pending");
+    if (pending.length) return alert("追加施工は、お客様の承認または今回は見送るを選んでください。");
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "反映中…";
+
+    const addError = await addApprovedServiceConfirmationSteps(recordId, stageProposals);
+    if (addError) {
+      button.disabled = false;
+      button.textContent = "お客様確認を確定して施工へ進む";
+      return alert(saveErrorMessage(addError));
+    }
+
+    const { data: freshSteps, error: stepError } = await supabase.from("service_steps")
+      .select("id,started_at,ended_at,sequence_no")
+      .eq("service_record_id", recordId)
+      .order("sequence_no", { ascending: true });
+    if (stepError) {
+      button.disabled = false;
+      button.textContent = "お客様確認を確定して施工へ進む";
+      return alert(saveErrorMessage(stepError));
+    }
+
+    const now = new Date().toISOString();
+    const { error: endError } = await supabase.from("service_steps")
+      .update({ ended_at: now })
+      .eq("id", activeStep.id)
+      .is("ended_at", null);
+    if (endError) return alert(saveErrorMessage(endError));
+
+    const currentIndex = (freshSteps || []).findIndex((step) => step.id === activeStep.id);
+    const nextStep = currentIndex >= 0 ? freshSteps[currentIndex + 1] : null;
+    if (nextStep) {
+      const { error: startError } = await supabase.from("service_steps")
+        .update({ started_at: now })
+        .eq("id", nextStep.id)
+        .is("started_at", null);
+      if (startError) return alert(saveErrorMessage(startError));
+    }
+    await renderServiceTimer(recordId);
+  });
+
+  bindActiveServiceDelete(recordId);
+  document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
 }
 
 const recentDeletedServiceCutoff = () => new Date(Date.now() - 30 * 86400000).toISOString();
@@ -2617,7 +2735,7 @@ async function renderServiceTimer(recordId) {
       return setServiceContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(confirmationError))}</p></div>`);
     }
     const { data: proposalRows, error: proposalError } = await supabase.from("service_proposals")
-      .select("id,title,priority,status,source_tag_key,step_keys,source_service_record_id,snapshot")
+      .select("id,title,priority,status,source_tag_key,step_keys,source_service_record_id,snapshot,customer_decision,customer_confirmed_at")
       .eq("service_record_id", recordId)
       .not("source_tag_key", "is", null)
       .order("created_at", { ascending: true });
@@ -2625,6 +2743,12 @@ async function renderServiceTimer(recordId) {
       return setServiceContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(proposalError))}</p></div>`);
     }
     confirmationProposals = proposalRows || [];
+    const customerConfirmationStage = confirmationProposals.some((proposal) =>
+      proposal.status === "adopted" && proposal.customer_decision !== "not_required"
+    );
+    if (customerConfirmationStage) {
+      return renderServiceCustomerConfirmation(recordId, record, activeStep, confirmationProposals, steps);
+    }
     confirmationMarkup = serviceConfirmationMarkup(confirmationProposals, steps);
   }
   const chemicalMarkup = isPreCheck || ["step_600", "step_1100", "step_1500"].includes(activeStep.step_key) ? "" : serviceChemicalUsageMarkup(activeStep, chemicalUsages, chemicals, chemicalStandards);
@@ -2688,10 +2812,13 @@ async function renderServiceTimer(recordId) {
     const button = event.currentTarget;
     button.disabled = true;
     if (isPreCheck) {
-      const confirmationApplyError = await applyServiceConfirmationResults(recordId, confirmationProposals);
-      if (confirmationApplyError) {
+      const confirmationApply = await applyServiceConfirmationResults(recordId, confirmationProposals, steps);
+      if (confirmationApply.error) {
         button.disabled = false;
-        return alert(saveErrorMessage(confirmationApplyError));
+        return alert(saveErrorMessage(confirmationApply.error));
+      }
+      if (confirmationApply.needsCustomerConfirmation) {
+        return renderServiceTimer(recordId);
       }
     }
     const now = new Date().toISOString();
@@ -2753,7 +2880,7 @@ async function renderServiceDetail(recordId) {
   let confirmationHistoryMarkup = "";
   if (record.status === "completed") {
     const { data: confirmationRows, error: confirmationHistoryError } = await supabase.from("service_proposals")
-      .select("title,priority,status,source_tag_key,step_keys,snapshot")
+      .select("title,priority,status,source_tag_key,step_keys,snapshot,customer_decision,customer_confirmed_at")
       .eq("service_record_id", recordId)
       .not("source_tag_key", "is", null)
       .order("created_at", { ascending: true });
@@ -2764,7 +2891,10 @@ async function renderServiceDetail(recordId) {
       confirmationHistoryMarkup = `<section class="card"><h2>確認候補の結果</h2>${confirmationRows.map((item) => {
         const snapshot = item.snapshot || {};
         const detail = snapshot.detail ? `（${snapshot.detail}）` : "";
-        return `<div class="service-timing-correction"><div class="planner-priority-row"><p><strong>${escapeHtml(item.source_tag_key || item.title)}${escapeHtml(detail)}</strong></p><span class="planner-priority-badge ${escapeHtml(item.priority || "reference")}">${escapeHtml(priorityLabels[item.priority] || "参考")}</span></div><p class="muted">確認結果：${escapeHtml(serviceConfirmationStatusLabels[item.status] || item.status)}</p></div>`;
+        const customerDecision = item.customer_decision && item.customer_decision !== "not_required"
+          ? ` ・ お客様確認：${serviceCustomerDecisionLabels[item.customer_decision] || item.customer_decision}`
+          : "";
+        return `<div class="service-timing-correction"><div class="planner-priority-row"><p><strong>${escapeHtml(item.source_tag_key || item.title)}${escapeHtml(detail)}</strong></p><span class="planner-priority-badge ${escapeHtml(item.priority || "reference")}">${escapeHtml(priorityLabels[item.priority] || "参考")}</span></div><p class="muted">確認結果：${escapeHtml(serviceConfirmationStatusLabels[item.status] || item.status)}${escapeHtml(customerDecision)}</p></div>`;
       }).join("")}</section>`;
     }
   }
