@@ -1552,8 +1552,7 @@ const serviceOptionSteps = {
     { step_key: "glass_repellent", name: "フロントガラス 撥水", order_group: 1420 },
   ],
   front_glass_scale: [
-    { step_key: "glass_scale", name: "フロントガラス ウロコ除去", order_group: 920 },
-    { step_key: "glass_oil", name: "フロントガラス 油膜除去", order_group: 930 },
+    { step_key: "glass_scale", name: "フロントガラス ウロコ・油膜除去", order_group: 920 },
     { step_key: "glass_repellent", name: "フロントガラス 撥水", order_group: 1420 },
   ],
   all_glass_oil_repellent: [
@@ -1561,8 +1560,7 @@ const serviceOptionSteps = {
     { step_key: "glass_repellent", name: "全面ガラス 撥水", order_group: 1420 },
   ],
   all_glass_scale: [
-    { step_key: "glass_scale", name: "全面ガラス ウロコ除去", order_group: 920 },
-    { step_key: "glass_oil", name: "全面ガラス 油膜除去", order_group: 930 },
+    { step_key: "glass_scale", name: "全面ガラス ウロコ・油膜除去", order_group: 920 },
     { step_key: "glass_repellent", name: "全面ガラス 撥水", order_group: 1420 },
   ],
 };
@@ -1606,7 +1604,7 @@ const plannerConditionStepKeys = {
   "鉄粉多め": ["step_300"],
   "未塗装樹脂白化": ["step_800", "resin_coat"],
   "ガラス油膜あり": ["glass_oil", "glass_repellent"],
-  "ガラスウロコあり": ["glass_scale", "glass_oil", "glass_repellent"],
+  "ガラスウロコあり": ["glass_scale", "glass_repellent"],
   "ホイール汚れ強め": ["wheel_scale"],
 };
 const plannerCoatingStateLabels = {
