@@ -630,7 +630,7 @@ async function renderChemicalPlanner() {
 
   const [{ data: chemicals, error: chemicalError }, { data: completedRecords, error: completedError }, { data: usages, error: usageError }, { data: reservations, error: reservationError }, { data: purchases, error: purchaseError }, { data: initialStocks, error: initialStockError }, { data: purchaseOrders, error: purchaseOrderError }, { data: purchaseSources, error: purchaseSourceError }] = await Promise.all([
     supabase.from("recordare_chemicals").select("id,status,unit,current_stock,reorder_threshold,target_stock,chemical_catalog_products(manufacturer,product_name)").eq("status", "active").order("created_at"),
-    supabase.from("service_records").select("id,course_code").eq("status", "completed"),
+    supabase.from("service_records").select("id,course_code").eq("is_active", true).eq("status", "completed"),
     supabase.from("service_chemical_usages").select("service_record_id,recordare_chemical_id,usage_status,actual_amount"),
     supabase.from("reservations").select("course_code,reservation_date,status").eq("is_active", true).gte("reservation_date", today).lte("reservation_date", horizon).in("status", ["tentative","confirmed"]),
     supabase.from("chemical_purchases").select("recordare_chemical_id,capacity,quantity,amount,purchased_on").order("purchased_on", { ascending: true }),
@@ -1063,7 +1063,7 @@ async function renderCustomerDetail(customerId, returnToReservation = null) {
   const [{ data: customer, error: customerError }, { data: vehicles, error: vehicleError }, { data: history }] = await Promise.all([
     supabase.from("customers").select("*").eq("id", customerId).maybeSingle(),
     supabase.from("customer_vehicles").select("*").eq("customer_id", customerId).eq("is_active", true).order("created_at"),
-    supabase.from("service_records").select("id, vehicle_id, service_date, course_code, selected_options, actual_service_minutes, actual_total_minutes, status").eq("customer_id", customerId).order("service_date", { ascending: false }).limit(30)
+    supabase.from("service_records").select("id, vehicle_id, service_date, course_code, selected_options, actual_service_minutes, actual_total_minutes, status").eq("customer_id", customerId).eq("is_active", true).order("service_date", { ascending: false }).limit(30)
   ]);
   if (customerError || vehicleError || !customer) return setCustomerContent(`<div class="card"><p class="error">顧客情報を読み込めませんでした。</p><button class="secondary" type="button" id="backToCustomers">一覧へ戻る</button></div>`);
   const vehicleRows = vehicles.length ? vehicles.map((vehicle) => `<div class="vehicle-row" data-vehicle-id="${vehicle.id}" role="button" tabindex="0"><div><strong>${escapeHtml(vehicle.manufacturer)} ${escapeHtml(vehicle.model)}</strong><small>${escapeHtml(vehicle.color)}${vehicle.plate_last4 ? ` ・ ${escapeHtml(vehicle.plate_last4)}` : ""}${vehicle.notes ? ` ・ ${escapeHtml(vehicle.notes)}` : ""}</small></div><button class="archive-button" type="button" data-archive-vehicle="${vehicle.id}">無効化</button></div>`).join("") : '<div class="empty-state">車両はまだ登録されていません。</div>';
@@ -1094,7 +1094,7 @@ async function renderVehicleDetail(customerId, vehicleId) {
   setCustomerContent('<div class="card placeholder"><p class="muted">車両を読み込んでいます…</p></div>');
   const [{ data: vehicle, error: vehicleError }, { data: history, error: historyError }] = await Promise.all([
     supabase.from("customer_vehicles").select("*").eq("id", vehicleId).eq("customer_id", customerId).maybeSingle(),
-    supabase.from("service_records").select("id, service_date, course_code, selected_options, actual_service_minutes, actual_total_minutes, status").eq("vehicle_id", vehicleId).order("service_date", { ascending: false }).limit(30),
+    supabase.from("service_records").select("id, service_date, course_code, selected_options, actual_service_minutes, actual_total_minutes, status").eq("vehicle_id", vehicleId).eq("is_active", true).order("service_date", { ascending: false }).limit(30),
   ]);
   if (vehicleError || historyError || !vehicle) return setCustomerContent('<div class="card"><p class="error">車両を読み込めませんでした。</p></div>');
   const historyRows = history.length ? history.map((item) => `<button class="service-history-row" type="button" data-vehicle-history-record="${item.id}"><strong>${escapeHtml(reservationDate(item.service_date))} ・ ${escapeHtml(reservationCourses[item.course_code] || item.course_code)}</strong><small>実施工 ${item.actual_service_minutes ?? "--"}分 ・ 総拘束 ${item.actual_total_minutes ?? "--"}分 ・ ${escapeHtml(serviceStatuses[item.status] || item.status)}</small></button>`).join("") : '<p class="muted">施工履歴はまだありません。</p>';
@@ -1410,7 +1410,7 @@ async function renderReservationForm(reservation = null) {
   if (isEdit) {
     document.getElementById("reservationPrePlanButton")?.addEventListener("click", () => renderReservationPrePlan(reservation));
     const serviceButton = document.getElementById("createServiceRecordButton");
-    const { data: existingService } = await supabase.from("service_records").select("id").eq("reservation_id", reservation.id).maybeSingle();
+    const { data: existingService } = await supabase.from("service_records").select("id").eq("reservation_id", reservation.id).eq("is_active", true).maybeSingle();
     if (existingService?.id) serviceButton.textContent = "施工記録を見る";
     serviceButton?.addEventListener("click", async (event) => {
       const button = event.currentTarget;
@@ -1644,12 +1644,14 @@ async function renderReservationPrePlan(reservation) {
     supabase
       .from("service_records")
       .select("id,service_date,course_code,vehicle_id,coating_state")
+      .eq("is_active", true)
       .eq("status", "completed")
       .order("service_date", { ascending: false })
       .limit(50),
     supabase
       .from("service_records")
       .select("id,service_date,course_code,vehicle_id,coating_state")
+      .eq("is_active", true)
       .eq("status", "completed")
       .eq("vehicle_id", reservation.vehicle_id)
       .order("service_date", { ascending: false })
@@ -1944,6 +1946,7 @@ async function ensureServiceConfirmationProposals(record) {
       .not("source_tag_key", "is", null),
     supabase.from("service_records")
       .select("id,service_date")
+      .eq("is_active", true)
       .eq("status", "completed")
       .eq("vehicle_id", record.vehicle_id)
       .neq("id", record.id)
@@ -2110,14 +2113,78 @@ async function applyServiceConfirmationResults(recordId, proposals) {
   return error || null;
 }
 
+const recentDeletedServiceCutoff = () => new Date(Date.now() - 30 * 86400000).toISOString();
+
+async function renderRecentlyDeletedServices() {
+  clearServiceElapsed();
+  const token = ++serviceViewToken;
+  setServiceContent('<div class="card placeholder"><p class="muted">最近削除した項目を読み込んでいます…</p></div>');
+  const { data, error } = await supabase.from("service_records")
+    .select("id,reservation_id,customer_name,vehicle_manufacturer,vehicle_model,course_code,service_date,status,deleted_at")
+    .eq("is_active", false)
+    .not("deleted_at", "is", null)
+    .gte("deleted_at", recentDeletedServiceCutoff())
+    .order("deleted_at", { ascending: false });
+  if (token !== serviceViewToken || activeTab !== "施工") return;
+  if (error) return setServiceContent('<div class="card"><p class="error">最近削除した項目を読み込めませんでした。</p><button class="text-button" id="backToServiceList">← 施工一覧へ戻る</button></div>');
+
+  const rows = (data || []).length
+    ? data.map((record) => {
+        const deletedLabel = record.deleted_at ? new Date(record.deleted_at).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+        return `<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">削除済み</span></div><dl><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>削除日時</dt><dd>${escapeHtml(deletedLabel)}</dd></dl><button class="secondary" type="button" data-restore-service-record="${escapeHtml(record.id)}" data-reservation-id="${escapeHtml(record.reservation_id)}">施工履歴を復元</button></div>`;
+      }).join("")
+    : '<div class="empty-state">30日以内に削除した施工履歴はありません。</div>';
+
+  setServiceContent(`<section class="card"><h2>最近削除した項目</h2><p class="muted">削除から30日以内の施工履歴を表示しています。工程・施工前状態・使用ケミカルなどの紐づく記録も一緒に復元されます。</p></section>${rows}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+
+  document.querySelectorAll("[data-restore-service-record]").forEach((button) => button.addEventListener("click", async () => {
+    const recordId = button.dataset.restoreServiceRecord;
+    const reservationId = button.dataset.reservationId;
+    const { data: activeRecord, error: activeError } = await supabase.from("service_records")
+      .select("id")
+      .eq("reservation_id", reservationId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (activeError) return alert(saveErrorMessage(activeError));
+    if (activeRecord?.id) return alert("同じ予約に新しい施工記録があるため、この履歴は復元できません。");
+    if (!confirm("この施工履歴を復元しますか？")) return;
+    button.disabled = true;
+    button.textContent = "復元中…";
+    const { error: restoreError } = await supabase.from("service_records")
+      .update({ is_active: true, deleted_at: null })
+      .eq("id", recordId)
+      .eq("is_active", false);
+    if (restoreError) {
+      button.disabled = false;
+      button.textContent = "施工履歴を復元";
+      return alert(saveErrorMessage(restoreError));
+    }
+    await renderRecentlyDeletedServices();
+  }));
+
+  document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
+}
+
 async function renderServiceList() {
   clearServiceElapsed();
   const token = ++serviceViewToken;
-  const { data, error } = await supabase.from("service_records").select("id, reservation_id, customer_name, vehicle_manufacturer, vehicle_model, course_code, service_date, planned_start_time, planned_slot_minutes, planned_total, actual_total, status").eq("is_active", true).order("service_date", { ascending: true }).order("planned_start_time", { ascending: true });
+  const [{ data, error }, { count: deletedCount, error: deletedError }] = await Promise.all([
+    supabase.from("service_records")
+      .select("id, reservation_id, customer_name, vehicle_manufacturer, vehicle_model, course_code, service_date, planned_start_time, planned_slot_minutes, planned_total, actual_total, status")
+      .eq("is_active", true)
+      .order("service_date", { ascending: true })
+      .order("planned_start_time", { ascending: true }),
+    supabase.from("service_records")
+      .select("id", { count: "exact", head: true })
+      .eq("is_active", false)
+      .not("deleted_at", "is", null)
+      .gte("deleted_at", recentDeletedServiceCutoff()),
+  ]);
   if (token !== serviceViewToken || activeTab !== "施工") return;
-  if (error) return setServiceContent('<div class="card"><p class="error">施工記録を読み込めませんでした。</p></div>');
+  if (error || deletedError) return setServiceContent('<div class="card"><p class="error">施工記録を読み込めませんでした。</p></div>');
   const rows = data.length ? data.map((record) => `<button class="reservation-row" type="button" data-service-record-id="${record.id}"><span><strong>${escapeHtml(reservationDate(record.service_date))} ${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</strong><small>${escapeHtml(record.customer_name)} ・ ${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</small><small>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}${(record.actual_total ?? record.planned_total) != null ? ` ・ ${escapeHtml(yen(record.actual_total ?? record.planned_total))}` : ""}</small></span><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></button>`).join("") : '<div class="empty-state">まだ施工記録がありません。予約から施工記録を作成できます。</div>';
-  setServiceContent(`<div class="customer-list">${rows}</div>`);
+  setServiceContent(`<button class="secondary add-button" type="button" id="recentDeletedServicesButton">最近削除した項目${deletedCount ? `（${deletedCount}）` : ""}</button><div class="customer-list">${rows}</div>`);
+  document.getElementById("recentDeletedServicesButton").addEventListener("click", renderRecentlyDeletedServices);
   document.querySelectorAll("[data-service-record-id]").forEach((button) => button.addEventListener("click", () => renderServiceDetail(button.dataset.serviceRecordId)));
 }
 
@@ -2185,7 +2252,7 @@ async function ensureActiveServiceStep(recordId, record, existingSteps) {
 async function startServiceTimer(recordId, button) {
   button.disabled = true;
   button.textContent = "開始中…";
-  const { data: record, error: recordError } = await supabase.from("service_records").select("course_code, selected_options").eq("id", recordId).maybeSingle();
+  const { data: record, error: recordError } = await supabase.from("service_records").select("course_code, selected_options").eq("id", recordId).eq("is_active", true).maybeSingle();
   if (recordError || !record) {
     button.disabled = false;
     button.textContent = "施工開始";
@@ -2468,7 +2535,7 @@ async function renderServiceTimer(recordId) {
   const token = ++serviceViewToken;
   setServiceContent('<div class="card placeholder"><p class="muted">工程を読み込んでいます…</p></div>');
   const [{ data: record, error: recordError }, { data: steps, error: stepsError }, { data: savedConditions }, { data: sessions, error: sessionsError }, { data: pauses }, { data: chemicalUsages, error: chemicalUsagesError }, { data: chemicals, error: chemicalsError }, { data: chemicalStandards, error: chemicalStandardsError }] = await Promise.all([
-    supabase.from("service_records").select("*").eq("id", recordId).maybeSingle(),
+    supabase.from("service_records").select("*").eq("id", recordId).eq("is_active", true).maybeSingle(),
     supabase.from("service_steps").select("*").eq("service_record_id", recordId).order("sequence_no", { ascending: true }),
     supabase.from("service_condition_tags").select("tag_key, details").eq("service_record_id", recordId),
     supabase.from("service_sessions").select("id, started_at, ended_at, status").eq("service_record_id", recordId).order("started_at", { ascending: true }),
@@ -2621,7 +2688,7 @@ async function renderServiceDetail(recordId) {
   clearServiceElapsed();
   const token = ++serviceViewToken;
   setServiceContent('<div class="card placeholder"><p class="muted">施工記録を読み込んでいます…</p></div>');
-  const { data: record, error } = await supabase.from("service_records").select("*").eq("id", recordId).maybeSingle();
+  const { data: record, error } = await supabase.from("service_records").select("*").eq("id", recordId).eq("is_active", true).maybeSingle();
   if (token !== serviceViewToken || activeTab !== "施工") return;
   if (error || !record) return setServiceContent('<div class="card"><p class="error">施工記録を読み込めませんでした。</p><button class="secondary" type="button" id="backToServiceList">施工一覧へ戻る</button></div>');
   const { data: savedConditions } = await supabase.from("service_condition_tags").select("tag_key, details").eq("service_record_id", recordId);
@@ -2760,7 +2827,7 @@ async function renderServiceDetail(recordId) {
       : "";
   const conditionMarkup = serviceConditionMarkup(record, savedConditions);
 
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl></div>${plannedConfirmationMarkup}${conditionMarkup}${confirmationHistoryMarkup}${serviceChemicalUsageDetailMarkup}<form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl></div>${plannedConfirmationMarkup}${conditionMarkup}${confirmationHistoryMarkup}${serviceChemicalUsageDetailMarkup}<form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button danger-text" type="button" id="deleteServiceRecordButton">施工履歴を削除</button><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
   if (record.status === "completed") bindCompletedServiceChemicalUsageForms(recordId);
 
   document.getElementById("prepareServiceButton")?.addEventListener("click", async (event) => {
@@ -2867,12 +2934,29 @@ async function renderServiceDetail(recordId) {
     await renderServiceDetail(recordId);
   });
 
+  document.getElementById("deleteServiceRecordButton")?.addEventListener("click", async () => {
+    if (!confirm("この施工履歴を削除しますか？30日間は「最近削除した項目」から復元できます。")) return;
+    const button = document.getElementById("deleteServiceRecordButton");
+    button.disabled = true;
+    button.textContent = "削除中…";
+    const { error } = await supabase.from("service_records")
+      .update({ is_active: false, deleted_at: new Date().toISOString() })
+      .eq("id", recordId)
+      .eq("is_active", true);
+    if (error) {
+      button.disabled = false;
+      button.textContent = "施工履歴を削除";
+      return alert(saveErrorMessage(error));
+    }
+    await renderServiceList();
+  });
+
   document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
 }
 
 async function createServiceRecordFromReservation(reservationId, button) {
   try {
-    const { data: existing, error: existingError } = await supabase.from("service_records").select("id").eq("reservation_id", reservationId).maybeSingle();
+    const { data: existing, error: existingError } = await supabase.from("service_records").select("id").eq("reservation_id", reservationId).eq("is_active", true).maybeSingle();
     if (existingError) throw existingError;
     if (existing?.id) {
       activeTab = "施工";
