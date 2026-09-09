@@ -2097,6 +2097,29 @@ async function startServiceTimer(recordId, button) {
   await renderServiceTimer(recordId);
 }
 
+const activeServiceDeleteMarkup = '<button class="text-button danger-text" type="button" id="deleteActiveServiceRecordButton">施工履歴を削除</button>';
+
+const bindActiveServiceDelete = (recordId) => {
+  const button = document.getElementById("deleteActiveServiceRecordButton");
+  if (!button) return;
+  button.addEventListener("click", async () => {
+    if (!confirm("この施工履歴を削除しますか？30日間は「最近削除した項目」から復元できます。")) return;
+    button.disabled = true;
+    button.textContent = "削除中…";
+    const { error } = await supabase.from("service_records")
+      .update({ is_active: false, deleted_at: new Date().toISOString() })
+      .eq("id", recordId)
+      .eq("is_active", true);
+    if (error) {
+      button.disabled = false;
+      button.textContent = "施工履歴を削除";
+      return alert(saveErrorMessage(error));
+    }
+    clearServiceElapsed();
+    await renderServiceList();
+  });
+};
+
 async function renderPreparationState(recordId, record, preparationSession) {
   const optionText = jsonArray(record.selected_options).map((item) => item.name || item.code).filter(Boolean).join("、") || "なし";
   let confirmationMarkup = "";
@@ -2115,9 +2138,10 @@ async function renderPreparationState(recordId, record, preparationSession) {
     ]);
     confirmationMarkup = serviceConfirmationMarkup(proposalRows || [], stepRows || [], false);
   }
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">準備中</span></div><h2>準備中</h2><dl><dt>準備開始</dt><dd>${escapeHtml(formatActualTime(preparationSession.started_at))}</dd><dt>経過</dt><dd id="preparationElapsed"></dd><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl><button class="primary service-action-button" type="button" id="startServiceButton">施工開始</button></div>${confirmationMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">準備中</span></div><h2>準備中</h2><dl><dt>準備開始</dt><dd>${escapeHtml(formatActualTime(preparationSession.started_at))}</dd><dt>経過</dt><dd id="preparationElapsed"></dd><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl><button class="primary service-action-button" type="button" id="startServiceButton">施工開始</button></div>${confirmationMarkup}${activeServiceDeleteMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
   showServiceElapsed("preparationElapsed", preparationSession.started_at);
   document.getElementById("startServiceButton").addEventListener("click", (event) => startServiceTimer(recordId, event.currentTarget));
+  bindActiveServiceDelete(recordId);
   document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
 }
 
@@ -2129,7 +2153,7 @@ async function renderServiceActualReview(recordId, record, steps, sessions, paus
   const totalMinutes = totalSessionMinutes(sessions, pauses);
   const planned = plannedServiceTime(record);
   const plannedLabel = planned.minutes == null ? `予定時間算出不可 / ${planned.reason}` : `${planned.minutes}分`;
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工実績確認</span></div><dl><dt>施工終了</dt><dd>${escapeHtml(formatActualTime(finalStep?.ended_at))}</dd><dt>実施工時間</dt><dd>${escapeHtml(formatServiceMinutes(actualMinutes))}</dd><dt>総拘束時間</dt><dd>${escapeHtml(formatServiceMinutes(totalMinutes))}</dd><dt>予定施工時間</dt><dd>${escapeHtml(plannedLabel)}</dd><dt>予定との差</dt><dd>${escapeHtml(actualMinutes == null || planned.minutes == null ? "未計算" : serviceTimeDifference({ actual_service_minutes: actualMinutes }, planned))}</dd></dl></div><form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(record.actual_total ?? record.planned_total ?? "")}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="primary" type="submit">施工実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工実績確認</span></div><dl><dt>施工終了</dt><dd>${escapeHtml(formatActualTime(finalStep?.ended_at))}</dd><dt>実施工時間</dt><dd>${escapeHtml(formatServiceMinutes(actualMinutes))}</dd><dt>総拘束時間</dt><dd>${escapeHtml(formatServiceMinutes(totalMinutes))}</dd><dt>予定施工時間</dt><dd>${escapeHtml(plannedLabel)}</dd><dt>予定との差</dt><dd>${escapeHtml(actualMinutes == null || planned.minutes == null ? "未計算" : serviceTimeDifference({ actual_service_minutes: actualMinutes }, planned))}</dd></dl></div><form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(record.actual_total ?? record.planned_total ?? "")}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="primary" type="submit">施工実績を保存</button></form>${activeServiceDeleteMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
   document.getElementById("serviceActualForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -2156,6 +2180,7 @@ async function renderServiceActualReview(recordId, record, steps, sessions, paus
     if (timeError) return alert(saveErrorMessage(timeError));
     await renderServiceDetail(recordId);
   });
+  bindActiveServiceDelete(recordId);
   document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
 }
 
@@ -2163,7 +2188,7 @@ async function renderCleanupState(recordId, record, steps, sessions, pauses) {
   const finalStep = [...steps].reverse().find((step) => step.ended_at);
   const activeSession = (sessions || []).find((session) => !session.ended_at);
   if (!activeSession) return renderServiceActualReview(recordId, record, steps, sessions, pauses);
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">片付け中</span></div><h2>片付け中</h2><dl><dt>施工終了</dt><dd>${escapeHtml(formatActualTime(finalStep?.ended_at))}</dd><dt>総拘束経過</dt><dd id="cleanupElapsed"></dd></dl><button class="primary service-action-button" type="button" id="completeCleanupButton">片付け完了</button></div><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">片付け中</span></div><h2>片付け中</h2><dl><dt>施工終了</dt><dd>${escapeHtml(formatActualTime(finalStep?.ended_at))}</dd><dt>総拘束経過</dt><dd id="cleanupElapsed"></dd></dl><button class="primary service-action-button" type="button" id="completeCleanupButton">片付け完了</button></div>${activeServiceDeleteMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
   showServiceElapsed("cleanupElapsed", activeSession.started_at);
   document.getElementById("completeCleanupButton").addEventListener("click", async (event) => {
     const button = event.currentTarget;
@@ -2173,6 +2198,7 @@ async function renderCleanupState(recordId, record, steps, sessions, pauses) {
     if (error) return alert(saveErrorMessage(error));
     await renderServiceTimer(recordId);
   });
+  bindActiveServiceDelete(recordId);
   document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
 }
 
@@ -2180,7 +2206,7 @@ async function renderServiceEndState(recordId, record, steps, sessions) {
   const finalStep = [...steps].reverse().find((step) => step.ended_at);
   const activeSession = (sessions || []).find((session) => !session.ended_at);
   if (!activeSession) return;
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工中</span></div><h2>最終確認・仕上げ</h2><dl><dt>最終工程完了</dt><dd>${escapeHtml(formatActualTime(finalStep?.ended_at))}</dd></dl><button class="primary service-action-button" type="button" id="finishServiceButton">施工終了</button></div><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工中</span></div><h2>最終確認・仕上げ</h2><dl><dt>最終工程完了</dt><dd>${escapeHtml(formatActualTime(finalStep?.ended_at))}</dd></dl><button class="primary service-action-button" type="button" id="finishServiceButton">施工終了</button></div>${activeServiceDeleteMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
   document.getElementById("finishServiceButton").addEventListener("click", async (event) => {
     const button = event.currentTarget;
     button.disabled = true;
@@ -2189,6 +2215,7 @@ async function renderServiceEndState(recordId, record, steps, sessions) {
     if (error) return alert(saveErrorMessage(error));
     await renderServiceTimer(recordId);
   });
+  bindActiveServiceDelete(recordId);
   document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
 }
 
@@ -2387,7 +2414,7 @@ async function renderServiceTimer(recordId) {
   const previousStep = currentIndex > 0 ? steps[currentIndex - 1] : null;
   const activePause = (pauses || []).find((pause) => !pause.ended_at);
   if (activePause) {
-    setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">一時停止中</span></div><h2>${escapeHtml(activeStep.step_name)}</h2><dl><dt>工程開始</dt><dd>${escapeHtml(formatActualTime(activeStep.started_at))}</dd><dt>施工経過</dt><dd id="serviceStepElapsed"></dd><dt>停止開始</dt><dd>${escapeHtml(formatActualTime(activePause.started_at))}</dd></dl><button class="primary service-action-button" type="button" id="resumeServiceButton">施工を再開</button></div><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+    setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">一時停止中</span></div><h2>${escapeHtml(activeStep.step_name)}</h2><dl><dt>工程開始</dt><dd>${escapeHtml(formatActualTime(activeStep.started_at))}</dd><dt>施工経過</dt><dd id="serviceStepElapsed"></dd><dt>停止開始</dt><dd>${escapeHtml(formatActualTime(activePause.started_at))}</dd></dl><button class="primary service-action-button" type="button" id="resumeServiceButton">施工を再開</button></div>${activeServiceDeleteMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
     showServiceElapsed("serviceStepElapsed", activeStep.started_at, pauses);
     document.getElementById("resumeServiceButton").addEventListener("click", async (event) => {
       const button = event.currentTarget;
@@ -2401,6 +2428,7 @@ async function renderServiceTimer(recordId) {
       }
       await renderServiceTimer(recordId);
     });
+    bindActiveServiceDelete(recordId);
     document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
     return;
   }
@@ -2427,7 +2455,7 @@ async function renderServiceTimer(recordId) {
   const previousStepMarkup = previousStep
     ? '<button class="text-button" type="button" id="previousServiceStepButton">← 前の工程へ戻る</button>'
     : "";
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工中</span></div><h2>${escapeHtml(activeStep.step_name)}</h2><dl><dt>開始</dt><dd>${escapeHtml(formatActualTime(activeStep.started_at))}</dd><dt>経過</dt><dd id="serviceStepElapsed"></dd></dl></div>${confirmationMarkup}${isPreCheck ? serviceConditionMarkup(record, savedConditions) : ""}${chemicalMarkup}<button class="primary service-action-button" type="button" id="nextServiceStepButton">${nextStep ? "次の工程へ" : "施工終了"}</button><button class="secondary service-action-button" type="button" id="pauseServiceButton">一時停止</button>${previousStepMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工中</span></div><h2>${escapeHtml(activeStep.step_name)}</h2><dl><dt>開始</dt><dd>${escapeHtml(formatActualTime(activeStep.started_at))}</dd><dt>経過</dt><dd id="serviceStepElapsed"></dd></dl></div>${confirmationMarkup}${isPreCheck ? serviceConditionMarkup(record, savedConditions) : ""}${chemicalMarkup}<button class="primary service-action-button" type="button" id="nextServiceStepButton">${nextStep ? "次の工程へ" : "施工終了"}</button><button class="secondary service-action-button" type="button" id="pauseServiceButton">一時停止</button>${previousStepMarkup}${activeServiceDeleteMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
   showServiceElapsed("serviceStepElapsed", activeStep.started_at, pauses);
   if (isPreCheck) {
     bindServiceConditionForm(recordId, renderServiceTimer);
@@ -2505,6 +2533,7 @@ async function renderServiceTimer(recordId) {
     }
     await renderServiceTimer(recordId);
   });
+  bindActiveServiceDelete(recordId);
   document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
 }
 
