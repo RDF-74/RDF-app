@@ -1814,14 +1814,17 @@ async function ensureServiceConfirmationProposals(record) {
   return error || null;
 }
 
-const serviceConfirmationMarkup = (proposals, steps) => {
+const serviceConfirmationMarkup = (proposals, steps, interactive = true) => {
   if (!(proposals || []).length) return "";
   const existingStepKeys = new Set((steps || []).map((step) => step.step_key));
   const stepNames = new Map(plannerStepOptions().map((step) => [step.step_key, step.name]));
   const priorityLabels = { high: "優先確認", recommended: "確認推奨", reference: "参考" };
   const priorityOrder = { high: 0, recommended: 1, reference: 2 };
   const sorted = [...proposals].sort((a, b) => (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9));
-  return `<section class="card"><h2>過去履歴の確認候補</h2><p class="muted">現車を確認して結果を選びます。「施工必要」にした項目だけ、施工前確認を終える時に対応工程へ反映します。</p>${sorted.map((proposal) => {
+  const instructionText = interactive
+    ? "現車を確認して結果を選びます。「施工必要」にした項目だけ、施工前確認を終える時に対応工程へ反映します。"
+    : "予約確定時点の確認候補です。結果の選択と工程反映は現地の施工前確認で行います。";
+  return `<section class="card"><h2>過去履歴の確認候補</h2><p class="muted">${escapeHtml(instructionText)}</p>${sorted.map((proposal) => {
     const keys = jsonArray(proposal.step_keys);
     const targetNames = keys.map((key) => stepNames.get(key) || key);
     const alreadyIncluded = keys.length && keys.every((key) => existingStepKeys.has(key));
@@ -1834,7 +1837,8 @@ const serviceConfirmationMarkup = (proposals, steps) => {
     const detail = snapshot.detail ? `（${snapshot.detail}）` : "";
     const status = serviceConfirmationStatusLabels[proposal.status] || proposal.status;
     const requiredLabel = keys.length ? "施工必要" : "対応必要";
-    return `<div class="service-timing-correction"><div class="planner-priority-row"><p><strong>${escapeHtml(proposal.source_tag_key || proposal.title)}${escapeHtml(detail)}</strong></p><span class="planner-priority-badge ${escapeHtml(proposal.priority || "reference")}">${escapeHtml(priorityLabels[proposal.priority] || "参考")}</span></div><p class="muted">${escapeHtml(snapshot.source_date || "")} ・ 履歴 ${escapeHtml(snapshot.occurrence_count || 1)}回 ・ 前回工程：${escapeHtml(snapshot.past_status || "不明")}</p><p class="muted">${escapeHtml(targetText)}</p><p class="muted">確認結果：${escapeHtml(status)}</p><div class="service-confirmation-actions"><button type="button" class="filter-button ${proposal.status === "adopted" ? "active" : ""}" data-confirmation-result="adopted" data-proposal-id="${escapeHtml(proposal.id)}">${requiredLabel}</button><button type="button" class="filter-button ${proposal.status === "declined" ? "active" : ""}" data-confirmation-result="declined" data-proposal-id="${escapeHtml(proposal.id)}">今回は不要</button><button type="button" class="filter-button ${proposal.status === "proposed" ? "active" : ""}" data-confirmation-result="proposed" data-proposal-id="${escapeHtml(proposal.id)}">保留</button></div></div>`;
+    const resultMarkup = interactive ? `<p class="muted">確認結果：${escapeHtml(status)}</p><div class="service-confirmation-actions"><button type="button" class="filter-button ${proposal.status === "adopted" ? "active" : ""}" data-confirmation-result="adopted" data-proposal-id="${escapeHtml(proposal.id)}">${requiredLabel}</button><button type="button" class="filter-button ${proposal.status === "declined" ? "active" : ""}" data-confirmation-result="declined" data-proposal-id="${escapeHtml(proposal.id)}">今回は不要</button><button type="button" class="filter-button ${proposal.status === "proposed" ? "active" : ""}" data-confirmation-result="proposed" data-proposal-id="${escapeHtml(proposal.id)}">保留</button></div>` : "";
+    return `<div class="service-timing-correction"><div class="planner-priority-row"><p><strong>${escapeHtml(proposal.source_tag_key || proposal.title)}${escapeHtml(detail)}</strong></p><span class="planner-priority-badge ${escapeHtml(proposal.priority || "reference")}">${escapeHtml(priorityLabels[proposal.priority] || "参考")}</span></div><p class="muted">${escapeHtml(snapshot.source_date || "")} ・ 履歴 ${escapeHtml(snapshot.occurrence_count || 1)}回 ・ 前回工程：${escapeHtml(snapshot.past_status || "不明")}</p><p class="muted">${escapeHtml(targetText)}</p>${resultMarkup}</div>`;
   }).join("")}</section>`;
 };
 
@@ -2005,7 +2009,23 @@ async function startServiceTimer(recordId, button) {
 
 async function renderPreparationState(recordId, record, preparationSession) {
   const optionText = jsonArray(record.selected_options).map((item) => item.name || item.code).filter(Boolean).join("、") || "なし";
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">準備中</span></div><h2>準備中</h2><dl><dt>準備開始</dt><dd>${escapeHtml(formatActualTime(preparationSession.started_at))}</dd><dt>経過</dt><dd id="preparationElapsed"></dd><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl><button class="primary service-action-button" type="button" id="startServiceButton">施工開始</button></div><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  let confirmationMarkup = "";
+  const confirmationError = await ensureServiceConfirmationProposals(record);
+  if (!confirmationError) {
+    const [{ data: proposalRows }, { data: stepRows }] = await Promise.all([
+      supabase.from("service_proposals")
+        .select("id,title,priority,status,source_tag_key,step_keys,source_service_record_id,snapshot")
+        .eq("service_record_id", recordId)
+        .not("source_tag_key", "is", null)
+        .order("created_at", { ascending: true }),
+      supabase.from("service_steps")
+        .select("step_key")
+        .eq("service_record_id", recordId)
+        .order("sequence_no", { ascending: true }),
+    ]);
+    confirmationMarkup = serviceConfirmationMarkup(proposalRows || [], stepRows || [], false);
+  }
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">準備中</span></div><h2>準備中</h2><dl><dt>準備開始</dt><dd>${escapeHtml(formatActualTime(preparationSession.started_at))}</dd><dt>経過</dt><dd id="preparationElapsed"></dd><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl><button class="primary service-action-button" type="button" id="startServiceButton">施工開始</button></div>${confirmationMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
   showServiceElapsed("preparationElapsed", preparationSession.started_at);
   document.getElementById("startServiceButton").addEventListener("click", (event) => startServiceTimer(recordId, event.currentTarget));
   document.getElementById("backToServiceList").addEventListener("click", renderServiceList);
@@ -2299,6 +2319,31 @@ async function renderServiceDetail(recordId) {
   if (record.status === "in_progress") return renderServiceTimer(recordId);
   if (record.status === "planned" && preparationSession) return renderPreparationState(recordId, record, preparationSession);
 
+  let plannedConfirmationMarkup = "";
+  if (record.status === "planned") {
+    const confirmationError = await ensureServiceConfirmationProposals(record);
+    if (confirmationError) {
+      plannedConfirmationMarkup = `<section class="card"><h2>過去履歴の確認候補</h2><p class="error">${escapeHtml(saveErrorMessage(confirmationError))}</p></section>`;
+    } else {
+      const [{ data: proposalRows, error: proposalError }, { data: stepRows, error: stepError }] = await Promise.all([
+        supabase.from("service_proposals")
+          .select("id,title,priority,status,source_tag_key,step_keys,source_service_record_id,snapshot")
+          .eq("service_record_id", recordId)
+          .not("source_tag_key", "is", null)
+          .order("created_at", { ascending: true }),
+        supabase.from("service_steps")
+          .select("step_key")
+          .eq("service_record_id", recordId)
+          .order("sequence_no", { ascending: true }),
+      ]);
+      if (proposalError || stepError) {
+        plannedConfirmationMarkup = '<section class="card"><h2>過去履歴の確認候補</h2><p class="error">確認候補を読み込めませんでした。</p></section>';
+      } else {
+        plannedConfirmationMarkup = serviceConfirmationMarkup(proposalRows || [], stepRows || [], false);
+      }
+    }
+  }
+
   let confirmationHistoryMarkup = "";
   if (record.status === "completed") {
     const { data: confirmationRows, error: confirmationHistoryError } = await supabase.from("service_proposals")
@@ -2405,7 +2450,7 @@ async function renderServiceDetail(recordId) {
       : "";
   const conditionMarkup = serviceConditionMarkup(record, savedConditions);
 
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl></div>${conditionMarkup}${confirmationHistoryMarkup}${serviceChemicalUsageDetailMarkup}<form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl></div>${conditionMarkup}${plannedConfirmationMarkup}${confirmationHistoryMarkup}${serviceChemicalUsageDetailMarkup}<form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
   if (record.status === "completed") bindCompletedServiceChemicalUsageForms(recordId);
 
   document.getElementById("prepareServiceButton")?.addEventListener("click", async (event) => {
