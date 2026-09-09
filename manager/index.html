@@ -1547,16 +1547,30 @@ const serviceOptionSteps = {
   wheel_scale_heavy: [{ step_key: "wheel_scale", name: "ホイール スケール除去", order_group: 250 }],
   unpainted_resin_partial: [{ step_key: "step_800", name: "未塗装樹脂洗浄", order_group: 800 }, { step_key: "resin_coat", name: "未塗装樹脂コーティング", order_group: 1410 }],
   unpainted_resin_wide: [{ step_key: "step_800", name: "未塗装樹脂洗浄", order_group: 800 }, { step_key: "resin_coat", name: "未塗装樹脂コーティング", order_group: 1410 }],
-  front_glass_oil_repellent: [{ step_key: "glass_oil", name: "フロントガラス 油膜除去＋撥水", order_group: 1415 }],
-  front_glass_scale: [{ step_key: "glass_scale", name: "フロントガラス ウロコ除去＋油膜除去＋撥水", order_group: 1415 }],
-  all_glass_oil_repellent: [{ step_key: "glass_oil", name: "全面ガラス 油膜除去＋撥水", order_group: 1415 }],
-  all_glass_scale: [{ step_key: "glass_scale", name: "全面ガラス ウロコ除去＋油膜除去＋撥水", order_group: 1415 }],
+  front_glass_oil_repellent: [
+    { step_key: "glass_oil", name: "フロントガラス 油膜除去", order_group: 930 },
+    { step_key: "glass_repellent", name: "フロントガラス 撥水", order_group: 1420 },
+  ],
+  front_glass_scale: [
+    { step_key: "glass_scale", name: "フロントガラス ウロコ除去", order_group: 920 },
+    { step_key: "glass_oil", name: "フロントガラス 油膜除去", order_group: 930 },
+    { step_key: "glass_repellent", name: "フロントガラス 撥水", order_group: 1420 },
+  ],
+  all_glass_oil_repellent: [
+    { step_key: "glass_oil", name: "全面ガラス 油膜除去", order_group: 930 },
+    { step_key: "glass_repellent", name: "全面ガラス 撥水", order_group: 1420 },
+  ],
+  all_glass_scale: [
+    { step_key: "glass_scale", name: "全面ガラス ウロコ除去", order_group: 920 },
+    { step_key: "glass_oil", name: "全面ガラス 油膜除去", order_group: 930 },
+    { step_key: "glass_repellent", name: "全面ガラス 撥水", order_group: 1420 },
+  ],
 };
 const buildServiceSteps = (courseCode, selectedOptions) => {
   const base = courseCode === "rinseless"
     ? [{ ...serviceStepMaster[0], rinseless: "allowed" }, { ...serviceStepMaster[1], rinseless: "allowed" }, { step_key: "rinseless_wash_dry", name: "リンスレス洗浄＋拭き上げ", order_group: 1100, timed: true, skippable: false, rinseless: "allowed" }, { ...serviceStepMaster[14], rinseless: "allowed" }]
-    : courseCode === "reset_coat" ? serviceStepMaster
-      : serviceStepMaster.filter((step) => [100, 200, 400, 600, 1100, 1500].includes(step.order_group));
+    : courseCode === "reset_coat" ? serviceStepMaster.filter((step) => step.order_group !== 600)
+      : serviceStepMaster.filter((step) => [100, 200, 400, 1100, 1500].includes(step.order_group));
   const byKey = new Map(base.map((step) => [step.step_key, { ...step }]));
   jsonArray(selectedOptions).forEach((option) => (serviceOptionSteps[option.code] || []).forEach((step) => { if (courseCode !== "reset_coat" || !byKey.has(step.step_key)) byKey.set(step.step_key, { ...step, timed: true, skippable: true, rinseless: courseCode === "rinseless" ? "conditional" : "allowed" }); }));
   return [...byKey.values()].sort((a, b) => a.order_group - b.order_group || a.name.localeCompare(b.name, "ja"));
@@ -1591,8 +1605,8 @@ const plannerConditionStepKeys = {
   "水ジミ・スケール": ["step_900"],
   "鉄粉多め": ["step_300"],
   "未塗装樹脂白化": ["step_800", "resin_coat"],
-  "ガラス油膜あり": ["glass_oil"],
-  "ガラスウロコあり": ["glass_scale"],
+  "ガラス油膜あり": ["glass_oil", "glass_repellent"],
+  "ガラスウロコあり": ["glass_scale", "glass_oil", "glass_repellent"],
   "ホイール汚れ強め": ["wheel_scale"],
 };
 const plannerCoatingStateLabels = {
