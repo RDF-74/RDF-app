@@ -2344,7 +2344,7 @@ async function renderServiceTimer(recordId) {
     confirmationProposals = proposalRows || [];
     confirmationMarkup = serviceConfirmationMarkup(confirmationProposals, steps);
   }
-  const chemicalMarkup = isPreCheck ? "" : serviceChemicalUsageMarkup(activeStep, chemicalUsages, chemicals, chemicalStandards);
+  const chemicalMarkup = isPreCheck || activeStep.step_key === "step_600" ? "" : serviceChemicalUsageMarkup(activeStep, chemicalUsages, chemicals, chemicalStandards);
   const previousStepMarkup = previousStep
     ? '<button class="text-button" type="button" id="previousServiceStepButton">← 前の工程へ戻る</button>'
     : "";
