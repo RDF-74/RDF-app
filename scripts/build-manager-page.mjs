@@ -17,7 +17,7 @@ const replacements = {
   "/* __SUPABASE_CONFIG__ */": await read("../manager/supabase-config.js"),
   "/* __SUPABASE_VENDOR__ */": await read("../manager/supabase-vendor.js"),
   "/* __SUPABASE_CLIENT__ */": await read("../manager/supabase-client.js"),
-  "/* __MANAGER_APP__ */": `${await read("../manager/app.js")}\n${await read("../manager/reservation-application-import.js")}\n${await read("../manager/reservation-course-option-rules.js")}\n${await read("../manager/reservation-confirmation-line.js")}\n${await read("../manager/reservation-status-auto.js")}`,
+  "/* __MANAGER_APP__ */": `${await read("../manager/app.js")}\n${await read("../manager/reservation-application-import.js")}\n${await read("../manager/reservation-course-option-rules.js")}\n${await read("../manager/reservation-confirmation-line.js")}\n${await read("../manager/reservation-status-auto.js")}\n${await read("../manager/reservation-cancellation-line.js")}`,
 };
 for (const [placeholder, contents] of Object.entries(replacements))
   page = page.replace(placeholder, contents);
