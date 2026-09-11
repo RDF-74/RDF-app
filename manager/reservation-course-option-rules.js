@@ -34,9 +34,10 @@
         if (!label.dataset.originalOptionLabel) {
           label.dataset.originalOptionLabel = label.textContent || "";
         }
-        label.textContent = isReset && resetLabelOverrides[code]
+        const desiredLabel = isReset && resetLabelOverrides[code]
           ? resetLabelOverrides[code]
           : label.dataset.originalOptionLabel;
+        if (label.textContent !== desiredLabel) label.textContent = desiredLabel;
       }
     });
   };
