@@ -45,12 +45,33 @@
   };
 
   const manufacturers = ["トヨタ", "レクサス", "日産", "ニッサン", "ホンダ", "マツダ", "スバル", "スズキ", "ダイハツ", "三菱", "ミツビシ", "フォルクスワーゲン", "Volkswagen", "VW", "BMW", "メルセデス・ベンツ", "メルセデスベンツ", "ベンツ", "アウディ", "Audi", "ボルボ", "Volvo", "プジョー", "シトロエン", "ルノー", "MINI", "ミニ", "ポルシェ", "Porsche", "テスラ", "Tesla"];
+  const manufacturerOptions = [
+    "トヨタ", "レクサス", "日産", "ホンダ", "マツダ", "スバル", "スズキ", "ダイハツ", "三菱",
+    "フォルクスワーゲン", "BMW", "メルセデス・ベンツ", "アウディ", "ボルボ", "プジョー", "シトロエン", "ルノー", "MINI", "ポルシェ", "テスラ",
+  ];
+  const canonicalManufacturer = (value) => {
+    const text = normalize(value);
+    const aliases = {
+      "ニッサン": "日産",
+      "ミツビシ": "三菱",
+      "Volkswagen": "フォルクスワーゲン",
+      "VW": "フォルクスワーゲン",
+      "メルセデスベンツ": "メルセデス・ベンツ",
+      "ベンツ": "メルセデス・ベンツ",
+      "Audi": "アウディ",
+      "Volvo": "ボルボ",
+      "ミニ": "MINI",
+      "Porsche": "ポルシェ",
+      "Tesla": "テスラ",
+    };
+    return aliases[text] || text;
+  };
   const vehicleParts = (text) => {
     const manufacturer = applicationField(text, ["メーカー", "車両メーカー"]);
     const rawModel = applicationField(text, ["車種", "車名", "車両"]);
-    if (manufacturer || !rawModel) return { manufacturer, model: rawModel };
+    if (manufacturer || !rawModel) return { manufacturer: canonicalManufacturer(manufacturer), model: rawModel };
     const found = manufacturers.find((item) => rawModel.toLowerCase().startsWith(item.toLowerCase()));
-    return found ? { manufacturer: found, model: normalize(rawModel.slice(found.length)) } : { manufacturer: "", model: rawModel };
+    return found ? { manufacturer: canonicalManufacturer(found), model: normalize(rawModel.slice(found.length)) } : { manufacturer: "", model: rawModel };
   };
 
   const parseApplication = (text) => {
@@ -72,12 +93,41 @@
     };
   };
 
+  const syncManufacturerOther = () => {
+    const select = document.getElementById("applicationManufacturer");
+    const other = document.getElementById("applicationManufacturerOther");
+    if (!select || !other) return;
+    const isOther = select.value === "__other__";
+    other.classList.toggle("hidden", !isOther);
+    other.required = isOther;
+    if (!isOther) other.value = "";
+  };
+  const setManufacturerField = (value) => {
+    const select = document.getElementById("applicationManufacturer");
+    const other = document.getElementById("applicationManufacturerOther");
+    if (!select || !other || !value) return;
+    const canonical = canonicalManufacturer(value);
+    if (manufacturerOptions.includes(canonical)) {
+      select.value = canonical;
+      other.value = "";
+    } else {
+      select.value = "__other__";
+      other.value = canonical;
+    }
+    syncManufacturerOther();
+  };
+  const selectedManufacturer = () => {
+    const select = document.getElementById("applicationManufacturer");
+    const other = document.getElementById("applicationManufacturerOther");
+    if (!select) return "";
+    return select.value === "__other__" ? normalize(other?.value) : normalize(select.value);
+  };
+
   const fillParsedFields = (parsed) => {
     const values = {
       applicationCustomerName: parsed.customerName,
       applicationPhone: parsed.phone,
       applicationLineName: parsed.lineName,
-      applicationManufacturer: parsed.manufacturer,
       applicationModel: parsed.model,
       applicationColor: parsed.color,
       applicationPlate: parsed.plate,
@@ -89,6 +139,7 @@
       const input = document.getElementById(id);
       if (input && value) input.value = value;
     });
+    setManufacturerField(parsed.manufacturer);
   };
 
   async function reusableCustomer(values) {
@@ -131,8 +182,10 @@
   }
 
   async function renderApplicationImport() {
-    setReservationContent(`<form class="card form-card" id="reservationApplicationForm"><h2>予約申込から登録</h2><p class="muted">LINEで届いた予約申込文を貼り付けると、読み取れる項目を自動入力します。</p><label>予約申込文</label><textarea id="reservationApplicationText" rows="8" placeholder="【RE 予約申込】から始まるメッセージを貼り付け"></textarea><button class="secondary" type="button" id="parseReservationApplicationButton">内容を読み取る</button><label>お客様名</label><input id="applicationCustomerName" required autocomplete="name"><label>電話番号</label><input id="applicationPhone" type="tel" inputmode="tel"><label>LINE表示名</label><input id="applicationLineName"><label>メーカー</label><input id="applicationManufacturer" required><label>車種</label><input id="applicationModel" required><label>色</label><input id="applicationColor" required><label>ナンバー下4桁</label><input id="applicationPlate" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"><label>車両区分</label><select id="applicationSizeClass" required><option value="">車両区分を選択</option>${Object.entries(reservationSizeClasses).map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join("")}</select><label>コース</label><select id="applicationCourse"><option value="">予約画面で選択</option>${Object.entries(reservationCourses).map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join("")}</select><label>施工日</label><input id="applicationDate" type="date"><label>開始時間</label><input id="applicationTime" type="time"><p class="error hidden" id="reservationApplicationError"></p><button class="primary" type="submit">顧客・車両を登録して予約へ</button><button class="text-button" type="button" id="cancelReservationApplicationButton">予約一覧へ戻る</button></form>`);
+    const manufacturerMarkup = manufacturerOptions.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("");
+    setReservationContent(`<form class="card form-card" id="reservationApplicationForm"><h2>予約申込から登録</h2><p class="muted">LINEで届いた予約申込文を貼り付けると、読み取れる項目を自動入力します。</p><label>予約申込文</label><textarea id="reservationApplicationText" rows="8" placeholder="【RE 予約申込】から始まるメッセージを貼り付け"></textarea><button class="secondary" type="button" id="parseReservationApplicationButton">内容を読み取る</button><label>お客様名</label><input id="applicationCustomerName" required autocomplete="name"><label>電話番号</label><input id="applicationPhone" type="tel" inputmode="tel"><label>LINE表示名</label><input id="applicationLineName"><label>メーカー</label><select id="applicationManufacturer" required><option value="">メーカーを選択</option>${manufacturerMarkup}<option value="__other__">その他</option></select><input id="applicationManufacturerOther" class="hidden" placeholder="メーカー名を入力"><label>車種</label><input id="applicationModel" required><label>色</label><input id="applicationColor" required><label>ナンバー下4桁</label><input id="applicationPlate" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"><label>車両区分</label><select id="applicationSizeClass" required><option value="">車両区分を選択</option>${Object.entries(reservationSizeClasses).map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join("")}</select><label>コース</label><select id="applicationCourse"><option value="">予約画面で選択</option>${Object.entries(reservationCourses).map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join("")}</select><label>施工日</label><input id="applicationDate" type="date"><label>開始時間</label><input id="applicationTime" type="time"><p class="error hidden" id="reservationApplicationError"></p><button class="primary" type="submit">顧客・車両を登録して予約へ</button><button class="text-button" type="button" id="cancelReservationApplicationButton">予約一覧へ戻る</button></form>`);
     const text = document.getElementById("reservationApplicationText");
+    document.getElementById("applicationManufacturer").addEventListener("change", syncManufacturerOther);
     document.getElementById("parseReservationApplicationButton").addEventListener("click", () => fillParsedFields(parseApplication(text.value)));
     document.getElementById("cancelReservationApplicationButton").addEventListener("click", renderReservationList);
     document.getElementById("reservationApplicationForm").addEventListener("submit", async (event) => {
@@ -141,7 +194,7 @@
       const errorTarget = document.getElementById("reservationApplicationError");
       const draft = parseApplication(text.value);
       const customerValues = { name: normalize(document.getElementById("applicationCustomerName").value), phone: emptyToNull(document.getElementById("applicationPhone").value), line_display_name: emptyToNull(document.getElementById("applicationLineName").value), contact_method: "line", notes: null };
-      const vehicleValues = { manufacturer: normalize(document.getElementById("applicationManufacturer").value), model: normalize(document.getElementById("applicationModel").value), color: normalize(document.getElementById("applicationColor").value), plate_last4: emptyToNull(document.getElementById("applicationPlate").value), size_class: document.getElementById("applicationSizeClass").value, notes: null };
+      const vehicleValues = { manufacturer: selectedManufacturer(), model: normalize(document.getElementById("applicationModel").value), color: normalize(document.getElementById("applicationColor").value), plate_last4: emptyToNull(document.getElementById("applicationPlate").value), size_class: document.getElementById("applicationSizeClass").value, notes: null };
       draft.sizeClass = vehicleValues.size_class;
       draft.course = document.getElementById("applicationCourse").value || draft.course;
       draft.date = document.getElementById("applicationDate").value || draft.date;
