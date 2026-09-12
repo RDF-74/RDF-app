@@ -5122,6 +5122,7 @@
           name: "Koch-Chemie",
           source: "https://www.koch-chemie.com/en/products",
         },
+        { name: "Labocosmetica", source: "https://www.labocosmetica.com/ja/shop/" },
         { name: "GANBASS", source: "https://ganbass.net/" },
         { name: "PROVIDE", source: "https://provide.shop-pro.jp/" },
         { name: "SOFT99", source: "https://www.soft99.co.jp/products/" },
@@ -5475,8 +5476,12 @@
           ["VITREO", "その他", "ガラス用研磨コンパウンド"],
         ]),
       ];
+      const LABOCOSMETICA_CATALOG_PRODUCTS = new Set(["BENEFÌCIA","ÈNERGO","IDROSAVE","INITIO","LIBERA","NERO","NÈVE","NITIDO","PERFÉCTA 2.0","PERFÉCTA SiO2","PRELUDIO ALKALINE","PRÌMUS 2.0","PURÌFICA (Upgrade Formula)","SÈMPER","SIDERO","VÈRITAS"]);
       const CHEMICAL_CATALOG = CHEMICAL_CATALOG_RAW.filter(
-        (item) => !["VONIXX", "Labocosmetica"].includes(item.manufacturer),
+        (item) =>
+          item.manufacturer !== "VONIXX" &&
+          (item.manufacturer !== "Labocosmetica" ||
+            LABOCOSMETICA_CATALOG_PRODUCTS.has(item.name)),
       ).concat(
         ...catalogRows("GANBASS", [
           ["REBOOT NEXT", "その他", "シリカスケール除去", [], {
