@@ -68,7 +68,7 @@
 
     const config = window.RECORDARE_SUPABASE_CONFIG || {};
     const body = await calendarPayload(reservationId, action);
-    const response = await fetch(`${API_BASE}/api/google-calendar-sync`, {
+    const response = await fetch(`${API_BASE}/api/reservation-confirmation`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -76,6 +76,7 @@
       },
       body: JSON.stringify({
         ...body,
+        calendarSyncAction: action,
         supabaseUrl: config.url,
         anonKey: config.anonKey,
       }),
