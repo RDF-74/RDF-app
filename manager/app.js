@@ -897,11 +897,15 @@ async function renderCustomerDetail(customerId, returnToReservation = null) {
   document.getElementById("backToCustomers").addEventListener("click", returnToReservation || renderCustomerList);
   document.getElementById("addVehicleButton").addEventListener("click", () => renderVehicleForm(customerId));
   document.getElementById("archiveCustomerButton").addEventListener("click", async () => {
+    if (!confirm(`「${customer.name}」を無効化しますか？\n通常の顧客一覧に表示されなくなります。`)) return;
     const { error } = await supabase.from("customers").update({ is_active: false }).eq("id", customerId);
     if (error) return alert(errorMessage);
     renderCustomerList();
   });
   document.querySelectorAll("[data-archive-vehicle]").forEach((button) => button.addEventListener("click", async () => {
+    const vehicle = vehicles.find((item) => item.id === button.dataset.archiveVehicle);
+    const vehicleName = vehicle ? `${vehicle.manufacturer} ${vehicle.model}${vehicle.plate_last4 ? ` ・ ${vehicle.plate_last4}` : ""}` : "この車両";
+    if (!confirm(`「${vehicleName}」を無効化しますか？\n顧客詳細の車両一覧に表示されなくなります。`)) return;
     const { error } = await supabase.from("customer_vehicles").update({ is_active: false }).eq("id", button.dataset.archiveVehicle);
     if (error) return alert(errorMessage);
     renderCustomerDetail(customerId);
