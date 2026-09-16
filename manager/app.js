@@ -1852,7 +1852,7 @@ async function ensureServiceConfirmationProposals(record) {
 
 const serviceConfirmationMarkup = (proposals, steps, interactive = true) => {
   if (!(proposals || []).length) return "";
-  const existingStepKeys = new Set((steps || []).map((step) => step.step_key));
+  const existingStepKeys = new Set((steps || []).filter((step) => !step.skipped_reason).map((step) => step.step_key));
   const stepNames = new Map(plannerStepOptions().map((step) => [step.step_key, step.name]));
   const priorityLabels = { high: "優先確認", recommended: "確認推奨", reference: "参考" };
   const priorityOrder = { high: 0, recommended: 1, reference: 2 };
@@ -1895,7 +1895,7 @@ const bindServiceConfirmationResults = (recordId, rerender) => {
 };
 
 const serviceConfirmationMissingStepKeys = (proposal, steps) => {
-  const existing = new Set((steps || []).map((step) => step.step_key));
+  const existing = new Set((steps || []).filter((step) => !step.skipped_reason).map((step) => step.step_key));
   return jsonArray(proposal.step_keys).filter((stepKey) => !existing.has(stepKey));
 };
 
@@ -2187,7 +2187,7 @@ async function ensureActiveServiceStep(recordId, record, existingSteps) {
     steps = data.sort((a, b) => a.sequence_no - b.sequence_no);
   }
   if (steps.some((step) => step.started_at && !step.ended_at)) return null;
-  const nextStep = steps.find((step) => !step.started_at && !step.ended_at);
+  const nextStep = steps.find((step) => !step.started_at && !step.ended_at && !step.skipped_reason);
   if (!nextStep) return new Error("再開できる未実施工程が見つかりませんでした。");
   const { data, error } = await supabase.from("service_steps").update({ started_at: new Date().toISOString() }).eq("id", nextStep.id).is("started_at", null).is("ended_at", null).select().maybeSingle();
   if (error) return error;
@@ -2503,6 +2503,57 @@ const bindCompletedServiceChemicalUsageForms = (recordId) => {
   });
 };
 
+
+async function syncPreCheckServiceSteps(recordId, activeStep, existingSteps, courseCode, selectedOptions) {
+  const desiredSteps = buildServiceSteps(courseCode, selectedOptions).slice(1);
+  const futureSteps = (existingSteps || [])
+    .filter((step) => Number(step.sequence_no) > Number(activeStep.sequence_no))
+    .sort((a, b) => Number(a.sequence_no) - Number(b.sequence_no));
+  if (futureSteps.some((step) => step.started_at || step.ended_at)) {
+    return new Error("施工開始済みの工程があるため、施工内容を変更できません。");
+  }
+
+  for (let index = 0; index < futureSteps.length; index += 1) {
+    const row = futureSteps[index];
+    const desired = desiredSteps[index];
+    const values = desired
+      ? {
+          step_key: desired.step_key,
+          step_name: desired.name,
+          order_group: desired.order_group,
+          timed: desired.timed,
+          skippable: desired.skippable,
+          started_at: null,
+          ended_at: null,
+          skipped_reason: null,
+          snapshot: { ...desired, course_code: courseCode, selected_options: jsonArray(selectedOptions) },
+        }
+      : { step_key: `removed_${row.id}`, skipped_reason: "施工前確認で施工内容変更により対象外" };
+    const { error } = await supabase.from("service_steps")
+      .update(values)
+      .eq("id", row.id)
+      .is("started_at", null)
+      .is("ended_at", null);
+    if (error) return error;
+  }
+
+  if (desiredSteps.length > futureSteps.length) {
+    const values = desiredSteps.slice(futureSteps.length).map((step, index) => ({
+      service_record_id: recordId,
+      step_key: step.step_key,
+      step_name: step.name,
+      order_group: step.order_group,
+      sequence_no: Number(activeStep.sequence_no) + futureSteps.length + index + 1,
+      timed: step.timed,
+      skippable: step.skippable,
+      snapshot: { ...step, course_code: courseCode, selected_options: jsonArray(selectedOptions) },
+    }));
+    const { error } = await supabase.from("service_steps").insert(values);
+    if (error) return error;
+  }
+  return null;
+}
+
 async function renderServiceTimer(recordId) {
   clearServiceElapsed();
   const token = ++serviceViewToken;
@@ -2522,7 +2573,7 @@ async function renderServiceTimer(recordId) {
   if (record.status !== "in_progress") return renderServiceDetail(recordId);
   const activeStep = steps.find((step) => step.started_at && !step.ended_at);
   if (!activeStep) {
-    if (steps.length && steps.every((step) => step.ended_at)) {
+    if (steps.length && steps.every((step) => step.ended_at || step.skipped_reason)) {
       const activeSession = (sessions || []).find((session) => !session.ended_at);
       if (!activeSession) return renderServiceActualReview(recordId, record, steps, sessions, pauses);
       return activeSession.status === "interrupted" ? renderCleanupState(recordId, record, steps, sessions, pauses) : renderServiceEndState(recordId, record, steps, sessions);
@@ -2532,8 +2583,8 @@ async function renderServiceTimer(recordId) {
     return renderServiceTimer(recordId);
   }
   const currentIndex = steps.findIndex((step) => step.id === activeStep.id);
-  const nextStep = steps[currentIndex + 1];
-  const previousStep = currentIndex > 0 ? steps[currentIndex - 1] : null;
+  const nextStep = steps.slice(currentIndex + 1).find((step) => !step.skipped_reason && !step.ended_at);
+  const previousStep = currentIndex > 0 ? [...steps.slice(0, currentIndex)].reverse().find((step) => !step.skipped_reason) || null : null;
   const activePause = (pauses || []).find((pause) => !pause.ended_at);
   if (activePause) {
     setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">一時停止中</span></div><h2>${escapeHtml(activeStep.step_name)}</h2><dl><dt>工程開始</dt><dd>${escapeHtml(formatActualTime(activeStep.started_at))}</dd><dt>施工経過</dt><dd id="serviceStepElapsed"></dd><dt>停止開始</dt><dd>${escapeHtml(formatActualTime(activePause.started_at))}</dd></dl><button class="primary service-action-button" type="button" id="resumeServiceButton">施工を再開</button></div>${activeServiceDeleteMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
@@ -2555,6 +2606,28 @@ async function renderServiceTimer(recordId) {
     return;
   }
   const isPreCheck = activeStep.step_key === "pre_check" || activeStep.sequence_no === 1;
+  let serviceContentMarkup = "";
+  let reservationSnapshot = null;
+  if (isPreCheck && record.reservation_id) {
+    const { data, error: reservationError } = await supabase.from("reservations")
+      .select("course_code, selected_options, final_total")
+      .eq("id", record.reservation_id)
+      .maybeSingle();
+    if (reservationError) {
+      return setServiceContent(`<div class="card"><p class="error">${escapeHtml(saveErrorMessage(reservationError))}</p></div>`);
+    }
+    reservationSnapshot = data;
+  }
+  if (isPreCheck) {
+    const reservedCourse = reservationSnapshot?.course_code || record.course_code;
+    const reservedOptions = jsonArray(reservationSnapshot?.selected_options);
+    const reservedOptionText = reservedOptions.map((item) => reservationOptions.find((option) => option.code === item.code)?.label || item.code).join("、") || "なし";
+    const currentOptionText = jsonArray(record.selected_options).map((item) => reservationOptions.find((option) => option.code === item.code)?.label || item.code).join("、") || "なし";
+    const currentOptionCodes = new Set(jsonArray(record.selected_options).map((item) => item.code));
+    const optionChoices = reservationOptions.map((option) => `<label class="pricing-choice pricing-choice-main"><input type="checkbox" name="service_option" value="${escapeHtml(option.code)}" ${currentOptionCodes.has(option.code) ? "checked" : ""} /><span><strong>${escapeHtml(option.label)}</strong></span></label>`).join("");
+    serviceContentMarkup = `<section class="card"><h2>予約内容</h2><p><strong>${escapeHtml(reservationCourses[reservedCourse] || reservedCourse)}</strong> ・ ${escapeHtml(reservedOptionText)} ・ ${escapeHtml(yen(reservationSnapshot?.final_total ?? record.planned_total))}</p><p class="muted">現在の施工内容：${escapeHtml(reservationCourses[record.course_code] || record.course_code)} ・ ${escapeHtml(currentOptionText)} ・ ${escapeHtml(yen(record.planned_total))}</p><button class="secondary" type="button" id="toggleServiceContentEdit">施工内容を変更</button><form class="service-timing-correction hidden" id="serviceContentEditForm"><label>コース<select name="course_code">${Object.entries(reservationCourses).map(([value, label]) => `<option value="${value}" ${record.course_code === value ? "selected" : ""}>${escapeHtml(label)}</option>`).join("")}</select></label><div class="pricing-group"><div class="pricing-group-title">オプション</div>${optionChoices}</div><label>予定金額<input name="planned_total" type="number" inputmode="numeric" min="0" step="100" required value="${escapeHtml(record.planned_total ?? "")}" /></label><p class="muted">ここで変更しても予約内容は変更されません。</p><button class="secondary" type="submit">施工内容を保存</button><button class="text-button" type="button" id="cancelServiceContentEdit">キャンセル</button></form></section>`;
+  }
+
   let confirmationProposals = [];
   let confirmationMarkup = "";
   if (isPreCheck) {
@@ -2583,9 +2656,59 @@ async function renderServiceTimer(recordId) {
   const previousStepMarkup = previousStep
     ? '<button class="text-button" type="button" id="previousServiceStepButton">← 前の工程へ戻る</button>'
     : "";
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工中</span></div><h2>${escapeHtml(activeStep.step_name)}</h2><dl><dt>開始</dt><dd>${escapeHtml(formatActualTime(activeStep.started_at))}</dd><dt>経過</dt><dd id="serviceStepElapsed"></dd></dl></div>${confirmationMarkup}${isPreCheck ? serviceConditionMarkup(record, savedConditions) : ""}${chemicalMarkup}<button class="primary service-action-button" type="button" id="nextServiceStepButton">${nextStep ? "次の工程へ" : "施工終了"}</button><button class="secondary service-action-button" type="button" id="pauseServiceButton">一時停止</button>${previousStepMarkup}${activeServiceDeleteMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">施工中</span></div><h2>${escapeHtml(activeStep.step_name)}</h2><dl><dt>開始</dt><dd>${escapeHtml(formatActualTime(activeStep.started_at))}</dd><dt>経過</dt><dd id="serviceStepElapsed"></dd></dl></div>${serviceContentMarkup}${confirmationMarkup}${isPreCheck ? serviceConditionMarkup(record, savedConditions) : ""}${chemicalMarkup}<button class="primary service-action-button" type="button" id="nextServiceStepButton">${nextStep ? "次の工程へ" : "施工終了"}</button><button class="secondary service-action-button" type="button" id="pauseServiceButton">一時停止</button>${previousStepMarkup}${activeServiceDeleteMarkup}<button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
   showServiceElapsed("serviceStepElapsed", activeStep.started_at, pauses);
+
   if (isPreCheck) {
+    const editButton = document.getElementById("toggleServiceContentEdit");
+    const editForm = document.getElementById("serviceContentEditForm");
+    const cancelEdit = document.getElementById("cancelServiceContentEdit");
+    editButton?.addEventListener("click", () => {
+      editForm?.classList.remove("hidden");
+      editButton.classList.add("hidden");
+    });
+    cancelEdit?.addEventListener("click", () => {
+      editForm?.classList.add("hidden");
+      editButton?.classList.remove("hidden");
+    });
+    editForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const button = form.querySelector('button[type="submit"]');
+      const courseCode = form.course_code.value;
+      const existingOptions = new Map(jsonArray(record.selected_options).map((item) => [item.code, item]));
+      const selectedOptions = [...form.querySelectorAll('input[name="service_option"]:checked')].map((input) => {
+        const master = reservationOptions.find((option) => option.code === input.value);
+        return { code: input.value, amount: Number(existingOptions.get(input.value)?.amount ?? master?.amount ?? 0) };
+      });
+      const plannedTotal = Math.max(0, Number(form.planned_total.value || 0));
+      const previousValues = {
+        course_code: record.course_code,
+        selected_options: jsonArray(record.selected_options),
+        planned_total: record.planned_total,
+        actual_total: record.actual_total,
+      };
+      button.disabled = true;
+      button.textContent = "保存中…";
+      const { error: updateError } = await supabase.from("service_records")
+        .update({ course_code: courseCode, selected_options: selectedOptions, planned_total: plannedTotal, actual_total: plannedTotal })
+        .eq("id", recordId)
+        .eq("status", "in_progress");
+      if (updateError) {
+        button.disabled = false;
+        button.textContent = "施工内容を保存";
+        return alert(saveErrorMessage(updateError));
+      }
+      const stepError = await syncPreCheckServiceSteps(recordId, activeStep, steps, courseCode, selectedOptions);
+      if (stepError) {
+        await supabase.from("service_records").update(previousValues).eq("id", recordId);
+        await syncPreCheckServiceSteps(recordId, activeStep, steps, previousValues.course_code, previousValues.selected_options);
+        button.disabled = false;
+        button.textContent = "施工内容を保存";
+        return alert(saveErrorMessage(stepError));
+      }
+      await renderServiceTimer(recordId);
+    });
     bindServiceConditionForm(recordId, renderServiceTimer);
     bindServiceConfirmationResults(recordId, renderServiceTimer);
   } else bindServiceChemicalUsageForms(recordId, activeStep);
