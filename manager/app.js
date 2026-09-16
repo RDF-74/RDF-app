@@ -2671,27 +2671,46 @@ async function renderServiceTimer(recordId) {
       editForm?.classList.add("hidden");
       editButton?.classList.remove("hidden");
     });
+    const serviceContentPricingValues = () => {
+      if (!editForm) return null;
+      const courseCode = editForm.course_code.value;
+      const existingOptions = new Map(jsonArray(record.selected_options).map((item) => [item.code, item]));
+      const selectedOptions = [...editForm.querySelectorAll('input[name="service_option"]:checked')].map((input) => {
+        const master = reservationOptions.find((option) => option.code === input.value);
+        return { code: input.value, amount: Number(existingOptions.get(input.value)?.amount ?? master?.amount ?? 0) };
+      });
+      const basePrice = Number(reservationCoursePrices[record.vehicle_size_class]?.[courseCode] || 0);
+      const optionsTotal = selectedOptions.reduce((sum, item) => sum + item.amount, 0);
+      const calculatedTotal = Math.max(0, basePrice + optionsTotal + Number(record.travel_fee || 0) - Number(record.discount_total || 0));
+      return { courseCode, selectedOptions, basePrice, optionsTotal, calculatedTotal };
+    };
+    const updateServiceContentPrice = () => {
+      const values = serviceContentPricingValues();
+      if (values) editForm.planned_total.value = values.calculatedTotal;
+    };
+    editForm?.course_code?.addEventListener("change", updateServiceContentPrice);
+    editForm?.querySelectorAll('input[name="service_option"]').forEach((input) => input.addEventListener("change", updateServiceContentPrice));
     editForm?.addEventListener("submit", async (event) => {
       event.preventDefault();
       const form = event.currentTarget;
       const button = form.querySelector('button[type="submit"]');
-      const courseCode = form.course_code.value;
-      const existingOptions = new Map(jsonArray(record.selected_options).map((item) => [item.code, item]));
-      const selectedOptions = [...form.querySelectorAll('input[name="service_option"]:checked')].map((input) => {
-        const master = reservationOptions.find((option) => option.code === input.value);
-        return { code: input.value, amount: Number(existingOptions.get(input.value)?.amount ?? master?.amount ?? 0) };
-      });
-      const plannedTotal = Math.max(0, Number(form.planned_total.value || 0));
+      const pricing = serviceContentPricingValues();
+      if (!pricing) return;
+      const { courseCode, selectedOptions, basePrice, optionsTotal, calculatedTotal } = pricing;
+      const plannedTotal = Math.max(0, Number(form.planned_total.value || calculatedTotal));
       const previousValues = {
         course_code: record.course_code,
         selected_options: jsonArray(record.selected_options),
+        base_price: record.base_price,
+        options_total: record.options_total,
+        calculated_total: record.calculated_total,
         planned_total: record.planned_total,
         actual_total: record.actual_total,
       };
       button.disabled = true;
       button.textContent = "保存中…";
       const { error: updateError } = await supabase.from("service_records")
-        .update({ course_code: courseCode, selected_options: selectedOptions, planned_total: plannedTotal, actual_total: plannedTotal })
+        .update({ course_code: courseCode, selected_options: selectedOptions, base_price: basePrice, options_total: optionsTotal, calculated_total: calculatedTotal, planned_total: plannedTotal, actual_total: plannedTotal })
         .eq("id", recordId)
         .eq("status", "in_progress");
       if (updateError) {
