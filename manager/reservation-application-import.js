@@ -255,10 +255,15 @@
     const time = document.getElementById("reservationTime");
     if (time && draft.time) { time.value = draft.time; time.dispatchEvent(new Event("input", { bubbles: true })); }
     const notes = document.getElementById("reservationNotes");
-    if (notes && draft.originalText) notes.value = ["予約申込原文", draft.originalText].join(String.fromCharCode(10));
+    if (notes && draft.originalText) {
+      const rows = [];
+      if (draft.lineRequestId) rows.push(`LINE仮予約ID:${draft.lineRequestId}`);
+      rows.push("予約申込原文", draft.originalText);
+      notes.value = rows.join(String.fromCharCode(10));
+    }
   }
 
-  async function renderApplicationImport() {
+  async function renderApplicationImport(initialText = "", initialMeta = {}) {
     const { data: customers, error: customerError } = await supabase.from("customers")
       .select("id,name,phone,line_display_name")
       .eq("is_active", true)
@@ -400,11 +405,20 @@
       updateSubmitLabel();
     });
     document.getElementById("cancelReservationApplicationButton").addEventListener("click", renderReservationList);
+    if (initialText) {
+      text.value = String(initialText);
+      const parsed = parseApplication(text.value);
+      if (!parsed.lineName && initialMeta?.lineDisplayName) parsed.lineName = String(initialMeta.lineDisplayName).trim();
+      fillParsedFields(parsed);
+      try { await autoMatchCustomer(parsed); }
+      catch (error) { alert(saveErrorMessage(error)); }
+    }
     document.getElementById("reservationApplicationForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = event.currentTarget.querySelector('button[type="submit"]');
       const errorTarget = document.getElementById("reservationApplicationError");
       const draft = parseApplication(text.value);
+      draft.lineRequestId = String(initialMeta?.requestId || "").trim();
       const customerValues = { name: normalize(document.getElementById("applicationCustomerName").value), phone: emptyToNull(document.getElementById("applicationPhone").value), line_display_name: emptyToNull(document.getElementById("applicationLineName").value), contact_method: "line", notes: null };
       const vehicleValues = { manufacturer: selectedManufacturer(), model: normalize(document.getElementById("applicationModel").value), color: normalize(document.getElementById("applicationColor").value), plate_last4: emptyToNull(document.getElementById("applicationPlate").value), size_class: document.getElementById("applicationSizeClass").value, notes: null };
       draft.sizeClass = vehicleValues.size_class;
@@ -465,7 +479,7 @@
     button.id = "reservationApplicationButton";
     button.className = "secondary add-button";
     button.textContent = "＋ LINE予約申込から登録";
-    button.addEventListener("click", renderApplicationImport);
+    button.addEventListener("click", () => renderApplicationImport());
     newButton.insertAdjacentElement("afterend", button);
   };
 
@@ -474,5 +488,6 @@
     addImportButton();
     return result;
   };
+  window.RECORDARE_RESERVATION_IMPORT = Object.freeze({ open: renderApplicationImport });
   if (activeTab === "予約") queueMicrotask(addImportButton);
 })();

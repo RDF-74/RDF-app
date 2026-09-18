@@ -1296,6 +1296,7 @@ async function renderReservationForm(reservation = null) {
       const request = isEdit ? supabase.from("reservations").update(values).eq("id", reservation.id).select("id").single() : supabase.from("reservations").insert(values).select("id").single();
       const { data, error } = await request;
       if (error || !data?.id) throw error || new Error("保存結果を確認できませんでした。");
+      await window.RECORDARE_LINE_RESERVATION_REQUESTS?.afterReservationSaved?.(data.id, values);
       await renderReservationList();
     } catch (error) {
       button.disabled = false;

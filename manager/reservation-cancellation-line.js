@@ -109,6 +109,7 @@
     reservation.cancelled_at = values.cancelled_at;
     reservation.cancellation_line_sent_at = values.cancellation_line_sent_at;
     window.RECORDARE_RESERVATION_STATUS?.set?.("cancelled");
+    await window.RECORDARE_LINE_RESERVATION_REQUESTS?.afterReservationResolved?.(reservation.id, "cancelled");
   };
 
   const installCancellationButton = (reservation) => {

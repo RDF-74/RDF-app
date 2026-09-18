@@ -93,8 +93,11 @@
     if (["pending", "done", "failed"].includes(element.dataset.calendarSyncState || "")) return;
     element.dataset.calendarSyncState = "pending";
     syncCalendar(activeReservationId, action)
-      .then(() => {
+      .then(async () => {
         element.dataset.calendarSyncState = "done";
+        if (errorId === "reservationConfirmationError") {
+          await window.RECORDARE_LINE_RESERVATION_REQUESTS?.afterReservationResolved?.(activeReservationId, "confirmed");
+        }
       })
       .catch((error) => {
         element.dataset.calendarSyncState = "failed";
