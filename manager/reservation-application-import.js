@@ -182,11 +182,134 @@
   }
 
   async function renderApplicationImport() {
+    const { data: customers, error: customerError } = await supabase.from("customers")
+      .select("id,name,phone,line_display_name")
+      .eq("is_active", true)
+      .order("name");
+    if (customerError) return setReservationContent('<div class="card"><p class="error">顧客を読み込めませんでした。</p></div>');
+
     const manufacturerMarkup = manufacturerOptions.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("");
-    setReservationContent(`<form class="card form-card" id="reservationApplicationForm"><h2>予約申込から登録</h2><p class="muted">LINEで届いた予約申込文を貼り付けると、読み取れる項目を自動入力します。</p><label>予約申込文</label><textarea id="reservationApplicationText" rows="8" placeholder="【RE 予約申込】から始まるメッセージを貼り付け"></textarea><button class="secondary" type="button" id="parseReservationApplicationButton">内容を読み取る</button><label>お客様名</label><input id="applicationCustomerName" required autocomplete="name"><label>電話番号</label><input id="applicationPhone" type="tel" inputmode="tel"><label>LINE表示名</label><input id="applicationLineName"><label>メーカー</label><select id="applicationManufacturer" required><option value="">メーカーを選択</option>${manufacturerMarkup}<option value="__other__">その他</option></select><input id="applicationManufacturerOther" class="hidden" placeholder="メーカー名を入力"><label>車種</label><input id="applicationModel" required><label>色</label><input id="applicationColor" required><label>ナンバー下4桁</label><input id="applicationPlate" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"><label>車両区分</label><select id="applicationSizeClass" required><option value="">車両区分を選択</option>${Object.entries(reservationSizeClasses).map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join("")}</select><label>コース</label><select id="applicationCourse"><option value="">予約画面で選択</option>${Object.entries(reservationCourses).map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join("")}</select><label>施工日</label><input id="applicationDate" type="date"><label>開始時間</label><input id="applicationTime" type="time"><p class="error hidden" id="reservationApplicationError"></p><button class="primary" type="submit">顧客・車両を登録して予約へ</button><button class="text-button" type="button" id="cancelReservationApplicationButton">予約一覧へ戻る</button></form>`);
+    setReservationContent(`<form class="card form-card" id="reservationApplicationForm"><h2>LINE予約申込から登録</h2><p class="muted">LINEで届いた予約申込文を貼り付けると、読み取れる項目を自動入力します。リピーターは既存のお客様・車両へ紐づけできます。</p><label>予約申込文</label><textarea id="reservationApplicationText" rows="8" placeholder="【RE 予約申込】から始まるメッセージを貼り付け"></textarea><button class="secondary" type="button" id="parseReservationApplicationButton">内容を読み取る</button><div class="pricing-group"><div class="pricing-group-title">既存のお客様</div><p class="muted">リピーターの場合は、名前・LINE名・電話番号で検索して選択してください。新規の場合は選択不要です。</p><input id="applicationCustomerSearch" type="search" placeholder="既存顧客を検索" autocomplete="off"><input id="applicationExistingCustomerId" type="hidden"><div class="picker-results" id="applicationCustomerResults"></div><p class="muted" id="applicationCustomerSelection">新規のお客様として登録</p><label>既存車両</label><select id="applicationExistingVehicle" disabled><option value="">先に既存のお客様を選択してください</option></select></div><label>お客様名</label><input id="applicationCustomerName" required autocomplete="name"><label>電話番号</label><input id="applicationPhone" type="tel" inputmode="tel"><label>LINE表示名</label><input id="applicationLineName"><label>メーカー</label><select id="applicationManufacturer" required><option value="">メーカーを選択</option>${manufacturerMarkup}<option value="__other__">その他</option></select><input id="applicationManufacturerOther" class="hidden" placeholder="メーカー名を入力"><label>車種</label><input id="applicationModel" required><label>色</label><input id="applicationColor" required><label>ナンバー下4桁</label><input id="applicationPlate" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"><label>車両区分</label><select id="applicationSizeClass" required><option value="">車両区分を選択</option>${Object.entries(reservationSizeClasses).map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join("")}</select><label>コース</label><select id="applicationCourse"><option value="">予約画面で選択</option>${Object.entries(reservationCourses).map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join("")}</select><label>施工日</label><input id="applicationDate" type="date"><label>開始時間</label><input id="applicationTime" type="time"><p class="error hidden" id="reservationApplicationError"></p><button class="primary" type="submit" id="reservationApplicationSubmit">新規顧客・車両を登録して予約へ</button><button class="text-button" type="button" id="cancelReservationApplicationButton">予約一覧へ戻る</button></form>`);
     const text = document.getElementById("reservationApplicationText");
+    const customerSearch = document.getElementById("applicationCustomerSearch");
+    const existingCustomerId = document.getElementById("applicationExistingCustomerId");
+    const customerResults = document.getElementById("applicationCustomerResults");
+    const customerSelection = document.getElementById("applicationCustomerSelection");
+    const existingVehicle = document.getElementById("applicationExistingVehicle");
+    const submitButton = document.getElementById("reservationApplicationSubmit");
+    let customerVehicles = [];
+
+    const clean = (value) => normalize(value).toLowerCase();
+    const phoneDigits = (value) => String(value || "").replace(/\D/g, "");
+    const updateSubmitLabel = () => {
+      if (!existingCustomerId.value) submitButton.textContent = "新規顧客・車両を登録して予約へ";
+      else if (existingVehicle.value && existingVehicle.value !== "__new__") submitButton.textContent = "この顧客・車両で予約へ";
+      else submitButton.textContent = "この顧客に車両を追加して予約へ";
+    };
+    const clearExistingCustomer = () => {
+      existingCustomerId.value = "";
+      customerSelection.textContent = "新規のお客様として登録";
+      customerVehicles = [];
+      existingVehicle.innerHTML = '<option value="">先に既存のお客様を選択してください</option>';
+      existingVehicle.disabled = true;
+      updateSubmitLabel();
+    };
+    const applyExistingVehicle = (vehicle) => {
+      if (!vehicle) return;
+      setManufacturerField(vehicle.manufacturer || "");
+      document.getElementById("applicationModel").value = vehicle.model || "";
+      document.getElementById("applicationColor").value = vehicle.color || "";
+      document.getElementById("applicationPlate").value = vehicle.plate_last4 || "";
+      document.getElementById("applicationSizeClass").value = vehicle.size_class || "";
+    };
+    const loadExistingVehicles = async (customerId) => {
+      const { data, error } = await supabase.from("customer_vehicles")
+        .select("id,manufacturer,model,color,plate_last4,size_class")
+        .eq("customer_id", customerId)
+        .eq("is_active", true)
+        .order("created_at");
+      if (error) throw error;
+      customerVehicles = data || [];
+      existingVehicle.innerHTML = `<option value="__new__">＋ 新しい車両として追加</option>${customerVehicles.map((vehicle) => `<option value="${escapeHtml(vehicle.id)}">${escapeHtml(reservationVehicleName(vehicle))}（${escapeHtml(vehicle.color || "")}）</option>`).join("")}`;
+      existingVehicle.disabled = false;
+      const manufacturer = clean(selectedManufacturer());
+      const model = clean(document.getElementById("applicationModel").value);
+      const color = clean(document.getElementById("applicationColor").value);
+      const matches = customerVehicles.filter((vehicle) => clean(vehicle.manufacturer) === manufacturer && clean(vehicle.model) === model && (!color || clean(vehicle.color) === color));
+      if (matches.length === 1) {
+        existingVehicle.value = matches[0].id;
+        applyExistingVehicle(matches[0]);
+      } else {
+        existingVehicle.value = "__new__";
+      }
+      updateSubmitLabel();
+    };
+    const selectExistingCustomer = async (customer) => {
+      existingCustomerId.value = customer.id;
+      customerSearch.value = customer.name;
+      customerResults.innerHTML = "";
+      customerSelection.textContent = `既存のお客様「${customer.name}」に紐づけ`;
+      document.getElementById("applicationCustomerName").value = customer.name || "";
+      document.getElementById("applicationPhone").value = customer.phone || "";
+      document.getElementById("applicationLineName").value = customer.line_display_name || "";
+      await loadExistingVehicles(customer.id);
+    };
+    const showCustomers = (query = "") => {
+      const q = clean(query);
+      const digits = phoneDigits(query);
+      if (!q && !digits) {
+        customerResults.innerHTML = "";
+        return;
+      }
+      const matches = (customers || []).filter((customer) =>
+        clean(customer.name).includes(q) ||
+        clean(customer.line_display_name).includes(q) ||
+        (digits && phoneDigits(customer.phone).includes(digits))
+      ).slice(0, 8);
+      customerResults.innerHTML = matches.map((customer) => `<button class="picker-option" type="button" data-application-customer="${escapeHtml(customer.id)}"><strong>${escapeHtml(customer.name)}</strong><small>${escapeHtml(customer.line_display_name || customer.phone || "")}</small></button>`).join("");
+      customerResults.querySelectorAll("[data-application-customer]").forEach((button) => button.addEventListener("click", async () => {
+        const customer = customers.find((item) => item.id === button.dataset.applicationCustomer);
+        if (!customer) return;
+        try { await selectExistingCustomer(customer); }
+        catch (error) { alert(saveErrorMessage(error)); }
+      }));
+    };
+    const autoMatchCustomer = async (parsed) => {
+      const exactPhone = phoneDigits(parsed.phone);
+      const exactLine = clean(parsed.lineName);
+      const exactName = clean(parsed.customerName);
+      const exact = (customers || []).filter((customer) =>
+        (exactPhone && phoneDigits(customer.phone) === exactPhone) ||
+        (exactLine && clean(customer.line_display_name) === exactLine) ||
+        (exactName && clean(customer.name) === exactName)
+      );
+      if (exact.length === 1) {
+        await selectExistingCustomer(exact[0]);
+        return true;
+      }
+      clearExistingCustomer();
+      const query = parsed.phone || parsed.lineName || parsed.customerName;
+      customerSearch.value = query;
+      showCustomers(query);
+      return false;
+    };
+
     document.getElementById("applicationManufacturer").addEventListener("change", syncManufacturerOther);
-    document.getElementById("parseReservationApplicationButton").addEventListener("click", () => fillParsedFields(parseApplication(text.value)));
+    document.getElementById("parseReservationApplicationButton").addEventListener("click", async () => {
+      const parsed = parseApplication(text.value);
+      fillParsedFields(parsed);
+      try { await autoMatchCustomer(parsed); }
+      catch (error) { alert(saveErrorMessage(error)); }
+    });
+    customerSearch.addEventListener("input", () => {
+      if (existingCustomerId.value) clearExistingCustomer();
+      showCustomers(customerSearch.value);
+    });
+    existingVehicle.addEventListener("change", () => {
+      const vehicle = customerVehicles.find((item) => item.id === existingVehicle.value);
+      if (vehicle) applyExistingVehicle(vehicle);
+      updateSubmitLabel();
+    });
     document.getElementById("cancelReservationApplicationButton").addEventListener("click", renderReservationList);
     document.getElementById("reservationApplicationForm").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -209,14 +332,24 @@
       let createdCustomerId = null;
       let createdVehicleId = null;
       try {
-        let customer = await reusableCustomer(customerValues);
+        let customer = customers.find((item) => item.id === existingCustomerId.value) || null;
+        if (!customer) customer = await reusableCustomer(customerValues);
         if (!customer) {
           const result = await supabase.from("customers").insert(customerValues).select("id,name,phone,line_display_name").single();
           if (result.error || !result.data?.id) throw result.error || new Error("顧客の登録結果を確認できませんでした。");
           customer = result.data;
           createdCustomerId = customer.id;
         }
-        let vehicle = await reusableVehicle(customer.id, vehicleValues);
+
+        const explicitExistingCustomer = existingCustomerId.value === customer.id;
+        const selectedExistingVehicleId = explicitExistingCustomer ? existingVehicle.value : "";
+        let vehicle = selectedExistingVehicleId && selectedExistingVehicleId !== "__new__"
+          ? customerVehicles.find((item) => item.id === selectedExistingVehicleId) || null
+          : null;
+        if (selectedExistingVehicleId && selectedExistingVehicleId !== "__new__" && !vehicle) {
+          throw new Error("選択した既存車両を確認できませんでした。");
+        }
+        if (!vehicle && !explicitExistingCustomer) vehicle = await reusableVehicle(customer.id, vehicleValues);
         if (!vehicle) {
           const result = await supabase.from("customer_vehicles").insert({ customer_id: customer.id, ...vehicleValues }).select("id,manufacturer,model,color,size_class").single();
           if (result.error || !result.data?.id) throw result.error || new Error("車両の登録結果を確認できませんでした。");
@@ -228,7 +361,7 @@
         if (createdVehicleId) await supabase.from("customer_vehicles").update({ is_active: false }).eq("id", createdVehicleId);
         if (createdCustomerId) await supabase.from("customers").update({ is_active: false }).eq("id", createdCustomerId);
         button.disabled = false;
-        button.textContent = "顧客・車両を登録して予約へ";
+        updateSubmitLabel();
         errorTarget.textContent = saveErrorMessage(error);
         errorTarget.classList.remove("hidden");
       }
@@ -242,7 +375,7 @@
     button.type = "button";
     button.id = "reservationApplicationButton";
     button.className = "secondary add-button";
-    button.textContent = "＋ 新規のお客様の予約申込から登録";
+    button.textContent = "＋ LINE予約申込から登録";
     button.addEventListener("click", renderApplicationImport);
     newButton.insertAdjacentElement("afterend", button);
   };
