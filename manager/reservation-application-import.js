@@ -44,7 +44,7 @@
     return match ? `${String(Number(match[1])).padStart(2, "0")}:${String(Number(match[2] || 0)).padStart(2, "0")}` : "";
   };
 
-  const manufacturers = ["トヨタ", "レクサス", "日産", "ニッサン", "ホンダ", "マツダ", "スバル", "スズキ", "ダイハツ", "三菱", "ミツビシ", "フォルクスワーゲン", "Volkswagen", "VW", "BMW", "メルセデス・ベンツ", "メルセデスベンツ", "ベンツ", "アウディ", "Audi", "ボルボ", "Volvo", "プジョー", "シトロエン", "ルノー", "MINI", "ミニ", "ポルシェ", "Porsche", "テスラ", "Tesla"];
+  const manufacturers = ["メルセデス・ベンツ", "メルセデスベンツ", "フォルクスワーゲン", "Volkswagen", "VOLKSWAGEN", "TOYOTA", "LEXUS", "NISSAN", "HONDA", "MAZDA", "SUBARU", "SUZUKI", "DAIHATSU", "MITSUBISHI", "AUDI", "VOLVO", "PORSCHE", "TESLA", "トヨタ", "レクサス", "日産", "ニッサン", "ホンダ", "マツダ", "スバル", "スズキ", "ダイハツ", "三菱", "ミツビシ", "VW", "BMW", "ベンツ", "アウディ", "Audi", "ボルボ", "Volvo", "プジョー", "シトロエン", "ルノー", "MINI", "ミニ", "ポルシェ", "Porsche", "テスラ", "Tesla"];
   const manufacturerOptions = [
     "トヨタ", "レクサス", "日産", "ホンダ", "マツダ", "スバル", "スズキ", "ダイハツ", "三菱",
     "フォルクスワーゲン", "BMW", "メルセデス・ベンツ", "アウディ", "ボルボ", "プジョー", "シトロエン", "ルノー", "MINI", "ポルシェ", "テスラ",
@@ -52,6 +52,20 @@
   const canonicalManufacturer = (value) => {
     const text = normalize(value);
     const aliases = {
+      "TOYOTA": "トヨタ",
+      "LEXUS": "レクサス",
+      "NISSAN": "日産",
+      "HONDA": "ホンダ",
+      "MAZDA": "マツダ",
+      "SUBARU": "スバル",
+      "SUZUKI": "スズキ",
+      "DAIHATSU": "ダイハツ",
+      "MITSUBISHI": "三菱",
+      "AUDI": "アウディ",
+      "VOLVO": "ボルボ",
+      "PORSCHE": "ポルシェ",
+      "TESLA": "テスラ",
+      "VOLKSWAGEN": "フォルクスワーゲン",
       "ニッサン": "日産",
       "ミツビシ": "三菱",
       "Volkswagen": "フォルクスワーゲン",
@@ -64,14 +78,50 @@
       "Porsche": "ポルシェ",
       "Tesla": "テスラ",
     };
-    return aliases[text] || text;
+    return aliases[text] || aliases[text.toUpperCase()] || text;
   };
   const vehicleParts = (text) => {
-    const manufacturer = applicationField(text, ["メーカー", "車両メーカー"]);
-    const rawModel = applicationField(text, ["車種", "車名", "車両"]);
+    const manufacturer = applicationField(text, ["メーカー", "車両メーカー", "自動車メーカー"]);
+    const rawModel = applicationField(text, ["車種", "車名", "車両", "お車", "車両情報", "車種・車名"]);
     if (manufacturer || !rawModel) return { manufacturer: canonicalManufacturer(manufacturer), model: rawModel };
-    const found = manufacturers.find((item) => rawModel.toLowerCase().startsWith(item.toLowerCase()));
-    return found ? { manufacturer: canonicalManufacturer(found), model: normalize(rawModel.slice(found.length)) } : { manufacturer: "", model: rawModel };
+    const rawLower = rawModel.toLowerCase();
+    const found = manufacturers.find((item) => rawLower.startsWith(item.toLowerCase()) || rawLower.includes(item.toLowerCase()));
+    if (!found) return { manufacturer: "", model: rawModel };
+    const index = rawLower.indexOf(found.toLowerCase());
+    const model = normalize(rawModel.slice(0, index) + " " + rawModel.slice(index + found.length));
+    return { manufacturer: canonicalManufacturer(found), model };
+  };
+
+  const vehicleComparable = (value) => normalize(value)
+    .toLowerCase()
+    .replace(/[\s　・･_\-ー\/\\()（）【】\[\]]+/g, "");
+  const vehicleMatchScore = (vehicle, values) => {
+    let score = 0;
+    const vehicleMaker = vehicleComparable(canonicalManufacturer(vehicle.manufacturer));
+    const targetMaker = vehicleComparable(canonicalManufacturer(values.manufacturer));
+    const vehicleModel = vehicleComparable(vehicle.model);
+    const targetModel = vehicleComparable(values.model);
+    const vehicleColor = vehicleComparable(vehicle.color);
+    const targetColor = vehicleComparable(values.color);
+    const vehiclePlate = String(vehicle.plate_last4 || "").replace(/\D/g, "").slice(-4);
+    const targetPlate = String(values.plate_last4 || values.plate || "").replace(/\D/g, "").slice(-4);
+
+    if (vehicleMaker && targetMaker) {
+      if (vehicleMaker === targetMaker) score += 5;
+      else if (vehicleMaker.includes(targetMaker) || targetMaker.includes(vehicleMaker)) score += 2;
+    }
+    if (vehicleModel && targetModel) {
+      if (vehicleModel === targetModel) score += 10;
+      else if (vehicleModel.includes(targetModel) || targetModel.includes(vehicleModel)) score += 7;
+      else {
+        const shorter = vehicleModel.length <= targetModel.length ? vehicleModel : targetModel;
+        const longer = vehicleModel.length > targetModel.length ? vehicleModel : targetModel;
+        if (shorter.length >= 3 && longer.includes(shorter.slice(0, Math.max(3, Math.floor(shorter.length * 0.7))))) score += 4;
+      }
+    }
+    if (vehicleColor && targetColor && vehicleColor === targetColor) score += 2;
+    if (vehiclePlate && targetPlate && vehiclePlate === targetPlate) score += 8;
+    return score;
   };
 
   const parseApplication = (text) => {
@@ -86,7 +136,7 @@
       model: vehicle.model,
       color: applicationField(text, ["ボディカラー", "車体色", "カラー", "色"]),
       plate: applicationField(text, ["ナンバー下4桁", "ナンバー"]).replace(/\D/g, "").slice(-4),
-      course: courseCode(applicationField(text, ["コース", "施工コース", "希望コース"])),
+      course: courseCode(applicationField(text, ["コース", "施工コース", "希望コース", "ご希望コース", "メニュー", "施工内容"]) || applicationLines(text).find((line) => courseCode(line)) || ""),
       date: dateValue(dateSource),
       time: timeValue(timeSource),
       originalText: String(text || "").trim(),
@@ -150,11 +200,13 @@
   }
 
   async function reusableVehicle(customerId, values) {
-    const { data, error } = await supabase.from("customer_vehicles").select("id,manufacturer,model,color,size_class").eq("customer_id", customerId).eq("is_active", true);
+    const { data, error } = await supabase.from("customer_vehicles").select("id,manufacturer,model,color,plate_last4,size_class").eq("customer_id", customerId).eq("is_active", true);
     if (error) throw error;
-    const clean = (value) => normalize(value).toLowerCase();
-    const matches = (data || []).filter((vehicle) => clean(vehicle.manufacturer) === clean(values.manufacturer) && clean(vehicle.model) === clean(values.model) && (!values.color || clean(vehicle.color) === clean(values.color)));
-    return matches.length === 1 ? matches[0] : null;
+    const ranked = (data || []).map((vehicle) => ({ vehicle, score: vehicleMatchScore(vehicle, values) }))
+      .sort((a, b) => b.score - a.score);
+    if (!ranked.length || ranked[0].score < 7) return null;
+    if (ranked.length > 1 && ranked[0].score === ranked[1].score) return null;
+    return ranked[0].vehicle;
   }
 
   async function openReservationWith(customer, vehicle, draft) {
@@ -230,15 +282,27 @@
         .order("created_at");
       if (error) throw error;
       customerVehicles = data || [];
-      existingVehicle.innerHTML = `<option value="__new__">＋ 新しい車両として追加</option>${customerVehicles.map((vehicle) => `<option value="${escapeHtml(vehicle.id)}">${escapeHtml(reservationVehicleName(vehicle))}（${escapeHtml(vehicle.color || "")}）</option>`).join("")}`;
+      const target = {
+        manufacturer: selectedManufacturer(),
+        model: document.getElementById("applicationModel").value,
+        color: document.getElementById("applicationColor").value,
+        plate_last4: document.getElementById("applicationPlate").value,
+      };
+      const ranked = customerVehicles.map((vehicle, index) => ({ vehicle, index, score: vehicleMatchScore(vehicle, target) }))
+        .sort((a, b) => b.score - a.score || a.index - b.index);
+      const best = ranked[0] || null;
+      const strongMatch = Boolean(best && best.score >= 7);
+      const existingOptions = ranked.map(({ vehicle }, index) => {
+        const hint = strongMatch && index === 0 ? "（予約文と近い候補）" : "";
+        return `<option value="${escapeHtml(vehicle.id)}">${escapeHtml(reservationVehicleName(vehicle))}（${escapeHtml(vehicle.color || "")}）${hint}</option>`;
+      }).join("");
+      existingVehicle.innerHTML = strongMatch
+        ? `${existingOptions}<option value="__new__">＋ 新しい車両として追加</option>`
+        : `<option value="__new__">＋ 新しい車両として追加</option>${existingOptions}`;
       existingVehicle.disabled = false;
-      const manufacturer = clean(selectedManufacturer());
-      const model = clean(document.getElementById("applicationModel").value);
-      const color = clean(document.getElementById("applicationColor").value);
-      const matches = customerVehicles.filter((vehicle) => clean(vehicle.manufacturer) === manufacturer && clean(vehicle.model) === model && (!color || clean(vehicle.color) === color));
-      if (matches.length === 1) {
-        existingVehicle.value = matches[0].id;
-        applyExistingVehicle(matches[0]);
+      if (strongMatch) {
+        existingVehicle.value = best.vehicle.id;
+        applyExistingVehicle(best.vehicle);
       } else {
         existingVehicle.value = "__new__";
       }
