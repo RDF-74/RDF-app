@@ -25,6 +25,23 @@
     if (/リセット.*コート|リセット＆コート|リセット&コート/i.test(text)) return "reset_coat";
     return "";
   };
+  const reservationOptionCodes = (value) => {
+    const text = normalize(value);
+    if (!text || text === "なし") return [];
+    const parts = text.split(/[、,，]/).map((item) => normalize(item)).filter(Boolean);
+    const rules = [
+      ["front_glass_scale", /フロントガラス.*ウロコ/],
+      ["all_glass_scale", /全面ガラス.*ウロコ/],
+      ["front_glass_oil_repellent", /フロントガラス.*油膜.*撥水/],
+      ["all_glass_oil_repellent", /全面ガラス.*油膜.*撥水/],
+      ["body_iron_removal", /ボディ.*鉄粉/],
+      ["wheel_scale_heavy", /ホイール.*スケール.*重度/],
+      ["wheel_scale_light", /ホイール.*スケール.*軽度/],
+      ["unpainted_resin_wide", /未塗装樹脂.*広範囲/],
+      ["unpainted_resin_partial", /未塗装樹脂.*部分/],
+    ];
+    return [...new Set(parts.map((part) => rules.find(([, pattern]) => pattern.test(part))?.[0]).filter(Boolean))];
+  };
 
   const dateValue = (value) => {
     const text = normalize(value);
@@ -137,6 +154,7 @@
       color: applicationField(text, ["ボディカラー", "車体色", "カラー", "色"]),
       plate: applicationField(text, ["ナンバー下4桁", "ナンバー"]).replace(/\D/g, "").slice(-4),
       course: courseCode(applicationField(text, ["コース", "施工コース", "希望コース", "ご希望コース", "メニュー", "施工内容"]) || applicationLines(text).find((line) => courseCode(line)) || ""),
+      options: reservationOptionCodes(applicationField(text, ["希望オプション", "オプション", "追加オプション"])),
       date: dateValue(dateSource),
       time: timeValue(timeSource),
       originalText: String(text || "").trim(),
@@ -225,6 +243,13 @@
     if (size) { size.value = vehicle.size_class || draft.sizeClass || ""; size.dispatchEvent(new Event("change", { bubbles: true })); }
     const course = document.getElementById("reservationCourse");
     if (course && draft.course) { course.value = draft.course; course.dispatchEvent(new Event("change", { bubbles: true })); }
+    (draft.options || []).forEach((code) => {
+      const checkbox = document.querySelector(`[data-option-code="${code}"]`);
+      const row = checkbox?.closest(".pricing-choice");
+      if (!checkbox || row?.hidden) return;
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+    });
     const date = document.getElementById("reservationDate");
     if (date && draft.date) date.value = draft.date;
     const time = document.getElementById("reservationTime");
