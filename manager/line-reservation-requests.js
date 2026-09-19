@@ -1,5 +1,5 @@
 (() => {
-  const API_URL = "https://recordare-line-webhook.vercel.app/api/line-reservation-requests";
+  const API_URL = "https://recordare-line-webhook.vercel.app/api/reservation-confirmation";
   const markerPattern = /LINE仮予約ID:([a-f0-9]{16,64})/i;
   const baseReservationListForLineRequests = renderReservationList;
 
@@ -16,6 +16,7 @@
       },
       body: JSON.stringify({
         ...payload,
+        lineReservationRequest: true,
         supabaseUrl: config.url,
         anonKey: config.anonKey,
       }),

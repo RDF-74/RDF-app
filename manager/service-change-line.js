@@ -64,10 +64,10 @@
     const token = data?.session?.access_token;
     if (!token) throw new Error("Managerのログイン情報を確認できませんでした。");
     const config = window.RECORDARE_SUPABASE_CONFIG || {};
-    const response = await fetch(`${API_BASE}/api/service-change-proposal`, {
+    const response = await fetch(`${API_BASE}/api/reservation-confirmation`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ ...payload, supabaseUrl: config.url, anonKey: config.anonKey }),
+      body: JSON.stringify({ ...payload, serviceChangeRequest: true, supabaseUrl: config.url, anonKey: config.anonKey }),
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
