@@ -285,10 +285,26 @@ ${yen(total)}
     });
   };
 
+  const hideConfirmationLineIfQuoteApproved = async (reservation) => {
+    if (!reservation?.id || reservation.status !== "confirmed") return;
+    try {
+      const result = await apiRequest({ action: "status", reservationId: reservation.id });
+      const quote = result?.quote || null;
+      if (quote?.confirmedAt && quote?.decision === "approved") {
+        document.getElementById("reservationConfirmationPanel")?.remove();
+        document.getElementById("reservationConfirmationButton")?.remove();
+      }
+    } catch (error) {
+      console.error("見積確定状態の確認に失敗しました", error);
+    }
+  };
+
   renderReservationForm = async function(...args) {
     clearTimeout(quotePollTimer);
+    const reservation = args[0] || null;
     const result = await baseReservationFormForQuote(...args);
-    installQuoteButton(args[0] || null);
+    installQuoteButton(reservation);
+    await hideConfirmationLineIfQuoteApproved(reservation);
     return result;
   };
 })();
