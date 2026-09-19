@@ -112,14 +112,16 @@
   };
 
   const proposalMessage = (items, baseTotal) => {
+    const base = Number(baseTotal || 0);
     const delta = items.reduce((sum, item) => sum + item.amountDelta, 0);
-    const total = Number(baseTotal || 0) + delta;
+    const total = base + delta;
+    const footer = "追加施工は、このあとのボタンで「了承する」を選び、回答を確定いただいた場合のみ行います。\n「相談」「見送る」も選べます。見送った場合は、現在のご予約内容のまま施工を進めます。";
     if (items.length === 1) {
       const item = items[0];
-      return `施工前確認で、追加でおすすめしたい内容があります。\n\n${item.detail}\n\n【ご提案内容】\n${item.title}\n\n【変更後の予定金額】\n${yen(total)}\n\n【差額】\n＋${yen(item.amountDelta)}\n\n内容をご確認のうえ、下のボタンからお選びください。`;
+      return `施工前にお車の状態を確認したところ、追加でご案内したい施工があります。\n\n【状態とご提案理由】\n${item.detail}\n\n【追加施工】\n${item.title}\n\n【料金】\n現在の予定金額：${yen(base)}\n追加料金：＋${yen(item.amountDelta)}\n変更後の予定金額：${yen(total)}\n\n${footer}\n\n内容をご確認のうえ、下のボタンからお選びください。`;
     }
-    const lines = items.map((item) => `・${item.title}\n${item.reason}`).join("\n\n");
-    return `施工前確認で、以下の追加施工をおすすめします。\n\n${lines}\n\n【変更後の予定金額】${yen(total)}\n【差額】＋${yen(delta)}\n\n内容をご確認のうえ、各項目のボタンからお選びください。`;
+    const lines = items.map((item, index) => `【${index + 1}】${item.title}\n${item.detail}\n追加料金：＋${yen(item.amountDelta)}`).join("\n\n");
+    return `施工前にお車の状態を確認したところ、追加でご案内したい施工があります。\n\n${lines}\n\n【料金】\n現在の予定金額：${yen(base)}\n追加料金合計：＋${yen(delta)}\n変更後の予定金額：${yen(total)}\n\n${footer}\n\n内容をご確認のうえ、各項目のボタンからお選びください。`;
   };
 
   const proposalStateLabel = (row) => {
