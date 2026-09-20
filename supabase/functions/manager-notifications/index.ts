@@ -112,6 +112,183 @@ function addDays(dateKey: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
+const reservationCourseLabels: Record<string, string> = {
+  rinseless: "リンスレス",
+  maintenance: "メンテナンス",
+  standard: "スタンダード",
+  reset_coat: "リセット＆コート",
+};
+
+function reservationStartAt(reservation: { reservation_date?: string; start_time?: string }) {
+  const date = String(reservation?.reservation_date || "").slice(0, 10);
+  const time = String(reservation?.start_time || "").slice(0, 5);
+  if (!date || !time) return null;
+  const value = new Date(`${date}T${time}:00+09:00`);
+  return Number.isNaN(value.getTime()) ? null : value;
+}
+
+async function verifyCronRequest(req: Request) {
+  const requestSecret = req.headers.get("x-cron-secret") || "";
+  const expectedSecret = await getSecret("manager_notification_cron_secret");
+  return Boolean(requestSecret && requestSecret === expectedSecret);
+}
+
+async function activeManagerSubscriptions() {
+  const [
+    { data: subscriptions, error: subscriptionError },
+    { data: profiles, error: profileError },
+  ] = await Promise.all([
+    db.from("manager_push_subscriptions").select("id,user_id,endpoint,p256dh,auth").eq("enabled", true),
+    db.from("manager_profiles").select("id").eq("is_active", true).in("role", ["admin", "staff"]),
+  ]);
+  if (subscriptionError || profileError) throw subscriptionError || profileError;
+
+  const activeUsers = new Set((profiles || []).map((item) => item.id));
+  const result = new Map<string, Array<{ id: string; endpoint: string; p256dh: string; auth: string }>>();
+  for (const subscription of subscriptions || []) {
+    if (!activeUsers.has(subscription.user_id)) continue;
+    if (!result.has(subscription.user_id)) result.set(subscription.user_id, []);
+    result.get(subscription.user_id)!.push(subscription);
+  }
+  return result;
+}
+
+async function deliveryAlreadySent(userId: string, date: string, kind: string) {
+  const { data, error } = await db
+    .from("manager_notification_deliveries")
+    .select("id,status")
+    .eq("user_id", userId)
+    .eq("notification_date", date)
+    .eq("kind", kind)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.status === "sent";
+}
+
+async function recordDelivery(
+  userId: string,
+  date: string,
+  kind: string,
+  result: { sent: number; failed: number },
+  details: Record<string, unknown>,
+) {
+  const { error } = await db.from("manager_notification_deliveries").upsert(
+    {
+      user_id: userId,
+      notification_date: date,
+      kind,
+      status: result.sent > 0 ? "sent" : "failed",
+      details: { ...details, sent_count: result.sent, failed_count: result.failed },
+    },
+    { onConflict: "user_id,notification_date,kind" },
+  );
+  if (error) throw error;
+}
+
+async function sendDayBeforeNotifications(req: Request, phase: string) {
+  if (!(await verifyCronRequest(req))) return jsonResponse({ error: "Not allowed" }, 403);
+  if (!["19", "21"].includes(phase)) return jsonResponse({ error: "Invalid phase" }, 400);
+
+  const today = jstDateKey();
+  const tomorrow = addDays(today, 1);
+  const { data: reservations, error } = await db
+    .from("reservations")
+    .select("id,start_time,course_code,day_before_line_sent_at,customers(name),customer_vehicles(model)")
+    .eq("is_active", true)
+    .eq("status", "confirmed")
+    .eq("reservation_date", tomorrow)
+    .is("day_before_line_sent_at", null)
+    .order("start_time", { ascending: true });
+  if (error) throw error;
+  if (!(reservations || []).length) return jsonResponse({ ok: true, sent: 0, due: 0 });
+
+  const subsByUser = await activeManagerSubscriptions();
+  const first = reservations![0];
+  const customer = Array.isArray(first.customers) ? first.customers[0] : first.customers;
+  const firstTime = String(first.start_time || "").slice(0, 5);
+  const count = reservations!.length;
+  const body = phase === "19"
+    ? `明日の予約 ${count}件で前日確認LINEが未送信です。最初は${firstTime ? ` ${firstTime}〜` : ""} ${String(customer?.name || "お客様")}様です。`
+    : `21時時点で、明日の予約の前日確認LINEが未送信のまま ${count}件あります。確認して送信してください。`;
+  const kind = `reservation_day_before_${phase}`;
+
+  let sent = 0;
+  let failed = 0;
+  for (const [userId, subscriptions] of subsByUser.entries()) {
+    if (await deliveryAlreadySent(userId, today, kind)) continue;
+    const result = await sendPayload(subscriptions, {
+      title: "RE:CORDARE Manager",
+      body,
+      tag: `recordare-${kind}-${today}`,
+      data: { url: "/manager" },
+    });
+    sent += result.sent;
+    failed += result.failed;
+    await recordDelivery(userId, today, kind, result, {
+      phase,
+      reservation_ids: reservations!.map((item) => item.id),
+      due_count: count,
+    });
+  }
+  return jsonResponse({ ok: true, sent, failed, due: count, phase });
+}
+
+async function sendStartNotifications(req: Request) {
+  if (!(await verifyCronRequest(req))) return jsonResponse({ error: "Not allowed" }, 403);
+
+  const now = new Date();
+  const lower = new Date(now.getTime() + 119 * 60 * 1000);
+  const upper = new Date(now.getTime() + 121 * 60 * 1000);
+  const dateKeys = [...new Set([jstDateKey(lower), jstDateKey(upper)])];
+  const { data: reservations, error } = await db
+    .from("reservations")
+    .select("id,reservation_date,start_time,course_code,customers(name),customer_vehicles(model)")
+    .eq("is_active", true)
+    .eq("status", "confirmed")
+    .in("reservation_date", dateKeys)
+    .order("reservation_date")
+    .order("start_time");
+  if (error) throw error;
+
+  const due = (reservations || []).filter((reservation) => {
+    const start = reservationStartAt(reservation);
+    return Boolean(start && start.getTime() >= lower.getTime() && start.getTime() <= upper.getTime());
+  });
+  if (!due.length) return jsonResponse({ ok: true, sent: 0, due: 0 });
+
+  const subsByUser = await activeManagerSubscriptions();
+  const today = jstDateKey(now);
+  let sent = 0;
+  let failed = 0;
+
+  for (const reservation of due) {
+    const customer = Array.isArray(reservation.customers) ? reservation.customers[0] : reservation.customers;
+    const vehicle = Array.isArray(reservation.customer_vehicles) ? reservation.customer_vehicles[0] : reservation.customer_vehicles;
+    const time = String(reservation.start_time || "").slice(0, 5);
+    const course = reservationCourseLabels[String(reservation.course_code || "")] || String(reservation.course_code || "");
+    const kind = `reservation_start_2h_${reservation.id}`;
+    const body = `${String(customer?.name || "お客様")}様の予約開始まで約2時間です。${time ? ` ${time}〜` : ""}${vehicle?.model ? ` / ${vehicle.model}` : ""}${course ? ` / ${course}` : ""}`;
+
+    for (const [userId, subscriptions] of subsByUser.entries()) {
+      if (await deliveryAlreadySent(userId, today, kind)) continue;
+      const result = await sendPayload(subscriptions, {
+        title: "RE:CORDARE Manager",
+        body,
+        tag: `recordare-${kind}`,
+        data: { url: "/manager" },
+      });
+      sent += result.sent;
+      failed += result.failed;
+      await recordDelivery(userId, today, kind, result, {
+        reservation_id: reservation.id,
+        start_time: time,
+      });
+    }
+  }
+
+  return jsonResponse({ ok: true, sent, failed, due: due.length });
+}
+
 async function sendDueNotifications(req: Request) {
   const requestSecret = req.headers.get("x-cron-secret") || "";
   const expectedSecret = await getSecret("manager_notification_cron_secret");
@@ -125,6 +302,7 @@ async function sendDueNotifications(req: Request) {
     { data: preferences, error: preferenceError },
     { data: chemicals, error: chemicalError },
     { data: purchaseOrders, error: purchaseOrderError },
+    { data: todayReservations, error: reservationError },
   ] = await Promise.all([
     db.from("manager_push_subscriptions").select("id,user_id,endpoint,p256dh,auth").eq("enabled", true),
     db.from("manager_profiles").select("id").eq("is_active", true).in("role", ["admin", "staff"]),
@@ -135,9 +313,16 @@ async function sendDueNotifications(req: Request) {
     db.from("chemical_purchase_orders")
       .select("id,recordare_chemical_id,capacity,quantity,status,planned_on")
       .in("status", ["planned", "ordered"]),
+    db.from("reservations")
+      .select("id,start_time,day_before_line_sent_at,customers(name)")
+      .eq("is_active", true)
+      .eq("status", "confirmed")
+      .eq("reservation_date", jstDateKey())
+      .is("day_before_line_sent_at", null)
+      .order("start_time", { ascending: true }),
   ]);
 
-  const loadError = subscriptionError || profileError || preferenceError || chemicalError || purchaseOrderError;
+  const loadError = subscriptionError || profileError || preferenceError || chemicalError || purchaseOrderError || reservationError;
   if (loadError) throw loadError;
 
   const activeUsers = new Set((profiles || []).map((item) => item.id));
@@ -182,8 +367,9 @@ async function sendDueNotifications(req: Request) {
     );
     const userStockAlerts = pref.stock_enabled ? stockAlerts : [];
     const userOverduePlans = pref.purchase_reminder_enabled ? overduePlans : [];
+    const unsentDayBefore = todayReservations || [];
 
-    if (!userStockAlerts.length && !userOverduePlans.length) continue;
+    if (!userStockAlerts.length && !userOverduePlans.length && !unsentDayBefore.length) continue;
 
     const { data: existingDelivery } = await db
       .from("manager_notification_deliveries")
@@ -194,14 +380,11 @@ async function sendDueNotifications(req: Request) {
       .maybeSingle();
     if (existingDelivery?.status === "sent") continue;
 
-    let body = "";
-    if (userStockAlerts.length && userOverduePlans.length) {
-      body = `在庫アラート ${userStockAlerts.length}件・購入予定の未注文 ${userOverduePlans.length}件があります。`;
-    } else if (userStockAlerts.length) {
-      body = `在庫アラートが ${userStockAlerts.length}件あります。ケミカル在庫を確認してください。`;
-    } else {
-      body = `購入予定の未注文が ${userOverduePlans.length}件あります。購入予定一覧を確認してください。`;
-    }
+    const summaryParts = [];
+    if (userStockAlerts.length) summaryParts.push(`在庫アラート ${userStockAlerts.length}件`);
+    if (userOverduePlans.length) summaryParts.push(`購入予定の未注文 ${userOverduePlans.length}件`);
+    if (unsentDayBefore.length) summaryParts.push(`本日の予約で前日確認LINE未送信 ${unsentDayBefore.length}件`);
+    const body = `${summaryParts.join("・")}があります。Managerで確認してください。`;
 
     const result = await sendPayload(userSubscriptions, {
       title: "RE:CORDARE Manager",
@@ -216,6 +399,7 @@ async function sendDueNotifications(req: Request) {
     const details = {
       stock_count: userStockAlerts.length,
       purchase_reminder_count: userOverduePlans.length,
+      day_before_unsent_count: unsentDayBefore.length,
       sent_count: result.sent,
       failed_count: result.failed,
     };
@@ -243,6 +427,8 @@ Deno.serve(async (req) => {
     const action = String(body?.action || "");
 
     if (action === "send-due") return await sendDueNotifications(req);
+    if (action === "reservation-day-before") return await sendDayBeforeNotifications(req, String(body?.phase || ""));
+    if (action === "reservation-start-due") return await sendStartNotifications(req);
 
     const user = await managerUser(req);
 
@@ -322,7 +508,7 @@ Deno.serve(async (req) => {
       if (error) throw error;
       const result = await sendPayload(rows || [], {
         title: "RE:CORDARE Manager",
-        body: "通知テストです。在庫・購入予定の通知をこの端末で受け取れます。",
+        body: "通知テストです。予約・施工後・在庫・購入予定の通知をこの端末で受け取れます。",
         tag: "recordare-manager-test",
         data: { url: "/manager" },
       });
