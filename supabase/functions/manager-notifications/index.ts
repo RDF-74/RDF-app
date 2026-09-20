@@ -313,6 +313,7 @@ async function sendDueNotifications(req: Request) {
     { data: purchaseOrders, error: purchaseOrderError },
     { data: todayReservations, error: reservationError },
     { data: unpaidServices, error: unpaidServiceError },
+    { data: maintenanceDue, error: maintenanceError },
   ] = await Promise.all([
     db.from("manager_push_subscriptions").select("id,user_id,endpoint,p256dh,auth").eq("enabled", true),
     db.from("manager_profiles").select("id").eq("is_active", true).in("role", ["admin", "staff"]),
@@ -338,9 +339,15 @@ async function sendDueNotifications(req: Request) {
       .gte("actual_completed_at", yesterdayStart)
       .lt("actual_completed_at", todayStart)
       .order("actual_completed_at", { ascending: true }),
+    db.from("service_maintenance_followups")
+      .select("id,service_record_id,day_offset,due_on")
+      .lte("due_on", today)
+      .is("sent_at", null)
+      .is("notified_at", null)
+      .order("due_on", { ascending: true }),
   ]);
 
-  const loadError = subscriptionError || profileError || preferenceError || chemicalError || purchaseOrderError || reservationError || unpaidServiceError;
+  const loadError = subscriptionError || profileError || preferenceError || chemicalError || purchaseOrderError || reservationError || unpaidServiceError || maintenanceError;
   if (loadError) throw loadError;
 
   const activeUsers = new Set((profiles || []).map((item) => item.id));
@@ -386,8 +393,9 @@ async function sendDueNotifications(req: Request) {
     const userOverduePlans = pref.purchase_reminder_enabled ? overduePlans : [];
     const unsentDayBefore = todayReservations || [];
     const userUnpaidServices = unpaidServices || [];
+    const userMaintenanceDue = maintenanceDue || [];
 
-    if (!userStockAlerts.length && !userOverduePlans.length && !unsentDayBefore.length && !userUnpaidServices.length) continue;
+    if (!userStockAlerts.length && !userOverduePlans.length && !unsentDayBefore.length && !userUnpaidServices.length && !userMaintenanceDue.length) continue;
 
     const { data: existingDelivery } = await db
       .from("manager_notification_deliveries")
@@ -396,13 +404,22 @@ async function sendDueNotifications(req: Request) {
       .eq("notification_date", today)
       .eq("kind", "chemical_morning_summary")
       .maybeSingle();
-    if (existingDelivery?.status === "sent") continue;
+    if (existingDelivery?.status === "sent") {
+      if (userMaintenanceDue.length) {
+        await db.from("service_maintenance_followups")
+          .update({ notified_at: new Date().toISOString() })
+          .in("id", userMaintenanceDue.map((item) => item.id))
+          .is("notified_at", null);
+      }
+      continue;
+    }
 
     const summaryParts = [];
     if (userStockAlerts.length) summaryParts.push(`在庫アラート ${userStockAlerts.length}件`);
     if (userOverduePlans.length) summaryParts.push(`購入予定の未注文 ${userOverduePlans.length}件`);
     if (unsentDayBefore.length) summaryParts.push(`本日の予約で前日確認LINE未送信 ${unsentDayBefore.length}件`);
     if (userUnpaidServices.length) summaryParts.push(`昨日の施工で未払い ${userUnpaidServices.length}件`);
+    if (userMaintenanceDue.length) summaryParts.push(`メンテナンス案内 ${userMaintenanceDue.length}件`);
     const body = `${summaryParts.join("・")}があります。Managerで確認してください。`;
 
     const result = await sendPayload(userSubscriptions, {
@@ -421,6 +438,8 @@ async function sendDueNotifications(req: Request) {
       day_before_unsent_count: unsentDayBefore.length,
       unpaid_service_count: userUnpaidServices.length,
       unpaid_service_ids: userUnpaidServices.map((item) => item.id),
+      maintenance_followup_count: userMaintenanceDue.length,
+      maintenance_followup_ids: userMaintenanceDue.map((item) => item.id),
       sent_count: result.sent,
       failed_count: result.failed,
     };
@@ -434,6 +453,13 @@ async function sendDueNotifications(req: Request) {
       },
       { onConflict: "user_id,notification_date,kind" },
     );
+    if (result.sent > 0 && userMaintenanceDue.length) {
+      const { error: maintenanceUpdateError } = await db.from("service_maintenance_followups")
+        .update({ notified_at: new Date().toISOString() })
+        .in("id", userMaintenanceDue.map((item) => item.id))
+        .is("notified_at", null);
+      if (maintenanceUpdateError) throw maintenanceUpdateError;
+    }
   }
 
   return jsonResponse({ ok: true, sent: totalSent, failed: totalFailed, date: today });
@@ -529,7 +555,7 @@ Deno.serve(async (req) => {
       if (error) throw error;
       const result = await sendPayload(rows || [], {
         title: "RE:CORDARE Manager",
-        body: "通知テストです。予約・施工後・未払い・在庫・購入予定の通知をこの端末で受け取れます。",
+        body: "通知テストです。予約・施工後・未払い・メンテナンス案内・在庫・購入予定の通知をこの端末で受け取れます。",
         tag: "recordare-manager-test",
         data: { url: "/manager" },
       });
