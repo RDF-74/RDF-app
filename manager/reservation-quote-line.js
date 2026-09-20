@@ -244,7 +244,7 @@ ${yen(total)}
 
       document.getElementById("sendReservationQuoteLine")?.addEventListener("click", async (event) => {
         const reservationText = originalReservationText(reservation);
-        if (!reservationText) {
+        if (!reservation.customer_id && !reservationText) {
           errorTarget.textContent = "この予約はLINE送信先と自動紐づけされていないため、見積を直接送信できません。";
           errorTarget.classList.remove("hidden");
           return;
@@ -261,6 +261,7 @@ ${yen(total)}
           await apiRequest({
             action: "send",
             reservationId: reservation.id,
+            customerId: reservation.customer_id,
             reservationText,
             quoteId: crypto.randomUUID(),
             signature: quoteSignature(reservation),

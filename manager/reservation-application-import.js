@@ -1,7 +1,35 @@
 (() => {
   const baseReservationList = renderReservationList;
   const baseReservationForm = renderReservationForm;
+  const LINE_API_BASE = "https://recordare-line-webhook.vercel.app";
   const normalize = (value = "") => String(value).replace(/\u3000/g, " ").trim();
+
+  const linkCustomerLine = async (customerId, reservationText) => {
+    if (!customerId || !String(reservationText || "").trim()) return { skipped: true };
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    if (!token) throw new Error("Managerのログイン情報を確認できませんでした。");
+    const config = window.RECORDARE_SUPABASE_CONFIG || {};
+    const response = await fetch(`${LINE_API_BASE}/api/reservation-confirmation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        customerLineLinkRequest: true,
+        action: "link",
+        customerId,
+        reservationText,
+        supabaseUrl: config.url,
+        anonKey: config.anonKey,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload?.ok) {
+      const error = new Error(payload?.error || `LINE連携エラー (${response.status})`);
+      error.code = payload?.error || "line_link_failed";
+      throw error;
+    }
+    return payload;
+  };
   const applicationLines = (text) => String(text || "")
     .split(String.fromCharCode(10))
     .map((line) => normalize(line.replaceAll(String.fromCharCode(13), "")))
@@ -459,7 +487,18 @@
           vehicle = result.data;
           createdVehicleId = vehicle.id;
         }
+        let lineLinkError = null;
+        if (draft.originalText) {
+          try {
+            await linkCustomerLine(customer.id, draft.originalText);
+          } catch (error) {
+            lineLinkError = error;
+          }
+        }
         await openReservationWith(customer, vehicle, draft);
+        if (lineLinkError) {
+          queueMicrotask(() => alert("予約は取り込めましたが、顧客のLINE恒久連携だけ失敗しました。顧客詳細では「LINE未連携」と表示されます。"));
+        }
       } catch (error) {
         if (createdVehicleId) await supabase.from("customer_vehicles").update({ is_active: false }).eq("id", createdVehicleId);
         if (createdCustomerId) await supabase.from("customers").update({ is_active: false }).eq("id", createdCustomerId);

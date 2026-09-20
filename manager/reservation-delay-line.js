@@ -110,7 +110,7 @@
 
   const sendDelay = async (reservation, delayKey, message) => {
     const reservationText = originalReservationText(reservation);
-    if (!reservationText) {
+    if (!reservation.customer_id && !reservationText) {
       const error = new Error("reservation_not_linked");
       error.code = "reservation_not_linked";
       throw error;
@@ -122,7 +122,7 @@
     const response = await fetch(`${API_BASE}/api/reservation-delay`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ reservationText, delayKey, message, supabaseUrl: config.url, anonKey: config.anonKey }),
+      body: JSON.stringify({ customerId: reservation.customer_id, reservationText, delayKey, message, supabaseUrl: config.url, anonKey: config.anonKey }),
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {

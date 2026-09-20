@@ -51,7 +51,7 @@ RE:CORDARE`;
 
   const sendLine = async (reservation, message) => {
     const reservationText = originalReservationText(reservation);
-    if (!reservationText) {
+    if (!reservation.customer_id && !reservationText) {
       const error = new Error("reservation_not_linked");
       error.code = "reservation_not_linked";
       throw error;
@@ -66,6 +66,7 @@ RE:CORDARE`;
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
+        customerId: reservation.customer_id,
         reservationText,
         message,
         supabaseUrl: config.url,

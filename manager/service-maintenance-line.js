@@ -26,8 +26,8 @@
     return ok;
   };
 
-  const sendLine = async (reservationText, message) => {
-    if (!reservationText) {
+  const sendLine = async (customerId, reservationText, message) => {
+    if (!customerId && !reservationText) {
       const error = new Error("reservation_not_linked");
       error.code = "reservation_not_linked";
       throw error;
@@ -43,6 +43,7 @@
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
+        customerId,
         reservationText,
         message,
         supabaseUrl: config.url,
@@ -178,7 +179,7 @@
           statusTarget.classList.add("hidden");
 
           try {
-            const payload = await sendLine(originalReservationText(reservation), message);
+            const payload = await sendLine(record.customer_id, originalReservationText(reservation), message);
             try {
               await markSent(followup, message, payload.sentAt || new Date().toISOString());
             } catch (recordError) {
@@ -211,7 +212,7 @@
     const recordId = args[0];
     if (!recordId || activeTab !== "施工") return result;
     const { data: record, error } = await supabase.from("service_records")
-      .select("id,reservation_id,customer_name,vehicle_manufacturer,vehicle_model,vehicle_color,course_code,status")
+      .select("id,reservation_id,customer_id,customer_name,vehicle_manufacturer,vehicle_model,vehicle_color,course_code,status")
       .eq("id", recordId)
       .eq("is_active", true)
       .maybeSingle();

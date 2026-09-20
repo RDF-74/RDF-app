@@ -313,7 +313,7 @@
       if (changes.needsPrice) return alert("要相談料金のオプションは、変更後の予定金額を入力してから送信してください。");
       if (rows.some(isBlocking)) return alert("すでに回答待ちの追加施工があります。先にお客様の回答を確認してください。");
       const reservationText = originalReservationText(reservation?.notes);
-      if (!reservationText) return alert("この予約はLINE送信先と自動紐づけされていないため、追加施工のボタン確認を送信できません。");
+      if (!record.customer_id && !reservationText) return alert("この予約はLINE送信先と自動紐づけされていないため、追加施工のボタン確認を送信できません。");
       const message = String(document.getElementById("serviceChangeLineMessage")?.value || "").trim();
       if (!message) return;
       if (!confirm("この内容をお客様のLINEへ送信しますか？")) return;
@@ -340,7 +340,7 @@
       }
       try {
         await apiRequest({
-          action: "send", reservationText, groupId, message,
+          action: "send", customerId: record.customer_id, reservationText, groupId, message,
           baseTotal: Number(record.planned_total || 0),
           items: proposals.map((item) => ({ proposalId: item.proposalId, title: item.title, reason: proposals.length === 1 ? item.detail.replace(/\n/g, " ") : item.reason, amountDelta: item.amountDelta })),
         });
