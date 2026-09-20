@@ -76,7 +76,7 @@ async function renderManagerChemicalAlerts() {
 function renderManager() {
   const name = escapeHtml(profile?.display_name || "管理者");
   const content = activeTab === "ホーム" ? `<div id="managerContent"><div class="card"><p class="welcome">${name}さん</p><h2>RE:CORDARE Manager</h2><button class="secondary" type="button" id="openChemicalsButton">ケミカル・在庫</button><a class="return-link" href="/">← Detailing Managerへ戻る</a></div><div id="managerAlerts"></div></div>` : `<div id="managerContent">${activeTab === "顧客" || activeTab === "予約" || activeTab === "施工" ? '<div class="card placeholder"><p class="muted">読み込んでいます…</p></div>' : `<div class="card placeholder"><h2>${activeTab}</h2><p class="muted">この機能は準備中です。</p></div>`}</div>`;
-  app.innerHTML = `<section class="screen"><header class="topbar"><div><div class="brand">RE:CORDARE Manager</div><h1>${activeTab}</h1></div><button class="icon-button" type="button" aria-label="設定" id="settingsButton">⚙</button></header>${content}</section><nav class="manager-nav" aria-label="管理メニュー">${tabs.map((tab) => `<button type="button" data-tab="${tab}" class="${tab === activeTab ? "active" : ""}">${tab}</button>`).join("")}</nav><div class="settings-panel hidden" id="settingsPanel"><div class="settings-box"><h2>設定</h2><p class="muted">管理者：${name}</p><p class="muted">Build: ${escapeHtml(buildSha)}</p><p class="muted" id="managerNotificationStatus">通知：確認中…</p><button class="secondary" type="button" id="enableManagerNotifications">通知を有効にする</button><button class="secondary hidden" type="button" id="testManagerNotifications" style="margin-top:10px">テスト通知</button><button class="secondary hidden" type="button" id="disableManagerNotifications" style="margin-top:10px">通知を停止</button><p class="muted">予約前日・開始前・施工後のお礼LINE未送信、在庫アラート、購入予定の未対応をiPhoneへ通知します。</p><button class="secondary" type="button" id="signOutButton">ログアウト</button><button class="secondary" type="button" id="closeSettingsButton" style="margin-top:10px">閉じる</button></div></div>`;
+  app.innerHTML = `<section class="screen"><header class="topbar"><div><div class="brand">RE:CORDARE Manager</div><h1>${activeTab}</h1></div><button class="icon-button" type="button" aria-label="設定" id="settingsButton">⚙</button></header>${content}</section><nav class="manager-nav" aria-label="管理メニュー">${tabs.map((tab) => `<button type="button" data-tab="${tab}" class="${tab === activeTab ? "active" : ""}">${tab}</button>`).join("")}</nav><div class="settings-panel hidden" id="settingsPanel"><div class="settings-box"><h2>設定</h2><p class="muted">管理者：${name}</p><p class="muted">Build: ${escapeHtml(buildSha)}</p><p class="muted" id="managerNotificationStatus">通知：確認中…</p><button class="secondary" type="button" id="enableManagerNotifications">通知を有効にする</button><button class="secondary hidden" type="button" id="testManagerNotifications" style="margin-top:10px">テスト通知</button><button class="secondary hidden" type="button" id="disableManagerNotifications" style="margin-top:10px">通知を停止</button><p class="muted">予約前日・開始前・施工後のお礼LINE未送信・未払い、在庫アラート、購入予定の未対応をiPhoneへ通知します。</p><button class="secondary" type="button" id="signOutButton">ログアウト</button><button class="secondary" type="button" id="closeSettingsButton" style="margin-top:10px">閉じる</button></div></div>`;
   document.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click", () => { activeTab = button.dataset.tab; renderManager(); }));
   document.getElementById("settingsButton").addEventListener("click", async () => { document.getElementById("settingsPanel").classList.remove("hidden"); await refreshManagerNotificationSettings(); });
   document.getElementById("closeSettingsButton").addEventListener("click", () => document.getElementById("settingsPanel").classList.add("hidden"));
@@ -2117,7 +2117,7 @@ async function renderServiceList() {
   const token = ++serviceViewToken;
   const [{ data, error }, { count: deletedCount, error: deletedError }] = await Promise.all([
     supabase.from("service_records")
-      .select("id, reservation_id, customer_name, vehicle_manufacturer, vehicle_model, course_code, service_date, planned_start_time, planned_slot_minutes, planned_total, actual_total, status")
+      .select("id, reservation_id, customer_name, vehicle_manufacturer, vehicle_model, course_code, service_date, planned_start_time, planned_slot_minutes, planned_total, actual_total, status, payment_status")
       .eq("is_active", true)
       .order("service_date", { ascending: true })
       .order("planned_start_time", { ascending: true }),
@@ -2129,7 +2129,7 @@ async function renderServiceList() {
   ]);
   if (token !== serviceViewToken || activeTab !== "施工") return;
   if (error || deletedError) return setServiceContent('<div class="card"><p class="error">施工記録を読み込めませんでした。</p></div>');
-  const rows = data.length ? data.map((record) => `<button class="reservation-row" type="button" data-service-record-id="${record.id}"><span><strong>${escapeHtml(reservationDate(record.service_date))} ${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</strong><small>${escapeHtml(record.customer_name)} ・ ${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</small><small>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}${(record.actual_total ?? record.planned_total) != null ? ` ・ ${escapeHtml(yen(record.actual_total ?? record.planned_total))}` : ""}</small></span><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></button>`).join("") : '<div class="empty-state">まだ施工記録がありません。予約から施工記録を作成できます。</div>';
+  const rows = data.length ? data.map((record) => `<button class="reservation-row" type="button" data-service-record-id="${record.id}"><span><strong>${escapeHtml(reservationDate(record.service_date))} ${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</strong><small>${escapeHtml(record.customer_name)} ・ ${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</small><small>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}${(record.actual_total ?? record.planned_total) != null ? ` ・ ${escapeHtml(yen(record.actual_total ?? record.planned_total))}` : ""}${record.payment_status === "unpaid" ? " ・ 未払い" : ""}</small></span><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></button>`).join("") : '<div class="empty-state">まだ施工記録がありません。予約から施工記録を作成できます。</div>';
   setServiceContent(`<button class="secondary add-button" type="button" id="recentDeletedServicesButton">最近削除した項目${deletedCount ? `（${deletedCount}）` : ""}</button><div class="customer-list">${rows}</div>`);
   document.getElementById("recentDeletedServicesButton").addEventListener("click", renderRecentlyDeletedServices);
   document.querySelectorAll("[data-service-record-id]").forEach((button) => button.addEventListener("click", () => renderServiceDetail(button.dataset.serviceRecordId)));
@@ -2290,6 +2290,8 @@ async function renderServiceActualReview(recordId, record, steps, sessions, paus
       actual_total: form.actual_total.value === "" ? null : Math.max(0, Number(form.actual_total.value)),
       actual_total_minutes: totalMinutes,
       service_notes: emptyToNull(form.service_notes.value),
+      payment_status: record.payment_status || "unpaid",
+      paid_at: record.payment_status === "paid" ? record.paid_at : null,
     };
     const { error } = await supabase.from("service_records").update(values).eq("id", recordId).eq("status", "in_progress");
     if (error) {
@@ -2957,9 +2959,43 @@ async function renderServiceDetail(recordId) {
       : "";
   const conditionMarkup = record.status === "planned" ? "" : serviceConditionMarkup(record, savedConditions);
   const serviceActualMarkup = record.status === "planned" ? "" : `<form class="card form-card" id="serviceActualForm"><h2>施工実績</h2><label for="serviceActualTotal">実売上</label><input id="serviceActualTotal" name="actual_total" type="number" inputmode="numeric" min="0" step="100" value="${escapeHtml(actualTotalValue)}" /><label for="serviceNotes">施工メモ</label><textarea id="serviceNotes" name="service_notes" rows="4">${escapeHtml(record.service_notes || "")}</textarea><p class="error hidden" id="serviceActualError"></p><button class="secondary" type="submit">実績を保存</button></form>`;
+  const paymentMarkup = record.status === "completed"
+    ? `<section class="card"><h2>支払い状況</h2><label for="servicePaymentStatus">状態</label><select id="servicePaymentStatus"><option value="" ${record.payment_status ? "" : "selected"}>未設定（過去記録）</option><option value="unpaid" ${record.payment_status === "unpaid" ? "selected" : ""}>未払い</option><option value="paid" ${record.payment_status === "paid" ? "selected" : ""}>支払い済み</option></select><p class="muted">${record.paid_at ? `支払い済み：${escapeHtml(new Date(record.paid_at).toLocaleString("ja-JP"))}` : "新しく完了した施工は自動で未払いになります。"}</p><p class="error hidden" id="servicePaymentError"></p><button class="secondary" type="button" id="saveServicePaymentStatus">支払い状況を保存</button></section>`
+    : "";
 
-  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl></div>${plannedConfirmationMarkup}${conditionMarkup}${confirmationHistoryMarkup}${serviceChemicalUsageDetailMarkup}${serviceActualMarkup}<button class="text-button danger-text" type="button" id="deleteServiceRecordButton">施工履歴を削除</button><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
+  setServiceContent(`<div class="card detail-card"><div class="detail-heading"><div><h2>${escapeHtml(record.customer_name)}</h2><p class="muted">${escapeHtml(`${record.vehicle_manufacturer} ${record.vehicle_model}`)}</p></div><span class="reservation-status">${escapeHtml(serviceStatuses[record.status] || record.status)}</span></div>${actionMarkup}${actualTimeMarkup}${timingCorrectionMarkup}${resetMarkup}<dl><dt>コース</dt><dd>${escapeHtml(reservationCourses[record.course_code] || record.course_code)}</dd><dt>施工日</dt><dd>${escapeHtml(reservationDate(record.service_date))}</dd><dt>予定時間</dt><dd>${escapeHtml(reservationTime(record.planned_start_time))}〜${escapeHtml(addMinutesToTime(record.planned_start_time, record.planned_slot_minutes || 0))}</dd><dt>オプション</dt><dd>${escapeHtml(optionText)}</dd></dl></div>${plannedConfirmationMarkup}${conditionMarkup}${confirmationHistoryMarkup}${serviceChemicalUsageDetailMarkup}${serviceActualMarkup}${paymentMarkup}<button class="text-button danger-text" type="button" id="deleteServiceRecordButton">施工履歴を削除</button><button class="text-button" type="button" id="backToServiceList">← 施工一覧へ戻る</button>`);
   if (record.status === "completed") bindCompletedServiceChemicalUsageForms(recordId);
+
+  document.getElementById("saveServicePaymentStatus")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const statusSelect = document.getElementById("servicePaymentStatus");
+    const errorTarget = document.getElementById("servicePaymentError");
+    const paymentStatus = String(statusSelect?.value || "");
+    button.disabled = true;
+    button.textContent = "保存中…";
+    errorTarget?.classList.add("hidden");
+
+    const values = {
+      payment_status: paymentStatus || null,
+      paid_at: paymentStatus === "paid"
+        ? (record.payment_status === "paid" && record.paid_at ? record.paid_at : new Date().toISOString())
+        : null,
+    };
+    const { error: paymentError } = await supabase.from("service_records")
+      .update(values)
+      .eq("id", recordId)
+      .eq("status", "completed");
+    if (paymentError) {
+      button.disabled = false;
+      button.textContent = "支払い状況を保存";
+      if (errorTarget) {
+        errorTarget.textContent = saveErrorMessage(paymentError);
+        errorTarget.classList.remove("hidden");
+      }
+      return;
+    }
+    await renderServiceDetail(recordId);
+  });
 
   document.getElementById("prepareServiceButton")?.addEventListener("click", async (event) => {
     const button = event.currentTarget;
@@ -2980,7 +3016,7 @@ async function renderServiceDetail(recordId) {
     const button = event.currentTarget;
     button.disabled = true;
     button.textContent = "完了処理中…";
-    const { error } = await supabase.from("service_records").update({ status: "completed" }).eq("id", recordId).eq("status", "in_progress");
+    const { error } = await supabase.from("service_records").update({ status: "completed", payment_status: record.payment_status || "unpaid", paid_at: record.payment_status === "paid" ? record.paid_at : null }).eq("id", recordId).eq("status", "in_progress");
     if (error) {
       button.disabled = false;
       button.textContent = "施工完了";
@@ -3036,6 +3072,8 @@ async function renderServiceDetail(recordId) {
       status: "in_progress",
       actual_completed_at: null,
       actual_service_minutes: null,
+      payment_status: null,
+      paid_at: null,
     }).eq("id", recordId).eq("status", "completed");
     if (error) return alert(saveErrorMessage(error));
     await renderServiceDetail(recordId);
